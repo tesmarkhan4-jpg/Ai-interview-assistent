@@ -169,7 +169,7 @@ class StealthHUD(QMainWindow):
         self.listen_btn.clicked.connect(self.toggle_listening)
         
         self.screen_btn = QPushButton("READ SCREEN: OFF")
-        self.screen_btn.clicked.connect(self.toggle_screen_reading)
+        self.screen_btn.clicked.connect(self.trigger_screen_analysis)
         
         toggle_style = """
             QPushButton {
@@ -244,16 +244,24 @@ class StealthHUD(QMainWindow):
             self.listen_btn.setStyleSheet("background: rgba(255, 255, 255, 0.05); color: #BBB; border-radius: 5px; padding: 8px; font-weight: bold;")
             self.log_message("<span style='color:gray;'>[SYSTEM] Auto-Hear Stopped</span>")
 
-    def toggle_screen_reading(self):
-        self.is_reading_screen = not self.is_reading_screen
-        if self.is_reading_screen:
-            self.screen_btn.setText("READ SCREEN: ON")
-            self.screen_btn.setStyleSheet("background: #6200EA; color: white; border-radius: 5px; padding: 8px; font-weight: bold;")
-            self.log_message("<span style='color:#6200EA;'>[SYSTEM] Screen Reading Active (Capturing...)</span>")
-            self.perform_screen_analysis()
-        else:
-            self.screen_btn.setText("READ SCREEN: OFF")
-            self.screen_btn.setStyleSheet("background: rgba(255, 255, 255, 0.05); color: #BBB; border-radius: 5px; padding: 8px; font-weight: bold;")
+    def trigger_screen_analysis(self):
+        """Action trigger for rapid-fire MCQ testing."""
+        self.screen_btn.setText("ANALYZING...")
+        self.screen_btn.setStyleSheet("background: #6200EA; color: white; border-radius: 5px; padding: 8px; font-weight: bold;")
+        self.log_message("<span style='color:#6200EA;'>[SYSTEM] Capture & Analyze in progress...</span>")
+        
+        # Start analysis in background
+        path = vision_handler.capture_fullscreen()
+        query = "Solve EVERY question on screen. Start each answer on a NEW LINE."
+        self.ai_worker = AIWorker(query, mode="vision", image_path=path)
+        self.ai_worker.finished.connect(self.handle_vision_finished)
+        self.ai_worker.start()
+
+    def handle_vision_finished(self, sender, message):
+        """Resets the button after analysis is complete."""
+        self.log_message(f"<span style='color:#00E676;'><b>AI (Vision):</b> {message}</span>")
+        self.screen_btn.setText("READ SCREEN: OFF")
+        self.screen_btn.setStyleSheet("background: rgba(255, 255, 255, 0.05); color: #BBB; border-radius: 5px; padding: 8px; font-weight: bold;")
 
     def perform_screen_analysis(self):
         path = vision_handler.capture_fullscreen()
@@ -307,7 +315,8 @@ class StealthHUD(QMainWindow):
         self.log_message(f"<span style='color:#00E676;'><b>AI:</b> {message}</span>")
 
     def log_message(self, message):
-        self.chat_display.append(message)
+        formatted_message = message.replace("\n", "<br>")
+        self.chat_display.append(formatted_message)
         self.chat_display.moveCursor(QTextCursor.MoveOperation.End)
 
     def showEvent(self, event):

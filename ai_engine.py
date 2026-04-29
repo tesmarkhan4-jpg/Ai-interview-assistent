@@ -16,22 +16,32 @@ class AIEngine:
             "mixtral-8x7b-32768"
         ]
         self.gemini_fallbacks = [
-            "gemini-2.5-flash"
+            "gemini-flash-latest",
+            "gemini-pro-latest"
         ]
         
         self.conversation_history = []
         self.system_prompt = (
             "PERSONA: You are a warm, highly-intelligent human mentor. You want the user to sound like a RELATABLE, charming, top-tier professional.\n"
             "STYLE RULES:\n"
-            "1. SIMPLE ENGLISH: Use easy, clear, and common English words. Avoid complex jargon or 'big' words that are hard to speak. Your goal is for the user to be 100% understandable.\n"
-            "2. CONVERSATIONAL FLEXIBILITY: You are not a robot. If the interviewer is just chatting or making small talk, just be a nice human! Do not pivot to technical topics unless a technical question is asked.\n"
-            "3. 100% HUMAN RHYTHM: Speak like a real person. No bullet points. Use short, punchy sentences that are easy to read out loud.\n"
-            "4. DYNAMIC SCALING: Match the 'depth' of the question. For small talk or interviewer agreement, keep your response under 5 words (e.g., 'Exactly, I totally agree.'). For standard questions, use 10-15 words. For deep stories, MAXIMUM 30 WORDS and MAXIMUM 2 SENTENCES.\n"
-            "5. NATURAL FLOW: Use contractions (I'm, don't, it's) to sound human. Never give a long lecture. Be punchy and relatable.\n"
-            "6. STRATEGIC BUT HUMBLE: Drop your 'golden nuggets' naturally. Don't brag—just share what works in a simple way.\n"
-            "7. FEEDBACK AWARENESS: If they give feedback, just say 'Thank you' or 'I totally agree.'\n"
-            "8. WAIT FOR COMPLETION: Only respond once a full thought or question is done.\n"
+            "1. SIMPLE ENGLISH: Use easy, clear, and common English words. Avoid jargon. Goal: 100% understandable.\n"
+            "2. CONVERSATIONAL FLEXIBILITY: If chatting, be human! Don't pivot to tech unless asked.\n"
+            "3. 100% HUMAN RHYTHM: No bullet points. Short, punchy sentences.\n"
+            "4. DYNAMIC SCALING: Match depth. Small talk: 5 words. Standard: 15 words. Deep: 30 words (MAX 2 SENTENCES).\n"
+            "5. NATURAL FLOW: Use contractions (I'm, don't, it's). No lectures.\n"
+            "6. STRATEGIC BUT HUMBLE: Drop golden nuggets naturally.\n"
+            "7. FEEDBACK AWARENESS: Acknowledgements should be brief.\n"
+            "8. WAIT FOR COMPLETION: Only respond to full thoughts.\n"
             "9. ENGLISH ONLY: Ignore non-English noise."
+        )
+        self.vision_prompt = (
+            "ROLE: You are an elite AI Exam Solver. Provide answers in a CLEAN, VERTICAL format for easy reading.\n"
+            "FORMATTING RULES:\n"
+            "1. NEW LINES: Every question and answer MUST start on a fresh new line.\n"
+            "2. BOLD HEADINGS: Use clear headings like **QUESTION 1:** and **ANSWER:**.\n"
+            "3. VERTICAL SPACING: Add a double line break between different questions to separate them clearly.\n"
+            "4. CONCISE EXPERTISE: Give the absolute best answer in 2-3 punchy sentences. Be the expert.\n"
+            "5. NO CLUMPING: Do not write giant blocks of text. Break information into small, easy-to-read chunks."
         )
 
     def get_groq_response(self, user_input: str) -> str:
@@ -68,18 +78,20 @@ class AIEngine:
         if not key: return "Gemini API Key missing."
 
         last_error = ""
+        prompt = self.vision_prompt if image_obj else self.system_prompt
+        
         for model_name in self.gemini_fallbacks:
             try:
                 genai.configure(api_key=key)
                 model = genai.GenerativeModel(model_name)
                 
-                config = genai.types.GenerationConfig(max_output_tokens=250, temperature=0.8)
+                config = genai.types.GenerationConfig(max_output_tokens=1000, temperature=0.7)
 
                 if image_obj:
                     # Native PIL Image support
-                    response = model.generate_content([self.system_prompt, image_obj, f"USER QUESTION: {user_input}"], generation_config=config)
+                    response = model.generate_content([prompt, image_obj, f"USER QUERY: {user_input}"], generation_config=config)
                 else:
-                    response = model.generate_content([self.system_prompt, user_input], generation_config=config)
+                    response = model.generate_content([prompt, user_input], generation_config=config)
                 
                 return response.text
             except Exception as e:
@@ -89,10 +101,10 @@ class AIEngine:
 
         return f"AI Failure: All brains exhausted. Last Error: {last_error}"
 
-    def analyze_screen(self, image_path: str, query: str = "Analyze and solve."):
+    def analyze_screen(self, image_path: str, query: str = "Identify any questions or code and solve them."):
         try:
             img = Image.open(image_path)
-            img.load() # Force load into memory to avoid file lock issues
+            img.load() 
             return self.get_gemini_response(query, image_obj=img)
         except Exception as e:
             return f"Vision Error: {e}"
