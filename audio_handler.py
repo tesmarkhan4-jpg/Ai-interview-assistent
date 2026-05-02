@@ -51,7 +51,7 @@ class AudioThread(QThread):
                 header=[f"Authorization: Token {api_key}"]
             )
             
-            audio_queue = queue.Queue()
+            audio_queue = queue.Queue(maxsize=100) # Cap to ~10s of audio to prevent lag
             self.transcript_buffer = []
             self.last_transcript_time = time.time()
 
@@ -67,9 +67,10 @@ class AudioThread(QThread):
                     with mic.recorder(samplerate=self.rate) as recorder:
                         while self.is_running and self.ws and self.ws.connected:
                             try:
-                                data = recorder.record(numframes=int(self.rate * 0.1))
+                                data = recorder.record(numframes=int(self.rate * 0.2)) # Increased block size
                                 data_int16 = (data[:, 0] * 32767).astype(np.int16)
-                                audio_queue.put(data_int16.tobytes())
+                                if not audio_queue.full():
+                                    audio_queue.put(data_int16.tobytes())
                             except:
                                 break
                 except:

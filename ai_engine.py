@@ -21,36 +21,45 @@ class AIEngine:
         ]
         
         self.conversation_history = []
+        self.cv_context = "No CV uploaded yet."
+        
         self.system_prompt = (
-            "PERSONA: You are a warm, highly-intelligent human mentor. You want the user to sound like a RELATABLE, charming, top-tier professional.\n"
+            "ROLE: You are the ELITE Technical Candidate described in the provided CV. You are currently in a high-stakes job interview.\n"
+            "CONTEXT: Your identity, name, and background are entirely defined by this CV data: {cv_data}\n\n"
             "STYLE RULES:\n"
-            "1. SIMPLE ENGLISH: Use easy, clear, and common English words. Avoid jargon. Goal: 100% understandable.\n"
-            "2. CONVERSATIONAL FLEXIBILITY: If chatting, be human! Don't pivot to tech unless asked.\n"
-            "3. 100% HUMAN RHYTHM: No bullet points. Short, punchy sentences.\n"
-            "4. DYNAMIC SCALING: Match depth. Small talk: 5 words. Standard: 15 words. Deep: 30 words (MAX 2 SENTENCES).\n"
-            "5. NATURAL FLOW: Use contractions (I'm, don't, it's). No lectures.\n"
-            "6. STRATEGIC BUT HUMBLE: Drop golden nuggets naturally.\n"
-            "7. FEEDBACK AWARENESS: Acknowledgements should be brief.\n"
-            "8. WAIT FOR COMPLETION: Only respond to full thoughts.\n"
-            "9. ENGLISH ONLY: Ignore non-English noise."
+            "1. BE ORGANIC: Talk like a real person in a casual but professional interview. Use fillers like 'Actually...', 'Well, basically...', 'I'd say...', or 'To be honest...'.\n"
+            "2. NO JARGON OVERLOAD: Avoid robotic marketing words like 'top-tier', 'powerful', 'seamless', 'optimization', or 'capabilities' unless they are essential. Talk like a senior dev chatting with a colleague.\n"
+            "3. IDENTITY: You are the candidate in the CV: {cv_data}.\n"
+            "4. RESPONSE LENGTH: Keep conversational answers under 25 words. Be punchy. Use contractions (I've, I'm).\n"
+            "5. NO LISTS OR BULLETS: Use fluid paragraphs only.\n"
+            "6. ENGLISH ONLY."
         )
         self.vision_prompt = (
-            "ROLE: You are an elite AI Exam Solver. Provide answers in a CLEAN, VERTICAL format for easy reading.\n"
-            "FORMATTING RULES:\n"
-            "1. NEW LINES: Every question and answer MUST start on a fresh new line.\n"
-            "2. BOLD HEADINGS: Use clear headings like **QUESTION 1:** and **ANSWER:**.\n"
-            "3. VERTICAL SPACING: Add a double line break between different questions to separate them clearly.\n"
-            "4. CONCISE EXPERTISE: Give the absolute best answer in 2-3 punchy sentences. Be the expert.\n"
-            "5. NO CLUMPING: Do not write giant blocks of text. Break information into small, easy-to-read chunks."
+            "ROLE: You are a WORLD-CLASS Technical Assessment Solver (Savant Eye).\n"
+            "GOAL: Solve any MCQ, Assessment, or Code Test on screen with absolute accuracy.\n"
+            "EXPLANATION RULE: For Code/Technical tests, provide a 'WHAT' (the solution) and a 'WHY' (the reasoning) so the user can explain it.\n"
+            "FORMATTING:\n"
+            "1. **QUESTION:** (The question found on screen)\n"
+            "2. **ANSWER:** (The correct option or code snippet)\n"
+            "3. **REASONING (The 'WHY'):** (2 punchy sentences explaining the logic for the candidate to say out loud).\n"
+            "4. VERTICAL SPACING: Double line breaks between different items. No blocky text."
         )
+
+    def set_cv_context(self, text: str):
+        self.cv_context = text
+        print(f"[AIEngine] CV Context synchronized ({len(text)} chars).")
+
+    def get_current_system_prompt(self):
+        return self.system_prompt.format(cv_data=self.cv_context)
 
     def get_groq_response(self, user_input: str) -> str:
         key = key_manager.get_key("GROQ")
         if not key: return "Groq API Key missing."
 
         client = Groq(api_key=key)
-        messages = [{"role": "system", "content": self.system_prompt}]
-        messages.extend(self.conversation_history[-10:])
+        messages = [{"role": "system", "content": self.get_current_system_prompt()}]
+        # Limit history to prevent context lag
+        messages.extend(self.conversation_history[-6:])
         messages.append({"role": "user", "content": user_input})
 
         last_error = ""
@@ -78,7 +87,7 @@ class AIEngine:
         if not key: return "Gemini API Key missing."
 
         last_error = ""
-        prompt = self.vision_prompt if image_obj else self.system_prompt
+        prompt = self.vision_prompt if image_obj else self.get_current_system_prompt()
         
         for model_name in self.gemini_fallbacks:
             try:
@@ -109,4 +118,48 @@ class AIEngine:
         except Exception as e:
             return f"Vision Error: {e}"
 
+    def generate_interview_report(self) -> Dict:
+        if not self.conversation_history:
+            return {
+                "summary": "Short session with no significant dialogue.",
+                "needs": "N/A",
+                "market": "N/A",
+                "salary": "N/A"
+            }
+        
+        # Build analysis prompt
+        history_text = "\n".join([f"{m['role']}: {m['content']}" for m in self.conversation_history])
+        analysis_prompt = (
+            "Analyze the following interview conversation and provide a structured report in JSON format.\n"
+            "Include these keys:\n"
+            "1. 'summary': A 2-sentence concise summary of the interview.\n"
+            "2. 'needs': What exactly does the client/interviewer want or need?\n"
+            "3. 'market': What are the current market rates/salaries for this role?\n"
+            "4. 'salary': A specific recommended budget or salary to ask for. It should be competitive but slightly lower than the average market rate to guarantee you win the project/job.\n\n"
+            "HISTORY:\n" + history_text
+        )
+        
+        try:
+            # We use a larger model for analysis
+            key = key_manager.get_key("GROQ")
+            if not key: raise Exception("Groq key missing")
+            
+            client = Groq(api_key=key)
+            completion = client.chat.completions.create(
+                model="llama-3.3-70b-versatile",
+                messages=[{"role": "user", "content": analysis_prompt}],
+                response_format={"type": "json_object"}
+            )
+            import json
+            return json.loads(completion.choices[0].message.content)
+        except Exception as e:
+            print(f"[AIEngine] Report generation failed: {e}")
+            return {
+                "summary": "Could not generate automated summary.",
+                "needs": "Manual review required.",
+                "market": "Standard market rates apply.",
+                "salary": "Refer to market research."
+            }
+
 ai_engine = AIEngine()
+
