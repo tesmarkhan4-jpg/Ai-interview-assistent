@@ -24,25 +24,29 @@ class AIEngine:
         self.cv_context = "No CV uploaded yet."
         
         self.system_prompt = (
-            "ROLE: You are the ELITE Technical Candidate described in the provided CV. You are currently in a high-stakes job interview.\n"
+            "ROLE: You are the candidate described in the provided CV. You are in a live online interview right now.\n"
             "CONTEXT: Your identity, name, and background are entirely defined by this CV data: {cv_data}\n\n"
-            "STYLE RULES:\n"
-            "1. BE ORGANIC: Talk like a real person in a casual but professional interview. Use fillers like 'Actually...', 'Well, basically...', 'I'd say...', or 'To be honest...'.\n"
-            "2. NO JARGON OVERLOAD: Avoid robotic marketing words like 'top-tier', 'powerful', 'seamless', 'optimization', or 'capabilities' unless they are essential. Talk like a senior dev chatting with a colleague.\n"
-            "3. IDENTITY: You are the candidate in the CV: {cv_data}.\n"
-            "4. RESPONSE LENGTH: Keep conversational answers under 25 words. Be punchy. Use contractions (I've, I'm).\n"
-            "5. NO LISTS OR BULLETS: Use fluid paragraphs only.\n"
-            "6. ENGLISH ONLY."
+            "CRITICAL CONVERSATION RULES:\n"
+            "1. HYPER-NATURAL SPEECH: Write exactly as a normal, confident person speaks in real life. Do not sound like a written essay or a formal cover letter.\n"
+            "2. ADAPTIVE LENGTH (SMART SIZING): Adapt your length to the prompt. If it's a simple greeting ('How are you?'), give a short 1-sentence reply ('Doing great, thanks!'). If it's 'Tell me about yourself', give a casual, punchy 3-sentence overview and stop. NEVER generate long paragraphs.\n"
+            "3. READABILITY: Every single response MUST be incredibly easy to read out loud on the fly. Use short, breath-sized sentences. No complex corporate jargon.\n"
+            "4. HUMAN REACTIONS: If you make a mistake, brush it off casually ('Ah, my bad!'). Do not over-apologize or sound subservient.\n"
+            "5. DYNAMIC TONE: Vary your sentence structures. Sometimes start with 'Yeah,', 'Sure,', or just dive straight into the answer. Do not follow a predictable pattern. Speak like an equal to the interviewer."
         )
         self.vision_prompt = (
-            "ROLE: You are a WORLD-CLASS Technical Assessment Solver (Savant Eye).\n"
-            "GOAL: Solve any MCQ, Assessment, or Code Test on screen with absolute accuracy.\n"
-            "EXPLANATION RULE: For Code/Technical tests, provide a 'WHAT' (the solution) and a 'WHY' (the reasoning) so the user can explain it.\n"
-            "FORMATTING:\n"
-            "1. **QUESTION:** (The question found on screen)\n"
-            "2. **ANSWER:** (The correct option or code snippet)\n"
-            "3. **REASONING (The 'WHY'):** (2 punchy sentences explaining the logic for the candidate to say out loud).\n"
-            "4. VERTICAL SPACING: Double line breaks between different items. No blocky text."
+            "ROLE: You are a WORLD-CLASS Technical Assessment Solver and Senior Software Engineer (Savant Eye).\n"
+            "GOAL: Instantly analyze the provided image, determine the type of test (MCQ, Coding Challenge, or General Assessment), and solve it with absolute accuracy.\n\n"
+            "INSTRUCTIONS BASED ON TEST TYPE:\n"
+            "--- IF IT IS A MULTIPLE CHOICE QUESTION (MCQ) ---\n"
+            "1. Provide the CORRECT OPTION(S) clearly.\n"
+            "2. Provide a 1-sentence plain-English explanation of WHY it is correct.\n\n"
+            "--- IF IT IS A CODING CHALLENGE ---\n"
+            "1. IDENTIFY the language required (e.g., Python, JavaScript, C++).\n"
+            "2. WRITE THE COMPLETE, ERROR-FREE CODE exactly as needed to pass the test cases. Do not omit anything. Keep the code clean, optimal, and readable.\n"
+            "3. EXPLAIN the logic in 2-3 extremely simple, non-technical sentences so the user can easily talk about it out loud.\n\n"
+            "FORMATTING RULES:\n"
+            "- Use bolding for headers like **ANSWER** or **CODE**.\n"
+            "- Be concise but thoroughly accurate."
         )
 
     def set_cv_context(self, text: str):
@@ -83,32 +87,41 @@ class AIEngine:
         return self.get_gemini_response(user_input)
 
     def get_gemini_response(self, user_input: str, image_obj=None) -> str:
-        key = key_manager.get_key("GEMINI")
-        if not key: return "Gemini API Key missing."
-
         last_error = ""
         prompt = self.vision_prompt if image_obj else self.get_current_system_prompt()
         
-        for model_name in self.gemini_fallbacks:
-            try:
-                genai.configure(api_key=key)
-                model = genai.GenerativeModel(model_name)
-                
-                config = genai.types.GenerationConfig(max_output_tokens=1000, temperature=0.7)
+        # Try up to 15 times to account for multiple exhausted keys
+        for attempt in range(15):
+            key = key_manager.get_key("GEMINI")
+            if not key: return "Gemini API Key missing."
 
-                if image_obj:
-                    # Native PIL Image support
-                    response = model.generate_content([prompt, image_obj, f"USER QUERY: {user_input}"], generation_config=config)
-                else:
-                    response = model.generate_content([prompt, user_input], generation_config=config)
-                
-                return response.text
-            except Exception as e:
-                last_error = str(e)
-                print(f"[AIEngine] Gemini Fallback {model_name} failed: {last_error}")
-                continue
+            for model_name in self.gemini_fallbacks:
+                try:
+                    genai.configure(api_key=key)
+                    model = genai.GenerativeModel(model_name)
+                    
+                    config = genai.types.GenerationConfig(max_output_tokens=2000, temperature=0.7)
 
-        return f"AI Failure: All brains exhausted. Last Error: {last_error}"
+                    if image_obj:
+                        # Native PIL Image support
+                        response = model.generate_content([prompt, image_obj, f"USER QUERY: {user_input}"], generation_config=config)
+                    else:
+                        response = model.generate_content([prompt, user_input], generation_config=config)
+                    
+                    return response.text
+                except Exception as e:
+                    last_error = str(e)
+                    safe_key = f"...{key[-4:]}" if len(key) > 4 else "UNKNOWN"
+                    print(f"[AIEngine] Gemini {model_name} failed with key {safe_key}: {last_error}")
+                    
+                    # If it's a rate limit, quota, or exhaustion error, report failure to remove key from rotation temporarily
+                    if "429" in last_error or "quota" in last_error.lower() or "exhausted" in last_error.lower() or "ResourceExhausted" in last_error:
+                        key_manager.report_failure("GEMINI", key)
+                        break  # Break out of model loop to get a NEW key immediately
+                    
+                    continue # Try the next fallback model with the same key
+                    
+        return f"AI Failure: All brains exhausted across all keys. Last Error: {last_error}"
 
     def analyze_screen(self, image_path: str, query: str = "Identify any questions or code and solve them."):
         try:

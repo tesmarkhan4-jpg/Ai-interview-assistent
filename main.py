@@ -73,6 +73,7 @@ class KeyboardThread(QThread):
         keyboard.add_hotkey('ctrl+shift+h', lambda: self.hotkey_pressed.emit("toggle_hear"))
         keyboard.add_hotkey('ctrl+shift+s', lambda: self.hotkey_pressed.emit("toggle_stealth"))
         keyboard.add_hotkey('ctrl+shift+c', lambda: self.hotkey_pressed.emit("clear_chat"))
+        keyboard.add_hotkey('ctrl+shift+x', lambda: self.hotkey_pressed.emit("copy_last"))
         
         # Window Movement
         keyboard.add_hotkey('alt+up', lambda: self.hotkey_pressed.emit("move_up"))
@@ -103,6 +104,7 @@ class StealthHUD(QMainWindow):
         self.is_stealth = True
         self.is_listening = False
         self.is_reading_screen = False
+        self.last_ai_response = ""
         
         # Components
         self.audio_thread = AudioThread()
@@ -302,6 +304,8 @@ class StealthHUD(QMainWindow):
         elif key == "clear_chat":
             self.chat_display.clear()
             self.log_message("<i style='color:gray;'>[SYSTEM] Chat cleared via shortcut.</i>")
+        elif key == "copy_last":
+            self.copy_last_response()
         elif key == "move_up":
             self.move(self.x(), self.y() - 50)
         elif key == "move_down":
@@ -310,6 +314,13 @@ class StealthHUD(QMainWindow):
             self.move(self.x() - 50, self.y())
         elif key == "move_right":
             self.move(self.x() + 50, self.y())
+
+    def copy_last_response(self):
+        if hasattr(self, 'last_ai_response') and self.last_ai_response:
+            QApplication.clipboard().setText(self.last_ai_response)
+            self.log_message("<span style='color:#00B0FF;'>[SYSTEM] 📋 Last AI response copied to clipboard!</span>")
+        else:
+            self.log_message("<span style='color:gray;'>[SYSTEM] No AI response to copy yet.</span>")
 
     def toggle_stealth(self):
         self.is_stealth = not self.is_stealth
@@ -354,6 +365,7 @@ class StealthHUD(QMainWindow):
 
     def handle_vision_finished(self, sender, message):
         """Resets the button after analysis is complete."""
+        self.last_ai_response = message
         self.log_message(f"<span style='color:#7C4DFF;'><b>AI (Savant Eye):</b> {message}</span>")
         self.screen_btn.setText("READ SCREEN: OFF")
         self.screen_btn.setStyleSheet("background: rgba(255, 255, 255, 0.5); color: #007E44; border-radius: 15px; padding: 12px; font-weight: 900;")
@@ -396,6 +408,7 @@ class StealthHUD(QMainWindow):
         self.ai_worker.start()
 
     def handle_ai_voice_finished(self, sender, message):
+        self.last_ai_response = message
         self.log_message(f"<span style='color:#007E44;'><b>AI (Voice Response):</b> {message}</span>")
 
     def handle_user_input(self):
@@ -412,6 +425,7 @@ class StealthHUD(QMainWindow):
                 self.audio_thread.flush_now()
 
     def handle_ai_finished(self, sender, message):
+        self.last_ai_response = message
         self.log_message(f"<span style='color:#007E44;'><b>AI (Manual Input):</b> {message}</span>")
 
     def log_message(self, message):
