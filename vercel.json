@@ -1,19 +1,5 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "web/server/main.py",
-      "use": "@vercel/python"
-    },
-    {
-      "src": "web/landing/**/*",
-      "use": "@vercel/static"
-    },
-    {
-      "src": "web/admin/**/*",
-      "use": "@vercel/static"
-    }
-  ],
   "rewrites": [
     {
       "source": "/admin",
@@ -29,7 +15,7 @@
     },
     {
       "source": "/api/(.*)",
-      "destination": "/web/server/main.py"
+      "destination": "/api/index.py"
     },
     {
       "source": "/",
