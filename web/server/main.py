@@ -60,6 +60,10 @@ async def login(user: UserLogin):
 # AI Proxy (Secure Key Rotation)
 @app.post("/api/v1/proxy")
 async def ai_proxy(req: ProxyRequest):
+    # Global Kill-Switch check
+    if db.get_config().get("maintenance_mode", False):
+        raise HTTPException(status_code=503, detail="Strategic System Maintenance in Progress. Tactical stream suspended.")
+
     key = db.get_pooled_key(req.provider)
     if not key:
         raise HTTPException(status_code=503, detail="Strategic Key Pool Exhausted.")
@@ -93,13 +97,34 @@ async def ai_proxy(req: ProxyRequest):
 # Admin Endpoints
 @app.get("/admin/stats")
 async def get_stats():
-    # In a real app, you'd calculate these from DB
     return {
         "total_users": db.users.count_documents({}),
-        "active_trials": db.users.count_documents({"tier": "TRIAL"}),
+        "active_sessions": db.users.count_documents({"tier": "PRO"}),
         "key_health": 98.2,
-        "revenue": 14200
+        "maintenance_mode": db.get_config().get("maintenance_mode", False)
     }
+
+@app.get("/admin/users")
+async def get_users():
+    users = db.get_all_users()
+    for u in users: u["_id"] = str(u["_id"])
+    return {"users": users}
+
+@app.get("/admin/keys")
+async def get_keys():
+    keys = db.get_all_keys()
+    for k in keys: k["_id"] = str(k["_id"])
+    return {"keys": keys}
+
+@app.post("/admin/keys/add")
+async def add_key(provider: str, value: str):
+    db.add_key(provider, value)
+    return {"status": "success"}
+
+@app.delete("/admin/keys/{key_id}")
+async def remove_key(key_id: str):
+    db.remove_key(key_id)
+    return {"status": "success"}
 
 @app.post("/admin/maintenance")
 async def set_maintenance(active: bool):

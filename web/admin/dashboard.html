@@ -184,34 +184,100 @@
         // Initialize Lucide icons
         lucide.createIcons();
 
-        // Simple Tab Switching Logic
+        const API_BASE = window.location.origin + "/api";
+
+        // Tab Switching Logic
         const navLinks = document.querySelectorAll('.nav-link');
         const tabTitle = document.getElementById('tab-title');
         const contents = {
             overview: document.getElementById('content-overview'),
             users: document.getElementById('content-users'),
             keys: document.getElementById('content-keys'),
-            payments: document.getElementById('content-overview'), // Placeholder
-            settings: document.getElementById('content-overview')  // Placeholder
+            payments: document.getElementById('content-overview'),
+            settings: document.getElementById('content-overview')
         };
 
         navLinks.forEach(link => {
             link.addEventListener('click', (e) => {
                 e.preventDefault();
                 const tab = link.getAttribute('data-tab');
-                
-                // Update Sidebar
                 navLinks.forEach(l => l.classList.remove('active'));
                 link.classList.add('active');
-
-                // Update Title
                 tabTitle.innerText = link.innerText.trim();
-
-                // Show Content
                 Object.values(contents).forEach(c => c.style.display = 'none');
                 if (contents[tab]) contents[tab].style.display = 'block';
+                
+                if(tab === 'users') fetchUsers();
+                if(tab === 'keys') fetchKeys();
             });
         });
+
+        // --- Backend Integration ---
+
+        async function fetchStats() {
+            try {
+                const res = await fetch(`${API_BASE}/admin/stats`);
+                const data = await res.json();
+                document.querySelectorAll('.stat-value')[0].innerText = data.total_users.toLocaleString();
+                document.querySelectorAll('.stat-value')[1].innerText = data.active_sessions.toLocaleString();
+                document.querySelectorAll('.stat-value')[2].innerText = data.key_health + "%";
+                document.getElementById('maintenance-toggle').checked = data.maintenance_mode;
+            } catch (e) { console.error("Stats fetch failed", e); }
+        }
+
+        async function toggleMaintenance() {
+            const active = document.getElementById('maintenance-toggle').checked;
+            await fetch(`${API_BASE}/admin/maintenance?active=${active}`, { method: 'POST' });
+        }
+
+        async function fetchUsers() {
+            try {
+                const res = await fetch(`${API_BASE}/admin/users`);
+                const data = await res.json();
+                const list = document.getElementById('user-list');
+                list.innerHTML = data.users.map(u => `
+                    <tr>
+                        <td><b>${u.email}</b></td>
+                        <td><span class="status-pill status-${u.tier.toLowerCase()}">${u.tier}</span></td>
+                        <td>${new Date(u.joined_at).toLocaleDateString()}</td>
+                        <td><button class="btn-action">Manage</button></td>
+                    </tr>
+                `).join('');
+            } catch (e) { console.error("User fetch failed", e); }
+        }
+
+        async function fetchKeys() {
+            try {
+                const res = await fetch(`${API_BASE}/admin/keys`);
+                const data = await res.json();
+                const list = document.querySelector('#content-keys tbody');
+                list.innerHTML = data.keys.map(k => `
+                    <tr>
+                        <td><b>${k.provider}</b></td>
+                        <td>${k.key_value.substring(0, 8)}...</td>
+                        <td><span class="status-pill status-${k.status === 'healthy' ? 'active' : 'trial'}">${k.status.toUpperCase()}</span></td>
+                        <td>${k.usage_count || 0}</td>
+                        <td><button class="btn-action btn-delete" onclick="removeKey('${k._id}')">Revoke</button></td>
+                    </tr>
+                `).join('');
+                
+                // Update key counts
+                document.querySelectorAll('#content-keys .stat-value')[0].innerText = data.keys.filter(k => k.provider === 'gemini').length;
+                document.querySelectorAll('#content-keys .stat-value')[1].innerText = data.keys.filter(k => k.provider === 'groq').length;
+            } catch (e) { console.error("Keys fetch failed", e); }
+        }
+
+        async function removeKey(id) {
+            if(confirm("Are you sure you want to revoke this key?")) {
+                await fetch(`${API_BASE}/admin/keys/${id}`, { method: 'DELETE' });
+                fetchKeys();
+            }
+        }
+
+        document.getElementById('maintenance-toggle').addEventListener('change', toggleMaintenance);
+
+        // Initial Load
+        fetchStats();
     </script>
 </body>
 </html>

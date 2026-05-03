@@ -92,3 +92,14 @@ class StealthDB:
 
     def set_maintenance(self, status):
         self.config.update_one({"type": "global"}, {"$set": {"maintenance_mode": status}}, upsert=True)
+
+    # Admin Helpers
+    def get_all_keys(self):
+        return list(self.keys.find({}))
+
+    def remove_key(self, key_id):
+        from bson import ObjectId
+        return self.keys.delete_one({"_id": ObjectId(key_id)})
+
+    def get_all_users(self, limit=50):
+        return list(self.users.find({}).sort("joined_at", -1).limit(limit))
