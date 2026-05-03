@@ -216,7 +216,7 @@
 
         async function fetchStats() {
             try {
-                const res = await fetch(`${API_BASE}/admin/stats`);
+                const res = await fetch(`/api/admin/stats`);
                 const data = await res.json();
                 document.querySelectorAll('.stat-value')[0].innerText = data.total_users.toLocaleString();
                 document.querySelectorAll('.stat-value')[1].innerText = data.active_sessions.toLocaleString();
@@ -232,7 +232,7 @@
 
         async function fetchUsers() {
             try {
-                const res = await fetch(`${API_BASE}/admin/users`);
+                const res = await fetch(`/api/admin/users`);
                 const data = await res.json();
                 const list = document.getElementById('user-list');
                 list.innerHTML = data.users.map(u => `
@@ -247,14 +247,19 @@
         }
 
         async function fetchKeys() {
+            console.log("Fetching Keys...");
             try {
-                const res = await fetch(`${API_BASE}/admin/keys`);
+                const res = await fetch(`/api/admin/keys`);
                 const data = await res.json();
+                console.log("Keys Data:", data);
+                
                 const list = document.querySelector('#content-keys tbody');
+                if (!list) return;
+
                 list.innerHTML = data.keys.map(k => `
                     <tr>
-                        <td><b>${k.provider}</b></td>
-                        <td>${k.key_value.substring(0, 8)}...</td>
+                        <td><b style="text-transform: capitalize;">${k.provider}</b></td>
+                        <td><code>${k.key_value.substring(0, 12)}...</code></td>
                         <td><span class="status-pill status-${k.status === 'healthy' ? 'active' : 'trial'}">${k.status.toUpperCase()}</span></td>
                         <td>${k.usage_count || 0}</td>
                         <td><button class="btn-action btn-delete" onclick="removeKey('${k._id}')">Revoke</button></td>
@@ -262,8 +267,12 @@
                 `).join('');
                 
                 // Update key counts
-                document.querySelectorAll('#content-keys .stat-value')[0].innerText = data.keys.filter(k => k.provider === 'gemini').length;
-                document.querySelectorAll('#content-keys .stat-value')[1].innerText = data.keys.filter(k => k.provider === 'groq').length;
+                const statValues = document.querySelectorAll('#content-keys .stat-value');
+                if (statValues.length >= 3) {
+                    statValues[0].innerText = data.keys.filter(k => k.provider === 'gemini').length;
+                    statValues[1].innerText = data.keys.filter(k => k.provider === 'groq').length;
+                    statValues[2].innerText = data.keys.filter(k => k.provider === 'deepgram').length;
+                }
             } catch (e) { console.error("Keys fetch failed", e); }
         }
 
