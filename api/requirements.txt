@@ -1,11 +1,8 @@
 fastapi
-uvicorn
 pymongo
 requests
-passlib[bcrypt]
 python-dotenv
-pydantic[email]
-motor
 certifi
 dnspython
-gunicorn
+pydantic[email]
+bcrypt
