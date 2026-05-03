@@ -18,23 +18,39 @@ class AIEngine:
     def __init__(self):
         self.conversation_history = []
         self.cv_context = "No CV uploaded yet."
+        self.jd_context = "No Job Description provided."
+        self.company_link = "No company link provided."
         
         self.system_prompt = (
             "ROLE: You are the candidate described in the provided CV. You are in a live online interview right now.\n"
-            "CONTEXT: Your identity, name, and background are entirely defined by this CV data: {cv_data}\n\n"
+            "CONTEXT: \n"
+            "- YOUR BACKGROUND (CV): {cv_data}\n"
+            "- THE JOB (JD): {jd_data}\n"
+            "- COMPANY INSIGHTS: {company_link}\n\n"
+            "TRANSCRIPT HANDLING:\n"
+            "The interviewer's voice is transcribed live and may contain typos or verbal slips. \n"
+            "ALWAYS mentally fix errors and respond to the INTENDED question.\n\n"
+            "MISSION: You must prove you are the perfect fit for THIS specific JD. Connect your CV experiences to the requirements in the JD whenever possible.\n\n"
             "CRITICAL CONVERSATION RULES:\n"
-            "1. HYPER-NATURAL SPEECH: Write exactly as a normal, confident person speaks in real life. Do not sound like a written essay or a formal cover letter.\n"
-            "2. ADAPTIVE LENGTH (SMART SIZING): Adapt your length to the prompt. If it's a simple greeting ('How are you?'), give a short 1-sentence reply ('Doing great, thanks!'). If it's 'Tell me about yourself', give a casual, punchy 3-sentence overview and stop. NEVER generate long paragraphs.\n"
-            "3. READABILITY: Every single response MUST be incredibly easy to read out loud on the fly. Use short, breath-sized sentences. No complex corporate jargon.\n"
-            "4. HUMAN REACTIONS: If you make a mistake, brush it off casually ('Ah, my bad!'). Do not over-apologize or sound subservient.\n"
-            "5. DYNAMIC TONE: Vary your sentence structures. Sometimes start with 'Yeah,', 'Sure,', or just dive straight into the answer. Do not follow a predictable pattern. Speak like an equal to the interviewer."
+            "1. HYPER-NATURAL SPEECH: Write exactly as a normal, confident person speaks.\n"
+            "2. ADAPTIVE LENGTH: Short replies for greetings, 2-3 sentences for technical questions.\n"
+            "3. READABILITY: Every response MUST be easy to read out loud.\n"
+            "4. HUMAN REACTIONS: Use casual professional tone ('Sure', 'That makes sense', 'Exactly')."
         )
 
     def set_cv_context(self, text: str):
         self.cv_context = text
 
+    def set_job_context(self, jd: str, link: str):
+        self.jd_context = jd
+        self.company_link = link
+
     def get_current_system_prompt(self):
-        return self.system_prompt.format(cv_data=self.cv_context)
+        return self.system_prompt.format(
+            cv_data=self.cv_context, 
+            jd_data=self.jd_context, 
+            company_link=self.company_link
+        )
 
     def get_ai_response(self, user_input: str, provider: str = "groq") -> str:
         """Securely fetches AI response from the centralized backend proxy."""

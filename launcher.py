@@ -63,10 +63,10 @@ class StealthController(QObject):
             self.login_win.close()
             self.login_win = None
 
-    def transition_to_hud(self, cv_text):
+    def transition_to_hud(self, cv_text, jd_text, link_text):
         pos = self.dash_win.pos() if self.dash_win else None
-        # We pass cv_text to the HUD which now synchronizes it with the AI Engine.
-        self.hud_win = StealthHUD(cv_text)
+        # Pass full context to HUD
+        self.hud_win = StealthHUD(cv_text, jd_text, link_text)
         if pos: self.hud_win.move(pos)
         self.hud_win.show()
         if self.dash_win:

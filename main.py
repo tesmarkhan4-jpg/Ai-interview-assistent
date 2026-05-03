@@ -84,10 +84,13 @@ class KeyboardThread(QThread):
         keyboard.wait()
 
 class StealthHUD(QMainWindow):
-    def __init__(self, cv_text=""):
+    def __init__(self, cv_text="", jd_text="", link_text=""):
         super().__init__()
-        self.cv_text = cv_text
+        
+        # Initialize AI Context
+        from ai_engine import ai_engine
         ai_engine.set_cv_context(cv_text)
+        ai_engine.set_job_context(jd_text, link_text)
         self.setWindowTitle("StealthHUD AI Assistant")
         # Added Tool flag to hide from taskbar
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint | Qt.WindowType.Tool)

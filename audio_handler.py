@@ -43,7 +43,7 @@ class AudioThread(QThread):
             self.is_running = False
             return
 
-        uri = f"wss://api.deepgram.com/v1/listen?model=nova-2&language=en-US&smart_format=true&encoding=linear16&sample_rate={self.rate}&channels={self.channels}&endpointing=300&interim_results=true"
+        uri = f"wss://api.deepgram.com/v1/listen?model=nova-3&language=en-US&smart_format=true&encoding=linear16&sample_rate={self.rate}&channels={self.channels}&endpointing=250&interim_results=true&diarize=false&punctuate=true"
         
         try:
             self.ws = websocket.create_connection(
@@ -57,24 +57,46 @@ class AudioThread(QThread):
 
             # --- Thread 1: Mic Reader ---
             def mic_reader():
+                print(f"[Audio] Initializing capture at {self.rate}Hz...")
                 try:
                     speaker = sc.default_speaker()
+                    mic = None
+                    
+                    # Try Loopback first (to hear interviewer)
                     try:
+                        print(f"[Audio] Attempting loopback on: {speaker.name}")
                         mic = sc.get_microphone(id=speaker.name, include_loopback=True)
-                    except:
+                    except Exception as e:
+                        print(f"[Audio] Loopback failed: {e}. Falling back to default mic.")
                         mic = sc.default_microphone()
+                    
+                    if not mic:
+                        self.error_occurred.emit("No audio capture device found.")
+                        return
+
+                    print(f"[Audio] Active Device: {mic.name}")
                     
                     with mic.recorder(samplerate=self.rate) as recorder:
                         while self.is_running and self.ws and self.ws.connected:
                             try:
-                                data = recorder.record(numframes=int(self.rate * 0.2)) # Increased block size
+                                data = recorder.record(numframes=int(self.rate * 0.1))
+                                
+                                # --- INTELLIGENT AGC (Auto Gain Control) ---
+                                # Boost quiet voices so Deepgram hears them better
+                                max_val = np.max(np.abs(data))
+                                if 0 < max_val < 0.05: # Extremely quiet
+                                    data = data * 8.0 # Aggressive boost
+                                elif 0.05 <= max_val < 0.2: # Quiet
+                                    data = data * 3.0 # Moderate boost
+                                    
                                 data_int16 = (data[:, 0] * 32767).astype(np.int16)
                                 if not audio_queue.full():
                                     audio_queue.put(data_int16.tobytes())
-                            except:
+                            except Exception as e:
+                                print(f"[Audio] Record error: {e}")
                                 break
-                except:
-                    pass
+                except Exception as e:
+                    print(f"[Audio] Mic Thread Critical Error: {e}")
 
             threading.Thread(target=mic_reader, daemon=True).start()
 
@@ -99,26 +121,26 @@ class AudioThread(QThread):
 
             threading.Thread(target=sender, daemon=True).start()
 
-            # --- Thread 3: 'Smart Patient' Logic ---
+            # --- Thread 3: 'Rapid Flush' Logic ---
             def flush_timer():
                 while self.is_running and self.ws and self.ws.connected:
                     if self.transcript_buffer:
                         full_text = " ".join(self.transcript_buffer).strip()
                         low_text = full_text.lower()
                         
-                        # --- SYNTACTIC PROTECTION LOGIC ---
-                        # 1. Question Trigger: (0.8s) - Very fast for clear questions
+                        # --- AGGRESSIVE RESPONSE LOGIC ---
+                        # 1. Question Trigger: (0.4s) - Near instant for questions
                         if full_text.endswith("?"):
-                            threshold = 0.8
-                        # 2. Syntactic Cliffhanger (Verbs/Adverbs/Prepositions): (6.0s)
+                            threshold = 0.4
+                        # 2. Syntactic Cliffhanger (Verbs/Adverbs/Prepositions): (2.5s) - Still wait a bit for natural flow
                         elif any(low_text.endswith(w) for w in ["you", "about", "your", "the", "that", "how", "can", "could", "would", "is", "are", "for", "with", "of", "to", "and", "but", "or", "really", "very", "mostly", "if", "when", "be", "was", "were"]):
-                            threshold = 6.0
-                        # 3. Sentence Finish (Period/Exclamation): (4.0s)
+                            threshold = 2.5
+                        # 3. Sentence Finish (Period/Exclamation): (1.0s) - Respond quickly to finished thoughts
                         elif full_text.endswith(".") or full_text.endswith("!"):
-                            threshold = 4.0
-                        # 4. Thinking/Breathing Pause: (5.0s)
+                            threshold = 1.0
+                        # 4. Thinking/Breathing Pause: (1.2s) - Standard gap before responding
                         else:
-                            threshold = 5.0
+                            threshold = 1.2
                             
                         if (time.time() - self.last_transcript_time > threshold):
                             self.flush_now()

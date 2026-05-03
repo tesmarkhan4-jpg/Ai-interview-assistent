@@ -91,7 +91,7 @@ class InterviewCard(QFrame):
         webbrowser.open('file://' + path)
 
 class UserDashboard(QWidget):
-    cv_submitted = pyqtSignal(str)
+    cv_submitted = pyqtSignal(str, str, str) # CV, JD, Link
 
     def __init__(self):
         super().__init__()
@@ -165,7 +165,7 @@ class UserDashboard(QWidget):
         panel_layout.addWidget(self.scroll)
 
         # --- CV Management Section ---
-        cv_label = QLabel("CV MANAGEMENT")
+        cv_label = QLabel("CONTEXT: YOUR CV")
         cv_label.setStyleSheet("color: rgba(0, 0, 0, 0.4); font-size: 11px; font-weight: 900; letter-spacing: 2px;")
         panel_layout.addWidget(cv_label)
 
@@ -176,37 +176,45 @@ class UserDashboard(QWidget):
                 background: rgba(0, 0, 0, 0.05);
                 color: #000000;
                 border: 2px dashed rgba(0, 0, 0, 0.1);
-                border-radius: 25px;
-                padding: 15px;
+                border-radius: 20px;
+                padding: 12px;
                 font-weight: 900;
-                font-size: 14px;
+                font-size: 12px;
             }
-            QPushButton:hover {
-                background: rgba(0, 230, 118, 0.1);
-                border: 2px dashed rgba(0, 230, 118, 0.4);
-            }
+            QPushButton:hover { background: rgba(0, 230, 118, 0.1); border: 2px dashed rgba(0, 230, 118, 0.4); }
         """)
         self.upload_btn.clicked.connect(self.handle_upload)
         panel_layout.addWidget(self.upload_btn)
 
-        # Text Area
+        # Text Area (CV)
         self.text_area = QTextEdit()
-        self.text_area.setPlaceholderText("Paste your CV text here to sync AI brain...")
+        self.text_area.setPlaceholderText("Paste CV text if not uploading...")
+        self.text_area.setMaximumHeight(80)
         self.text_area.setStyleSheet("""
-            QTextEdit {
-                background: rgba(255, 255, 255, 0.5);
-                border: 2px solid rgba(0, 0, 0, 0.05);
-                border-radius: 30px;
-                padding: 15px;
-                color: #000000;
-                font-size: 13px;
-            }
-            QTextEdit:focus {
-                border: 2px solid rgba(0, 230, 118, 0.3);
-            }
+            QTextEdit { background: rgba(255, 255, 255, 0.5); border-radius: 20px; padding: 10px; color: #000000; font-size: 12px; }
         """)
-        self.text_area.textChanged.connect(self.validate_input)
         panel_layout.addWidget(self.text_area)
+
+        # --- Job Context Section ---
+        jd_label = QLabel("CONTEXT: JOB DESCRIPTION & LINK")
+        jd_label.setStyleSheet("color: rgba(0, 0, 0, 0.4); font-size: 11px; font-weight: 900; letter-spacing: 2px; margin-top: 10px;")
+        panel_layout.addWidget(jd_label)
+
+        self.jd_area = QTextEdit()
+        self.jd_area.setPlaceholderText("Paste the Job Description (JD) here for a tailored strategy...")
+        self.jd_area.setMaximumHeight(80)
+        self.jd_area.setStyleSheet("""
+            QTextEdit { background: rgba(255, 255, 255, 0.5); border-radius: 20px; padding: 10px; color: #000000; font-size: 12px; }
+        """)
+        panel_layout.addWidget(self.jd_area)
+
+        self.link_field = QTextEdit() # Using QTextEdit for potentially long links/notes
+        self.link_field.setPlaceholderText("Paste Company Link or Mission Statement...")
+        self.link_field.setMaximumHeight(50)
+        self.link_field.setStyleSheet("""
+            QTextEdit { background: rgba(255, 255, 255, 0.5); border-radius: 20px; padding: 10px; color: #000000; font-size: 12px; }
+        """)
+        panel_layout.addWidget(self.link_field)
 
         # Launch Button
         self.launch_btn = QPushButton("LAUNCH STEALTH HUD")
@@ -228,6 +236,7 @@ class UserDashboard(QWidget):
                 font-weight: 900;
             }
         """)
+        self.text_area.textChanged.connect(self.validate_input)
         self.launch_btn.clicked.connect(self.handle_launch)
         panel_layout.addWidget(self.launch_btn)
         # Close Button
@@ -303,8 +312,10 @@ class UserDashboard(QWidget):
         self.launch_btn.setEnabled(has_content)
 
     def handle_launch(self):
-        final_text = self.text_area.toPlainText().strip() or self.cv_text
-        self.cv_submitted.emit(final_text)
+        final_cv = self.text_area.toPlainText().strip() or self.cv_text
+        final_jd = self.jd_area.toPlainText().strip()
+        final_link = self.link_field.toPlainText().strip()
+        self.cv_submitted.emit(final_cv, final_jd, final_link)
         self.close()
 
     def mousePressEvent(self, event):
