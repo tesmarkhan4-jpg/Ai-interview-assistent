@@ -18,10 +18,6 @@
       "destination": "/api/index.py"
     },
     {
-      "source": "/auth/(.*)",
-      "destination": "/api/index.py"
-    },
-    {
       "source": "/",
       "destination": "/web/landing/index.html"
     },

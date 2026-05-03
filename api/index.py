@@ -72,8 +72,12 @@ class ProxyRequest(BaseModel):
     prompt: str
     provider: str = "groq"
 
+@app.get("/api/ping")
+async def ping():
+    return {"status": "online", "message": "Strategic systems operational."}
+
 # --- AUTH ---
-@app.post("/auth/register")
+@app.post("/api/auth/register")
 async def register(user: UserRegister):
     conn = get_db()
     if conn.get_user(user.email): raise HTTPException(status_code=400, detail="Identity already registered.")
@@ -81,7 +85,7 @@ async def register(user: UserRegister):
     conn.create_user(user.email, hashed, user.full_name)
     return {"status": "success"}
 
-@app.post("/auth/login")
+@app.post("/api/auth/login")
 async def login(user: UserLogin):
     conn = get_db()
     db_user = conn.get_user(user.email)
@@ -90,8 +94,8 @@ async def login(user: UserLogin):
     return {"status": "success", "user": {"email": db_user["email"], "tier": db_user["tier"], "full_name": db_user["full_name"]}}
 
 # --- PROXY ---
-@app.post("/api/v1/proxy")
-async def ai_proxy(req: ProxyRequest):
+@app.post("/api/v1/ai")
+async def get_ai_response(req: ProxyRequest):
     conn = get_db()
     if conn.get_config().get("maintenance_mode", False): raise HTTPException(status_code=503, detail="Strategic System Maintenance.")
     key = conn.get_pooled_key(req.provider)
@@ -111,19 +115,26 @@ async def ai_proxy(req: ProxyRequest):
         raise HTTPException(status_code=500, detail="Intelligence Stream Interrupted.")
 
 # --- ADMIN ---
-@app.get("/admin/stats")
+@app.get("/api/v1/history")
+async def get_history(email: str):
+    conn = get_db()
+    history = conn.get_history(email)
+    for h in history: h["_id"] = str(h["_id"])
+    return {"history": history}
+
+@app.get("/api/admin/stats")
 async def get_stats():
     conn = get_db()
     return {"total_users": conn.users.count_documents({}), "active_sessions": conn.users.count_documents({"tier": "PRO"}), "key_health": 98.2, "maintenance_mode": conn.get_config().get("maintenance_mode", False)}
 
-@app.get("/admin/users")
+@app.get("/api/admin/users")
 async def get_users():
     conn = get_db()
     users = conn.get_all_users()
     for u in users: u["_id"] = str(u["_id"])
     return {"users": users}
 
-@app.get("/admin/keys")
+@app.get("/api/admin/keys")
 async def get_keys():
     conn = get_db()
     keys = conn.get_all_keys()
@@ -142,6 +153,15 @@ async def set_maintenance(active: bool):
     conn.set_maintenance(active)
     return {"status": "success", "maintenance_mode": active}
 
+@app.get("/{full_path:path}")
+async def catch_all(full_path: str):
+    return {"status": "diagnostic", "path": full_path, "message": "Strategic routing captured."}
+
+# Global Error Handler
 @app.exception_handler(Exception)
 async def global_exception_handler(request, exc):
-    return {"status": "error", "detail": str(exc)}
+    return {
+        "status": "error",
+        "detail": str(exc),
+        "trace": "Strategic infrastructure error reported."
+    }

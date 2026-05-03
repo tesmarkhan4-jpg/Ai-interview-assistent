@@ -31,7 +31,7 @@ class AuthManager:
         """Securely logs in via the centralized backend API."""
         try:
             res = requests.post(
-                f"{self.backend_url}/auth/login",
+                f"{self.backend_url}/api/auth/login",
                 json={"email": email, "password": password},
                 timeout=10
             )
@@ -51,7 +51,7 @@ class AuthManager:
         """Registers a new identity via the backend."""
         try:
             res = requests.post(
-                f"{self.backend_url}/auth/register",
+                f"{self.backend_url}/api/auth/register",
                 json={"email": email, "password": password, "full_name": full_name},
                 timeout=10
             )
