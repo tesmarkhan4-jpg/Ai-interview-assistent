@@ -2,6 +2,14 @@
   "version": 2,
   "rewrites": [
     {
+      "source": "/admin",
+      "destination": "/web/admin/dashboard.html"
+    },
+    {
+      "source": "/admin/",
+      "destination": "/web/admin/dashboard.html"
+    },
+    {
       "source": "/admin/(.*)",
       "destination": "/web/admin/$1"
     },
@@ -10,7 +18,11 @@
       "destination": "/web/server/main.py"
     },
     {
-      "source": "/((?!admin|api).*)",
+      "source": "/",
+      "destination": "/web/landing/index.html"
+    },
+    {
+      "source": "/((?!web|admin|api).*)",
       "destination": "/web/landing/$1"
     }
   ]
