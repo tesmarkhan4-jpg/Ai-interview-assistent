@@ -319,12 +319,9 @@ h2 {
     border: 1px solid var(--border);
     transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
     text-align: left;
-}
-
-.f-card:hover {
-    transform: translateY(-10px);
-    box-shadow: var(--shadow-soapy);
-    border-color: var(--primary);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
 }
 
 .f-icon {
@@ -337,17 +334,20 @@ h2 {
     justify-content: center;
     font-size: 1.5rem;
     margin-bottom: 24px;
+    flex-shrink: 0;
 }
 
 .f-card h3 {
     font-size: 1.25rem;
     font-weight: 800;
     margin-bottom: 12px;
+    flex-shrink: 0;
 }
 
 .f-card p {
     color: var(--text-muted);
     font-size: 0.95rem;
+    flex-grow: 1;
 }
 
 /* Pricing */

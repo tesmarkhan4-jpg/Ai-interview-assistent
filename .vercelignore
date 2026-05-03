@@ -1,0 +1,8 @@
+.venv/
+dist/
+build/
+__pycache__/
+*.exe
+*.spec
+.git/
+node_modules/
