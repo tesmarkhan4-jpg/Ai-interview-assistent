@@ -2,7 +2,7 @@ fastapi
 uvicorn
 pymongo
 requests
-bcrypt
+passlib[bcrypt]
 python-dotenv
 pydantic[email]
 motor
