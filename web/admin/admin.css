@@ -30,47 +30,68 @@ body {
 
 /* Sidebar */
 aside {
-    width: 280px;
+    width: 300px;
     background: white;
     border-right: 1px solid var(--border);
     padding: 40px 24px;
     display: flex;
     flex-direction: column;
+    height: 100vh;
+    position: sticky;
+    top: 0;
 }
 
-.logo {
+.brand {
     font-size: 1.5rem;
     font-weight: 900;
-    color: var(--primary);
+    color: var(--text-main);
     margin-bottom: 60px;
     letter-spacing: -1px;
 }
 
-nav ul {
-    list-style: none;
+.brand span {
+    color: var(--primary);
 }
 
-nav li {
-    padding: 14px 20px;
-    border-radius: 12px;
-    margin-bottom: 8px;
-    cursor: pointer;
-    font-weight: 600;
-    color: var(--text-muted);
-    transition: all 0.2s;
+.nav-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1;
+}
+
+.nav-link {
     display: flex;
     align-items: center;
     gap: 12px;
+    padding: 14px 20px;
+    border-radius: 14px;
+    text-decoration: none;
+    font-weight: 600;
+    color: var(--text-muted);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-nav li:hover {
+.nav-link i, .nav-link svg {
+    width: 20px;
+    height: 20px;
+    stroke-width: 2.5px;
+}
+
+.nav-link:hover {
     background: var(--bg-main);
     color: var(--primary);
 }
 
-nav li.active {
+.nav-link.active {
     background: var(--primary-soft);
     color: var(--primary);
+}
+
+.user-footer {
+    margin-top: auto;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
 }
 
 /* Main Content */
