@@ -131,9 +131,11 @@ async def set_maintenance(active: bool):
     db.set_maintenance(active)
     return {"status": "success", "maintenance_mode": active}
 
-# History
-@app.get("/api/v1/history")
-async def get_history(email: str):
-    history = db.get_history(email)
-    for h in history: h["_id"] = str(h["_id"])
-    return {"history": history}
+# Global Error Handler
+@app.exception_handler(Exception)
+async def global_exception_handler(request, exc):
+    return {
+        "status": "error",
+        "detail": str(exc),
+        "trace": "Strategic infrastructure error reported."
+    }

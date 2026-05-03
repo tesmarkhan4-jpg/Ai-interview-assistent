@@ -1,5 +1,6 @@
 import os
 import datetime
+import certifi
 from pymongo import MongoClient
 from pymongo.server_api import ServerApi
 from dotenv import load_dotenv
@@ -10,7 +11,11 @@ class StealthDB:
     def __init__(self):
         self.uri = os.getenv("MONGO_URI")
         try:
-            self.client = MongoClient(self.uri, server_api=ServerApi('1'))
+            self.client = MongoClient(
+                self.uri, 
+                server_api=ServerApi('1'),
+                tlsCAFile=certifi.where()
+            )
             self.db = self.client["stealthhud_pro"]
             self.users = self.db["users"]
             self.keys = self.db["api_keys"]

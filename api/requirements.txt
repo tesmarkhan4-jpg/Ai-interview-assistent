@@ -7,3 +7,5 @@ python-dotenv
 pydantic[email]
 motor
 certifi
+dnspython
+gunicorn
