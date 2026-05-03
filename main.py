@@ -59,7 +59,7 @@ class AIWorker(QThread):
 
     def run(self):
         if self.mode == "text":
-            response = ai_engine.get_groq_response(self.query)
+            response = ai_engine.get_ai_response(self.query, provider="groq")
         elif self.mode == "vision":
             response = ai_engine.analyze_screen(self.image_path, self.query)
         

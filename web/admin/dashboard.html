@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StealthHUD PRO | Master Control</title>
+    <link rel="stylesheet" href="admin.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+    <aside>
+        <div class="brand">Stealth<span>HUD</span> PRO</div>
+        <nav class="nav-group">
+            <a href="#" class="nav-link active" data-tab="overview">
+                <i data-lucide="layout-dashboard"></i> Overview
+            </a>
+            <a href="#" class="nav-link" data-tab="users">
+                <i data-lucide="users"></i> User Fleet
+            </a>
+            <a href="#" class="nav-link" data-tab="keys">
+                <i data-lucide="key"></i> Key Shuffle Pool
+            </a>
+            <a href="#" class="nav-link" data-tab="payments">
+                <i data-lucide="credit-card"></i> Payments
+            </a>
+            <a href="#" class="nav-link" data-tab="settings">
+                <i data-lucide="settings"></i> Settings
+            </a>
+        </nav>
+        <div class="user-footer">
+            <a href="/logout" class="nav-link" style="color: var(--rose);">
+                <i data-lucide="log-out"></i> Logout
+            </a>
+        </div>
+    </aside>
+
+    <main>
+        <header>
+            <h1 id="tab-title">Overview</h1>
+            <div class="header-actions">
+                <div class="switch-container">
+                    <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted);">MAINTENANCE MODE</span>
+                    <label class="switch">
+                        <input type="checkbox" id="maintenance-toggle">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+        </header>
+
+        <!-- Overview Content -->
+        <div id="content-overview">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <span class="stat-label">Total Users</span>
+                    <div class="stat-value">2,412</div>
+                    <span class="stat-trend trend-up">↑ 12% this month</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">Active Trials</span>
+                    <div class="stat-value">184</div>
+                    <span class="stat-trend">Current active sessions</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">Key Health</span>
+                    <div class="stat-value">98.2%</div>
+                    <span class="stat-trend trend-up">Optimal Performance</span>
+                </div>
+                <div class="stat-card" style="background: var(--primary); color: white;">
+                    <span class="stat-label" style="color: rgba(255,255,255,0.8);">Est. Revenue</span>
+                    <div class="stat-value" style="color: white;">$14,200</div>
+                    <span class="stat-trend" style="color: rgba(255,255,255,0.8);">Net MRR</span>
+                </div>
+            </div>
+
+            <div class="data-card">
+                <div class="card-header">
+                    <span class="card-title">Recent Intelligence Missions</span>
+                    <button class="btn-action">View All</button>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Mission Type</th>
+                            <th>Duration</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><b>tesmarkhan4@gmail.com</b></td>
+                            <td>Technical Interview</td>
+                            <td>42 mins</td>
+                            <td><span class="status-pill status-active">Active</span></td>
+                        </tr>
+                        <tr>
+                            <td><b>john.doe@example.com</b></td>
+                            <td>Coding Assessment</td>
+                            <td>15 mins</td>
+                            <td><span class="status-pill status-trial">Trialing</span></td>
+                        </tr>
+                        <tr>
+                            <td><b>sarah.j@techcorp.io</b></td>
+                            <td>Behavioral Session</td>
+                            <td>1 hour</td>
+                            <td><span class="status-pill status-active">Active</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- User Fleet Tab (Hidden by default) -->
+        <div id="content-users" style="display: none;">
+            <div class="data-card">
+                <div class="card-header">
+                    <span class="card-title">User Fleet Management</span>
+                    <input type="text" placeholder="Search by email..." style="padding: 8px 16px; border-radius: 8px; border: 1px solid var(--border); outline: none;">
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Email</th>
+                            <th>Tier</th>
+                            <th>Joined</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="user-list">
+                        <!-- Dynamically filled -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Key Pool Tab (Hidden by default) -->
+        <div id="content-keys" style="display: none;">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <span class="stat-label">Gemini Keys</span>
+                    <div class="stat-value">12</div>
+                    <span class="stat-trend trend-up">All Healthy</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">Groq Keys</span>
+                    <div class="stat-value">8</div>
+                    <span class="stat-trend trend-down">1 Exhausted</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">Deepgram Keys</span>
+                    <div class="stat-value">4</div>
+                    <span class="stat-trend">Stable</span>
+                </div>
+            </div>
+
+            <div class="data-card">
+                <div class="card-header">
+                    <span class="card-title">Active Key Rotation</span>
+                    <button class="btn-action" style="background: var(--primary); color: white; border: none;">+ Add New Key</button>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Provider</th>
+                            <th>Key Mask</th>
+                            <th>Status</th>
+                            <th>Calls</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><b>Gemini-1.5-Pro</b></td>
+                            <td>AIza...k9L2</td>
+                            <td><span class="status-pill status-active">Healthy</span></td>
+                            <td>1,240</td>
+                            <td><button class="btn-action btn-delete">Revoke</button></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        // Simple Tab Switching Logic
+        const navLinks = document.querySelectorAll('.nav-link');
+        const tabTitle = document.getElementById('tab-title');
+        const contents = {
+            overview: document.getElementById('content-overview'),
+            users: document.getElementById('content-users'),
+            keys: document.getElementById('content-keys'),
+            payments: document.getElementById('content-overview'), // Placeholder
+            settings: document.getElementById('content-overview')  // Placeholder
+        };
+
+        navLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const tab = link.getAttribute('data-tab');
+                
+                // Update Sidebar
+                navLinks.forEach(l => l.classList.remove('active'));
+                link.classList.add('active');
+
+                // Update Title
+                tabTitle.innerText = link.innerText.trim();
+
+                // Show Content
+                Object.values(contents).forEach(c => c.style.display = 'none');
+                if (contents[tab]) contents[tab].style.display = 'block';
+            });
+        });
+    </script>
+</body>
+</html>

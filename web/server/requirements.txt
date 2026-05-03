@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+pymongo
+requests
+bcrypt
+python-dotenv
+pydantic[email]
+motor
+certifi
