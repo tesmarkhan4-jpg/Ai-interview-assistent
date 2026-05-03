@@ -12,7 +12,13 @@ db = None
 def get_db():
     global db
     if db is None:
-        db = StealthDB()
+        uri = os.getenv("MONGO_URI")
+        if not uri:
+            raise HTTPException(status_code=500, detail="Strategic Error: MONGO_URI missing from cloud environment.")
+        try:
+            db = StealthDB()
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Database connection failed: {str(e)}")
     return db
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")

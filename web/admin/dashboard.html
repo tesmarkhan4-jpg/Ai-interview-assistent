@@ -249,7 +249,7 @@
         async function fetchKeys() {
             console.log("Fetching Keys...");
             try {
-                const res = await fetch(`/api/admin/keys`);
+                const res = await fetch(`/api/admin/keys?_=${Date.now()}`);
                 const data = await res.json();
                 console.log("Keys Data:", data);
                 
