@@ -58,9 +58,10 @@ app = FastAPI(title="StealthHUD PRO Backend")
 db = None
 
 def get_db():
-    global db
-    if db is None: db = StealthDB()
-    return db
+    try:
+        return StealthDB()
+    except:
+        return None
 
 def hash_password(password: str):
     salt = uuid.uuid4().hex
@@ -97,6 +98,7 @@ async def ping():
 @app.post("/api/auth/register")
 async def register(user: UserRegister):
     conn = get_db()
+    if conn is None: raise HTTPException(status_code=500, detail="Database connection failed.")
     if conn.get_user(user.email): raise HTTPException(status_code=400, detail="Identity already registered.")
     hashed = hash_password(user.password)
     conn.create_user(user.email, hashed, user.full_name)
@@ -105,6 +107,7 @@ async def register(user: UserRegister):
 @app.post("/api/auth/login")
 async def login(user: UserLogin):
     conn = get_db()
+    if conn is None: raise HTTPException(status_code=500, detail="Database connection failed.")
     db_user = conn.get_user(user.email)
     if not db_user or not verify_password(db_user["password"], user.password):
         raise HTTPException(status_code=401, detail="Strategic Identity Mismatch.")
