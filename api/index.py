@@ -9,6 +9,7 @@ from pymongo import MongoClient
 from dotenv import load_dotenv
 import hashlib
 import uuid
+import traceback
 # load_dotenv() - Removed for Vercel native stability
 
 # --- DATABASE ENGINE ---
@@ -21,8 +22,11 @@ class StealthDB:
             try:
                 # Fallback for serverless environments where certifi pathing can be tricky
                 self.client = MongoClient(self.uri, tlsCAFile=certifi.where())
+                # Trigger a quick connection check
+                self.client.admin.command('ping')
             except:
                 self.client = MongoClient(self.uri)
+            
             self.db = self.client['stealth_hud']
             self.users = self.db['users']
             self.keys = self.db['keys']
