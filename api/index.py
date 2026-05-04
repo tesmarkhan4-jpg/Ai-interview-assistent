@@ -19,22 +19,16 @@ class StealthDB:
         if not self.uri:
             raise Exception("MONGO_URI missing from environment.")
         try:
-            try:
-                # Fallback for serverless environments where certifi pathing can be tricky
-                self.client = MongoClient(self.uri, tlsCAFile=certifi.where())
-                # Trigger a quick connection check
-                self.client.admin.command('ping')
-            except:
-                self.client = MongoClient(self.uri)
-            
+            # High-compatibility connection for serverless
+            self.client = MongoClient(self.uri, serverSelectionTimeoutMS=5000, connectTimeoutMS=5000)
             self.db = self.client['stealth_hud']
             self.users = self.db['users']
             self.keys = self.db['keys']
             self.history = self.db["mission_history"]
             self.config = self.db['config']
-            print("DB Engine: Tactical Link Established.")
+            print("DB Engine: Link Established.")
         except Exception as e:
-            print(f"DB Engine: Connection Failure - {e}")
+            print(f"DB Engine: Link Failure - {e}")
             raise e
 
     def get_user(self, email): return self.users.find_one({"email": email})
