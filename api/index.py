@@ -2,28 +2,32 @@ import os
 import datetime
 import requests
 import certifi
-import bcrypt
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, EmailStr
 from pymongo import MongoClient
-from pymongo.server_api import ServerApi
 from dotenv import load_dotenv
-
+import hashlib
+import uuid
 load_dotenv()
 
-# --- DATABASE ENGINE (Inlined for reliability) ---
+# --- DATABASE ENGINE ---
 class StealthDB:
     def __init__(self):
         self.uri = os.getenv("MONGO_URI")
         if not self.uri:
             raise Exception("MONGO_URI missing from environment.")
-        self.client = MongoClient(self.uri, server_api=ServerApi('1'), tlsCAFile=certifi.where())
-        self.db = self.client["stealthhud_pro"]
-        self.users = self.db["users"]
-        self.keys = self.db["api_keys"]
-        self.history = self.db["mission_history"]
-        self.config = self.db["system_config"]
+        try:
+            self.client = MongoClient(self.uri, tlsCAFile=certifi.where())
+            self.db = self.client['stealth_hud']
+            self.users = self.db['users']
+            self.keys = self.db['keys']
+            self.history = self.db["mission_history"]
+            self.config = self.db['config']
+            print("DB Engine: Tactical Link Established.")
+        except Exception as e:
+            print(f"DB Engine: Connection Failure - {e}")
+            raise e
 
     def get_user(self, email): return self.users.find_one({"email": email})
     def create_user(self, email, password_hash, full_name):
@@ -56,6 +60,17 @@ def get_db():
     if db is None: db = StealthDB()
     return db
 
+def hash_password(password: str):
+    salt = uuid.uuid4().hex
+    return hashlib.sha256(salt.encode() + password.encode()).hexdigest() + ":" + salt
+
+def verify_password(hashed_password, user_password):
+    try:
+        password, salt = hashed_password.split(':')
+        return password == hashlib.sha256(salt.encode() + user_password.encode()).hexdigest()
+    except:
+        return False
+
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
 
 class UserRegister(BaseModel):
@@ -81,7 +96,7 @@ async def ping():
 async def register(user: UserRegister):
     conn = get_db()
     if conn.get_user(user.email): raise HTTPException(status_code=400, detail="Identity already registered.")
-    hashed = bcrypt.hashpw(user.password.encode('utf-8'), bcrypt.gensalt())
+    hashed = hash_password(user.password)
     conn.create_user(user.email, hashed, user.full_name)
     return {"status": "success"}
 
@@ -89,7 +104,7 @@ async def register(user: UserRegister):
 async def login(user: UserLogin):
     conn = get_db()
     db_user = conn.get_user(user.email)
-    if not db_user or not bcrypt.checkpw(user.password.encode('utf-8'), db_user["password"]):
+    if not db_user or not verify_password(db_user["password"], user.password):
         raise HTTPException(status_code=401, detail="Strategic Identity Mismatch.")
     return {"status": "success", "user": {"email": db_user["email"], "tier": db_user["tier"], "full_name": db_user["full_name"]}}
 
@@ -102,7 +117,7 @@ async def get_ai_response(req: ProxyRequest):
     if not key: raise HTTPException(status_code=503, detail="Strategic Key Pool Exhausted.")
     try:
         if req.provider == "groq":
-            resp = requests.post("https://api.groq.com/openai/v1/chat/completions", headers={"Authorization": f"Bearer {key}"}, json={"model": "llama-3.3-70b-versatile", "messages": [{"role": "user", "content": req.prompt}]}, timeout=15)
+            resp = requests.post("https://api.groq.com/openai/v1/chat/completions", headers={"Authorization": f"Bearer {key}"}, json={"model": "llama-3.1-8b-instant", "messages": [{"role": "user", "content": req.prompt}]}, timeout=10)
             result = resp.json()['choices'][0]['message']['content']
         else:
             url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={key}"
@@ -141,27 +156,35 @@ async def get_keys():
     for k in keys: k["_id"] = str(k["_id"])
     return {"keys": keys}
 
-@app.delete("/admin/keys/{key_id}")
+@app.delete("/api/admin/keys/{key_id}")
 async def remove_key(key_id: str):
     conn = get_db()
     conn.remove_key(key_id)
     return {"status": "success"}
 
-@app.post("/admin/maintenance")
+@app.post("/api/admin/maintenance")
 async def set_maintenance(active: bool):
     conn = get_db()
     conn.set_maintenance(active)
     return {"status": "success", "maintenance_mode": active}
 
 @app.get("/{full_path:path}")
-async def catch_all(full_path: str):
-    return {"status": "diagnostic", "path": full_path, "message": "Strategic routing captured."}
+async def catch_all(request: Request, full_path: str):
+    return {
+        "status": "diagnostic",
+        "path_param": full_path,
+        "scope_path": request.scope.get('path'),
+        "message": "Strategic routing captured."
+    }
 
 # Global Error Handler
 @app.exception_handler(Exception)
-async def global_exception_handler(request, exc):
+async def global_exception_handler(request: Request, exc: Exception):
+    import traceback
+    error_trace = traceback.format_exc()
+    print(f"CRITICAL ERROR: {str(exc)}\n{error_trace}")
     return {
         "status": "error",
         "detail": str(exc),
-        "trace": "Strategic infrastructure error reported."
+        "trace": error_trace
     }

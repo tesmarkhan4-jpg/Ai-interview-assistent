@@ -19,10 +19,12 @@ def build_app():
         subprocess.run([sys.executable, "-m", "PyInstaller", "--noconfirm", "StealthHUD.spec"], check=True)
         print(" Build Successful! You can find the app in the 'dist/StealthHUD' folder.")
         
-        # 3. Create .env if it doesn't exist in dist
-        env_dest = os.path.join("dist", "StealthHUD", ".env")
-        if not os.path.exists(env_dest):
-            shutil.copy(".env.example", env_dest)
+        # 3. Copy actual .env to dist folder
+        if os.path.exists(".env"):
+            shutil.copy(".env", "dist/.env")
+            print(" Synced production .env to the dist folder.")
+        else:
+            shutil.copy(".env.example", "dist/.env")
             print(" Created default .env in the dist folder.")
 
     except subprocess.CalledProcessError as e:

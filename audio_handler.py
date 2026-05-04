@@ -43,7 +43,7 @@ class AudioThread(QThread):
             self.is_running = False
             return
 
-        uri = f"wss://api.deepgram.com/v1/listen?model=nova-3&language=en-US&smart_format=true&encoding=linear16&sample_rate={self.rate}&channels={self.channels}&endpointing=250&interim_results=true&diarize=false&punctuate=true"
+        uri = f"wss://api.deepgram.com/v1/listen?model=nova-3&language=en-US&smart_format=true&encoding=linear16&sample_rate={self.rate}&channels={self.channels}&endpointing=750&interim_results=true&diarize=false&punctuate=true"
         
         try:
             self.ws = websocket.create_connection(
@@ -129,18 +129,18 @@ class AudioThread(QThread):
                         low_text = full_text.lower()
                         
                         # --- AGGRESSIVE RESPONSE LOGIC ---
-                        # 1. Question Trigger: (0.4s) - Near instant for questions
+                        # 1. Question Trigger: (1.5s) - Allow for a natural pause after a question
                         if full_text.endswith("?"):
-                            threshold = 0.4
-                        # 2. Syntactic Cliffhanger (Verbs/Adverbs/Prepositions): (2.5s) - Still wait a bit for natural flow
-                        elif any(low_text.endswith(w) for w in ["you", "about", "your", "the", "that", "how", "can", "could", "would", "is", "are", "for", "with", "of", "to", "and", "but", "or", "really", "very", "mostly", "if", "when", "be", "was", "were"]):
-                            threshold = 2.5
-                        # 3. Sentence Finish (Period/Exclamation): (1.0s) - Respond quickly to finished thoughts
+                            threshold = 1.5
+                        # 2. Syntactic Cliffhanger: (5.0s) - Wait significantly longer for unfinished thoughts
+                        elif any(low_text.endswith(w) for w in ["you", "about", "your", "the", "that", "how", "can", "could", "would", "is", "are", "for", "with", "of", "to", "and", "but", "or", "really", "very", "mostly", "if", "when", "be", "was", "were", "my", "our", "their", "this", "these", "those", "so", "because", "like"]):
+                            threshold = 5.0
+                        # 3. Sentence Finish (Period/Exclamation): (4.0s) - Wait for more sentences
                         elif full_text.endswith(".") or full_text.endswith("!"):
-                            threshold = 1.0
-                        # 4. Thinking/Breathing Pause: (1.2s) - Standard gap before responding
+                            threshold = 4.0
+                        # 4. Standard Pause: (5.0s) - General buffer
                         else:
-                            threshold = 1.2
+                            threshold = 5.0
                             
                         if (time.time() - self.last_transcript_time > threshold):
                             self.flush_now()
@@ -160,9 +160,9 @@ class AudioThread(QThread):
                         if alternatives:
                             sentence = alternatives[0].get("transcript", "").strip()
                             if sentence:
+                                self.last_transcript_time = time.time() # Update timer for ALL incoming speech
                                 if is_final:
                                     self.transcript_buffer.append(sentence)
-                                    self.last_transcript_time = time.time()
                                     self.partial_transcript_received.emit(" ".join(self.transcript_buffer))
                                 else:
                                     current_full = " ".join(self.transcript_buffer + [sentence])
