@@ -9,7 +9,7 @@ from pymongo import MongoClient
 from dotenv import load_dotenv
 import hashlib
 import uuid
-load_dotenv()
+# load_dotenv() - Removed for Vercel native stability
 
 # --- DATABASE ENGINE ---
 class StealthDB:
@@ -18,7 +18,11 @@ class StealthDB:
         if not self.uri:
             raise Exception("MONGO_URI missing from environment.")
         try:
-            self.client = MongoClient(self.uri, tlsCAFile=certifi.where())
+            try:
+                # Fallback for serverless environments where certifi pathing can be tricky
+                self.client = MongoClient(self.uri, tlsCAFile=certifi.where())
+            except:
+                self.client = MongoClient(self.uri)
             self.db = self.client['stealth_hud']
             self.users = self.db['users']
             self.keys = self.db['keys']

@@ -185,6 +185,14 @@ class AudioThread(QThread):
                 self.transcript_received.emit(full_text)
             self.transcript_buffer = []
 
+    def undo_flush(self, text):
+        """Re-inserts text at the beginning of the buffer if an interruption occurred."""
+        if text:
+            # Clean up potential duplicates and re-insert
+            self.transcript_buffer = [text] + self.transcript_buffer
+            self.last_transcript_time = time.time()
+            print(f"[Audio] Interruption detected. Rolled back: {text}")
+
     def stop(self):
         self.is_running = False
         if self.ws:

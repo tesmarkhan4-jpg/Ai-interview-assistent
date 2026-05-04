@@ -106,6 +106,10 @@ class StealthHUD(QMainWindow):
         # UI State
         self.is_stealth = True
         self.is_listening = False
+        self.interim_active = False
+        self.last_voice_text = ""
+        self.current_voice_worker = None
+        
         self.is_reading_screen = False
         self.last_ai_response = ""
         
@@ -380,6 +384,28 @@ class StealthHUD(QMainWindow):
         self.ai_worker.start()
 
     def handle_partial_transcript(self, text):
+        # --- SMART INTERRUPTION HANDLING ---
+        if self.current_voice_worker and self.current_voice_worker.isRunning():
+            print("[System] Interruption detected! Rolling back...")
+            try:
+                self.current_voice_worker.finished.disconnect()
+            except:
+                pass
+            
+            # Rollback UI: Remove the previously finalized interviewer line
+            cursor = self.chat_display.textCursor()
+            cursor.movePosition(QTextCursor.MoveOperation.End)
+            # Find and remove the last block containing 'INTERVIEWER:'
+            # Since we add spacers <br><br>, we need to be careful.
+            # Simpler: If we just added it, remove the last 2 lines.
+            cursor.movePosition(QTextCursor.MoveOperation.PreviousBlock, QTextCursor.MoveMode.KeepAnchor)
+            cursor.removeSelectedText()
+            
+            # Rollback Buffer
+            self.audio_thread.undo_flush(self.last_voice_text)
+            self.last_voice_text = ""
+            self.current_voice_worker = None
+
         cursor = self.chat_display.textCursor()
         cursor.movePosition(QTextCursor.MoveOperation.End)
         
@@ -405,10 +431,11 @@ class StealthHUD(QMainWindow):
             self.interim_active = False
 
         self.log_message(f"<span style='color:#00B0FF;'><b>INTERVIEWER:</b> {text}</span>")
+        self.last_voice_text = text
         # Automatically get AI response for interviewer voice
-        self.ai_worker = AIWorker(text, mode="text")
-        self.ai_worker.finished.connect(self.handle_ai_voice_finished)
-        self.ai_worker.start()
+        self.current_voice_worker = AIWorker(text, mode="text")
+        self.current_voice_worker.finished.connect(self.handle_ai_voice_finished)
+        self.current_voice_worker.start()
 
     def handle_ai_voice_finished(self, sender, message):
         self.last_ai_response = message
