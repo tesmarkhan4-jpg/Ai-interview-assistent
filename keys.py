@@ -6,12 +6,15 @@ class KeyManager:
     def __init__(self):
         self.status_log = []
         self.keys: Dict[str, List[str]] = {
-            "GROQ": self._load_keys("GROQ_API_KEYS"),
-            "DEEPGRAM": self._load_keys("DEEPGRAM_API_KEYS"),
-            "GEMINI": self._load_keys("GEMINI_API_KEYS"),
-            "TAVILY": self._load_keys("TAVILY_API_KEYS"),
+            "GROQ": [],
+            "DEEPGRAM": [],
+            "GEMINI": [],
+            "TAVILY": [],
         }
         self.indices = {service: 0 for service in self.keys}
+        # Initial load from local keys for immediate readiness
+        for svc in self.keys:
+            self.keys[svc] = self._load_keys(f"{svc}_API_KEYS")
 
     def _load_keys(self, env_var: str) -> List[str]:
         """Loads keys from a comma-separated string in environment variables with aggressive cleaning."""
@@ -47,15 +50,36 @@ class KeyManager:
         self.indices[service] = (self.indices[service] + 1) % len(self.keys[service])
         return key
 
-    def report_failure(self, service: str, key: str):
-        """Removes a failed/rate-limited key from the rotation temporarily."""
-        service = service.upper()
-        if key in self.keys.get(service, []):
-            print(f"[KeyManager] Key for {service} reported failure. Removing from rotation.")
-            self.keys[service].remove(key)
-            # Adjust index
-            if self.indices[service] >= len(self.keys[service]):
-                self.indices[service] = 0
+    def refresh_from_dashboard(self):
+        """Fetches latest keys from the live Admin Dashboard."""
+        try:
+            # First, load local keys as emergency fallback
+            for svc in self.keys:
+                local = self._load_keys(f"{svc}_API_KEYS")
+                if local: self.keys[svc] = list(set(self.keys[svc] + local))
+
+            # Fetch from Backend
+            from auth_manager import auth_manager
+            res = requests.get(f"{auth_manager.backend_url}/api/admin/keys", timeout=5)
+            if res.ok:
+                data = res.json().get("keys", [])
+                backend_keys = {"GROQ": [], "DEEPGRAM": [], "GEMINI": [], "TAVILY": []}
+                for item in data:
+                    prov = item.get("provider", "").upper()
+                    val = item.get("key_value", "").strip()
+                    if prov in backend_keys and val:
+                        backend_keys[prov].append(val)
+                
+                # Merge and update
+                for prov, keys in backend_keys.items():
+                    if keys:
+                        # Combine with local, remove duplicates
+                        self.keys[prov] = list(set(self.keys[prov] + keys))
+                
+                print(f"[KeyManager] Live Sync Complete. Pool size: {sum(len(v) for v in self.keys.values())} keys.")
+        except Exception as e:
+            print(f"[KeyManager] Dashboard Sync Failed (Using Fallback): {e}")
 
 # Global instance
+import requests # Ensure requests is available
 key_manager = KeyManager()

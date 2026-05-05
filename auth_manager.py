@@ -40,6 +40,11 @@ class AuthManager:
                 self.current_user = data["email"]
                 self.current_user_name = data.get("full_name", "Authorized Agent")
                 self.tier = data.get("tier", "TRIAL")
+                
+                # --- AUTO-SYNC KEYS FROM DASHBOARD ---
+                from keys import key_manager
+                key_manager.refresh_from_dashboard()
+                
                 return True, "Identity Verified."
             else:
                 detail = res.json().get("detail", "Strategic Identity Mismatch.")
@@ -66,10 +71,6 @@ class AuthManager:
     def send_verification_otp(self, email, name="User"):
         # The new backend handles OTP or simplified registration
         return True, "Endpoint Ready"
-
-# Global Instance
-auth_manager = AuthManager()
-
 
 # Global Instance
 auth_manager = AuthManager()

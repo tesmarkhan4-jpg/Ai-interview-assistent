@@ -49,7 +49,8 @@ except ImportError as e:
     sys.exit(1)
 
 class AIWorker(QThread):
-    finished = pyqtSignal(str, str) # Type (AI/YOU), Message
+    finished = pyqtSignal(str, str) # Type (AI/YOU), Full Message
+    chunk_received = pyqtSignal(str, str) # Type, Chunk
 
     def __init__(self, query, mode="text", image_path=None):
         super().__init__()
@@ -58,12 +59,21 @@ class AIWorker(QThread):
         self.image_path = image_path
 
     def run(self):
+        full_response = ""
         if self.mode == "text":
-            response = ai_engine.get_ai_response(self.query, provider="groq")
+            try:
+                for chunk in ai_engine.get_ai_response_stream(self.query, provider="groq"):
+                    if chunk:
+                        full_response += chunk
+                        self.chunk_received.emit("AI", chunk)
+            except Exception as e:
+                full_response = f"Intelligence Stream Error: {str(e)}"
+                self.chunk_received.emit("AI", full_response)
         elif self.mode == "vision":
-            response = ai_engine.analyze_screen(self.image_path, self.query)
+            full_response = ai_engine.analyze_screen(self.image_path, self.query)
+            self.chunk_received.emit("AI", full_response)
         
-        self.finished.emit("AI", response)
+        self.finished.emit("AI", full_response)
 
 class KeyboardThread(QThread):
     hotkey_pressed = pyqtSignal(str)
@@ -107,6 +117,7 @@ class StealthHUD(QMainWindow):
         self.is_stealth = True
         self.is_listening = False
         self.interim_active = False
+        self.streaming_active = False
         self.last_voice_text = ""
         self.current_voice_worker = None
         
@@ -201,6 +212,40 @@ class StealthHUD(QMainWindow):
         self.top_bar.addWidget(self.close_btn)
         
         self.panel_layout.addLayout(self.top_bar)
+        
+        # --- Tactical Settings Bar ---
+        self.settings_bar = QHBoxLayout()
+        self.settings_bar.setSpacing(10)
+        
+        # Intelligence Tier Toggle
+        self.tier_btn = QPushButton("TIER: TURBO")
+        self.tier_btn.clicked.connect(self.toggle_tier)
+        
+        # Mode Toggle
+        self.mode_btn = QPushButton("MODE: INTERVIEW")
+        self.mode_btn.clicked.connect(self.toggle_mode)
+        
+        setting_btn_style = """
+            QPushButton {
+                background: rgba(255, 255, 255, 0.1);
+                color: #007E44;
+                border: 1px solid rgba(0, 126, 68, 0.3);
+                border-radius: 10px;
+                padding: 5px 15px;
+                font-size: 10px;
+                font-weight: 800;
+                letter-spacing: 1px;
+            }
+            QPushButton:hover { background: rgba(0, 126, 68, 0.1); }
+        """
+        self.tier_btn.setStyleSheet(setting_btn_style)
+        self.mode_btn.setStyleSheet(setting_btn_style)
+        
+        self.settings_bar.addWidget(self.tier_btn)
+        self.settings_bar.addWidget(self.mode_btn)
+        self.settings_bar.addStretch()
+        
+        self.panel_layout.addLayout(self.settings_bar)
 
         # --- Chat Area ---
         self.chat_display = QTextEdit()
@@ -211,8 +256,8 @@ class StealthHUD(QMainWindow):
                 border-radius: 20px;
                 border: 2px solid rgba(0, 0, 0, 0.05);
                 color: #1A2E2A;
-                font-size: 14px;
-                padding: 15px;
+                font-size: 15px;
+                padding: 20px;
             }
             QTextEdit:focus {
                 border: 2px solid rgba(0, 230, 118, 0.3);
@@ -284,6 +329,24 @@ class StealthHUD(QMainWindow):
         """)
         self.input_field.returnPressed.connect(self.handle_user_input)
         self.panel_layout.addWidget(self.input_field)
+
+    def toggle_tier(self):
+        current = ai_engine.intelligence_tier
+        new_tier = "savant" if current == "turbo" else "turbo"
+        ai_engine.set_tier(new_tier)
+        self.tier_btn.setText(f"TIER: {new_tier.upper()}")
+        color = "#6200EA" if new_tier == "savant" else "#007E44"
+        self.tier_btn.setStyleSheet(self.tier_btn.styleSheet() + f" color: {color};")
+        self.log_message(f"<span style='color:gray;'>[SYSTEM] Intelligence Tier: {new_tier.upper()}</span>")
+
+    def toggle_mode(self):
+        modes = ["interview", "code", "mcq"]
+        current = ai_engine.mode
+        new_idx = (modes.index(current) + 1) % len(modes)
+        new_mode = modes[new_idx]
+        ai_engine.set_mode(new_mode)
+        self.mode_btn.setText(f"MODE: {new_mode.upper()}")
+        self.log_message(f"<span style='color:gray;'>[SYSTEM] Operational Mode: {new_mode.upper()}</span>")
 
     def end_interview_flow(self):
         self.end_btn.setText("⏳ GENERATING AI INSIGHTS...")
@@ -358,14 +421,22 @@ class StealthHUD(QMainWindow):
             self.log_message("<span style='color:gray;'>[SYSTEM] Auto-Hear Stopped</span>")
 
     def trigger_screen_analysis(self):
-        """Action trigger for rapid-fire MCQ testing."""
+        """Action trigger for rapid-fire MCQ testing or code solving."""
         self.screen_btn.setText("ANALYZING...")
         self.screen_btn.setStyleSheet("background: #6200EA; color: white; border-radius: 15px; padding: 12px; font-weight: 900;")
         self.log_message("<span style='color:#6200EA;'>[SYSTEM] Capture & Analyze in progress...</span>")
         
         # Start analysis in background
         path = vision_handler.capture_fullscreen()
-        query = "Solve EVERY question on screen. Start each answer on a NEW LINE."
+        
+        # Dynamic query based on mode
+        if ai_engine.mode == "code":
+            query = "Extract the code problem from the screen and solve it with optimized, clean code."
+        elif ai_engine.mode == "mcq":
+            query = "Identify the question and all options. Provide the correct answer and a brief reason."
+        else:
+            query = "Identify any questions or logic on screen and provide a natural, conversational answer."
+            
         self.ai_worker = AIWorker(query, mode="vision", image_path=path)
         self.ai_worker.finished.connect(self.handle_vision_finished)
         self.ai_worker.start()
@@ -385,26 +456,18 @@ class StealthHUD(QMainWindow):
 
     def handle_partial_transcript(self, text):
         # --- SMART INTERRUPTION HANDLING ---
+        # If the AI worker is active AND hasn't started streaming, kill it.
+        # We don't rollback the UI, we just let the AI read the stacked history.
         if self.current_voice_worker and self.current_voice_worker.isRunning():
-            print("[System] Interruption detected! Rolling back...")
-            try:
-                self.current_voice_worker.finished.disconnect()
-            except:
-                pass
-            
-            # Rollback UI: Remove the previously finalized interviewer line
-            cursor = self.chat_display.textCursor()
-            cursor.movePosition(QTextCursor.MoveOperation.End)
-            # Find and remove the last block containing 'INTERVIEWER:'
-            # Since we add spacers <br><br>, we need to be careful.
-            # Simpler: If we just added it, remove the last 2 lines.
-            cursor.movePosition(QTextCursor.MoveOperation.PreviousBlock, QTextCursor.MoveMode.KeepAnchor)
-            cursor.removeSelectedText()
-            
-            # Rollback Buffer
-            self.audio_thread.undo_flush(self.last_voice_text)
-            self.last_voice_text = ""
-            self.current_voice_worker = None
+            if not self.streaming_active: 
+                print("[System] Interruption detected! Aborting previous AI task...")
+                try:
+                    self.current_voice_worker.chunk_received.disconnect()
+                    self.current_voice_worker.finished.disconnect()
+                    self.current_voice_worker.terminate()
+                except:
+                    pass
+                self.current_voice_worker = None
 
         cursor = self.chat_display.textCursor()
         cursor.movePosition(QTextCursor.MoveOperation.End)
@@ -432,14 +495,41 @@ class StealthHUD(QMainWindow):
 
         self.log_message(f"<span style='color:#00B0FF;'><b>INTERVIEWER:</b> {text}</span>")
         self.last_voice_text = text
+        
+        # --- SINGLETON WORKER PATTERN (SAFETY) ---
+        if self.current_voice_worker and self.current_voice_worker.isRunning():
+            try:
+                self.current_voice_worker.chunk_received.disconnect()
+                self.current_voice_worker.finished.disconnect()
+                self.current_voice_worker.terminate()
+                self.current_voice_worker.wait(500) # Short wait for cleanup
+            except: pass
+        
+        # Reset streaming state for the new answer
+        self.streaming_active = False
+        
         # Automatically get AI response for interviewer voice
         self.current_voice_worker = AIWorker(text, mode="text")
+        self.current_voice_worker.chunk_received.connect(self.handle_ai_chunk)
         self.current_voice_worker.finished.connect(self.handle_ai_voice_finished)
         self.current_voice_worker.start()
 
     def handle_ai_voice_finished(self, sender, message):
+        # We handle the bulk through chunks now, this just updates the final state if needed
         self.last_ai_response = message
-        self.log_message(f"<span style='color:#007E44;'><b>AI (Voice Response):</b> {message}</span>")
+        self.streaming_active = False
+
+    def handle_ai_chunk(self, sender, chunk):
+        if not self.chat_display or not chunk: return
+        
+        if not self.streaming_active:
+            self.log_message(f"<span style='color:#007E44;'><b>AI (Savant Eye):</b> </span>", append_newline=False)
+            self.streaming_active = True
+        
+        # Ensure we are modifying the end of the document
+        self.chat_display.moveCursor(QTextCursor.MoveOperation.End)
+        self.chat_display.insertPlainText(chunk)
+        self.chat_display.moveCursor(QTextCursor.MoveOperation.End)
 
     def handle_user_input(self):
         text = self.input_field.text().strip()
@@ -447,6 +537,7 @@ class StealthHUD(QMainWindow):
             self.log_message(f"<span style='color:#D4AF37;'><b>YOU:</b> {text}</span>")
             self.input_field.clear()
             self.ai_worker = AIWorker(text, mode="text")
+            self.ai_worker.chunk_received.connect(self.handle_ai_chunk)
             self.ai_worker.finished.connect(self.handle_ai_finished)
             self.ai_worker.start()
         else:
@@ -456,12 +547,12 @@ class StealthHUD(QMainWindow):
 
     def handle_ai_finished(self, sender, message):
         self.last_ai_response = message
-        self.log_message(f"<span style='color:#007E44;'><b>AI (Manual Input):</b> {message}</span>")
+        self.streaming_active = False # Reset for next session
 
-    def log_message(self, message):
+    def log_message(self, message, append_newline=True):
         formatted_message = message.replace("\n", "<br>")
         # Add extra vertical spacing between messages for readability
-        spacer = "<br><br>" if self.chat_display.toPlainText().strip() else ""
+        spacer = "<br><br>" if self.chat_display.toPlainText().strip() and append_newline else ""
         self.chat_display.append(f"{spacer}{formatted_message}")
         self.chat_display.moveCursor(QTextCursor.MoveOperation.End)
 
