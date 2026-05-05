@@ -147,21 +147,40 @@ class AIEngine:
             if not api_key:
                 return "Vision Error: No Gemini Key. Please check dashboard."
 
-            import google.generativeai as genai
-            genai.configure(api_key=api_key)
-            model = genai.GenerativeModel('gemini-1.5-flash')
+            from google import genai
+            client = genai.Client(api_key=api_key)
             
             img = Image.open(image_path)
             
             # Integrated Savant Eye Vision Prompt
             vision_prompt = (
-                "ROLE: Expert Technical Assistant. "
-                "TASK: Solve any technical questions, code tests, or MCQs visible on screen. "
-                "RULES: Simple English only. MAX 2-3 sentences. NO markdown symbols."
+                "ROLE: You are an elite candidate taking an assessment or interview. Speak as 'I'. Use SIMPLE, EASY ENGLISH.\n"
+                "TASK: Look at the screen. Identify the main technical question, code test, or MCQ. Solve it instantly.\n"
+                "STRICT RULES:\n"
+                "1. MAX 3 sentences TOTAL for your entire response. Be extremely brief.\n"
+                "2. NO markdown (*, #), NO lists, NO long paragraphs.\n"
+                "3. If there are multiple questions on screen, only answer the first or most prominent one.\n"
+                "4. Sound like a real human in an interview, not a textbook."
             )
             
-            response = model.generate_content([vision_prompt, query, img])
-            return response.text.replace("*", "").strip()
+            # Use a robust fallback loop to handle High Demand (503) or Not Found (404) errors
+            models_to_try = ['gemini-2.5-flash', 'gemini-1.5-flash-8b', 'gemini-1.5-flash', 'gemini-1.5-pro']
+            
+            for model_name in models_to_try:
+                try:
+                    response = client.models.generate_content(
+                        model=model_name,
+                        contents=[vision_prompt, query, img]
+                    )
+                    return response.text.replace("*", "").strip()
+                except Exception as e:
+                    error_msg = str(e)
+                    if "503" in error_msg or "404" in error_msg or "429" in error_msg:
+                        continue # Try the next model
+                    else:
+                        raise e # If it's an auth error or something else, throw it
+            
+            return "Vision System Busy: High demand across all servers. Please try again in a few seconds."
             
         except Exception as e:
             print(f"[Vision] Critical Failure: {e}")
