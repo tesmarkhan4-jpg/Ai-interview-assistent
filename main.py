@@ -654,6 +654,18 @@ if __name__ == "__main__":
         sys.exit(0)
         
     app = QApplication(sys.argv)
-    window = StealthHUD()
-    window.show()
+    
+    # Auth Check
+    from auth_manager import auth_manager
+    from login_window import LoginWindow
+    
+    if not auth_manager.current_user:
+        # Show Login Screen if no session
+        login = LoginWindow()
+        login.show()
+    else:
+        # Show Main App if session exists
+        window = StealthHUD()
+        window.show()
+        
     sys.exit(app.exec())

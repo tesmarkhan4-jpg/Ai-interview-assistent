@@ -362,6 +362,12 @@ async def upgrade_user(email: str, tier: str = "PRO"):
     conn.users.update_one({"email": email}, {"$set": {"tier": tier, "sub_expiry": expiry}})
     return {"status": "success"}
 
+@app.post("/api/admin/users/reset_hwid")
+async def reset_hwid(email: str):
+    conn = get_db()
+    conn.users.update_one({"email": email}, {"$set": {"hwid": None}})
+    return {"status": "success"}
+
 @app.delete("/api/admin/users/{email}")
 async def delete_user(email: str):
     conn = get_db()
