@@ -403,7 +403,9 @@ async def update_global_config(request: Request):
 @app.get("/api/admin/config")
 async def get_global_config():
     conn = get_db()
-    return conn.get_config()
+    cfg = conn.get_config()
+    if "_id" in cfg: cfg["_id"] = str(cfg["_id"])
+    return cfg
 
 @app.get("/{full_path:path}")
 async def catch_all(request: Request, full_path: str):
