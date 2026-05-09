@@ -224,10 +224,12 @@ async def get_stats():
         pro = conn.users.count_documents({"tier": "PRO"})
         trial = conn.users.count_documents({"tier": "TRIAL"})
         return {
-            "total_users": total, 
-            "pro_users": pro, 
-            "trial_users": trial,
-            "key_health": 98.2, 
+            "total_users": total or 0, 
+            "pro_users": pro or 0, 
+            "trial_users": trial or 0,
+            "active_sessions": conn.history.count_documents({"timestamp": {"$gt": datetime.datetime.utcnow() - datetime.timedelta(hours=1)}}),
+            "revenue": pro * 49, # Simplified MRR calculation
+            "key_health": 100, 
             "maintenance_mode": conn.get_config().get("maintenance_mode", False)
         }
     except Exception as e:

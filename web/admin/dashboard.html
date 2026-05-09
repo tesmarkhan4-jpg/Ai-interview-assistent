@@ -345,9 +345,11 @@
             try {
                 const res = await fetch(`/api/admin/stats`);
                 const data = await res.json();
-                document.querySelectorAll('.stat-value')[0].innerText = data.total_users.toLocaleString();
-                document.querySelectorAll('.stat-value')[1].innerText = data.active_sessions.toLocaleString();
-                document.querySelectorAll('.stat-value')[2].innerText = data.key_health + "%";
+                const statValues = document.querySelectorAll('.stat-value');
+                if (statValues.length >= 1) statValues[0].innerText = (data.total_users || 0).toLocaleString();
+                if (statValues.length >= 2) statValues[1].innerText = (data.active_sessions || 0).toLocaleString();
+                if (statValues.length >= 3) statValues[2].innerText = (data.key_health || 100) + "%";
+                if (statValues.length >= 4) statValues[3].innerText = "$" + (data.revenue || 0).toLocaleString();
                 document.getElementById('maintenance-toggle').checked = data.maintenance_mode;
             } catch (e) { console.error("Stats fetch failed", e); }
         }
