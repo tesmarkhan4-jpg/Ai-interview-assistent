@@ -310,6 +310,13 @@
                 trial_days: parseInt(document.getElementById('cfg-trial-days').value),
                 branding: document.getElementById('cfg-branding').value
             };
+            try {
+                await fetch(`/api/admin/config`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(config)
+                });
+                alert("Strategic Infrastructure Updated Successfully");
             } catch (e) { alert("Failed to update config"); }
         }
 
