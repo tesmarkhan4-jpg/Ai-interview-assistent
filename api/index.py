@@ -207,10 +207,31 @@ async def login(user: UserLogin):
                 "trial_expiry": db_user.get("trial_expiry", datetime.datetime.utcnow()).isoformat(),
                 "server_time": datetime.datetime.utcnow().isoformat()
             }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database connection failed: {str(e)}")
+
+@app.post("/api/auth/validate")
+async def validate_session(data: dict):
+    email = data.get("email")
+    hwid = data.get("hwid")
+    try:
+        conn = StealthDB()
+        db_user = conn.get_user(email)
+        if not db_user: raise HTTPException(status_code=401, detail="Identity Expired.")
+        
+        # Verify HWID
+        if db_user.get("hwid") and db_user["hwid"] != hwid:
+             raise HTTPException(status_code=403, detail="System Mismatch.")
+
+        return {
+            "status": "success",
+            "tier": db_user.get("tier", "TRIAL"),
+            "full_name": db_user["full_name"],
+            "trial_expiry": db_user.get("trial_expiry", datetime.datetime.utcnow()).isoformat()
         }
     except HTTPException: raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Database connection failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 # --- AUTOMATED PAYMENTS (LEMONSQUEEZY & STRIPE) ---
 @app.post("/api/webhook/stripe")

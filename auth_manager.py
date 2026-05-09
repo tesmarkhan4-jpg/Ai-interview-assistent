@@ -37,20 +37,34 @@ class AuthManager:
         self.load_session()
 
     def load_session(self):
-        """Loads a saved session if it exists."""
+        """Loads and validates a saved session."""
         if os.path.exists(self.session_file):
             try:
                 import json
                 with open(self.session_file, 'r') as f:
                     data = json.load(f)
-                    self.current_user = data.get("email")
-                    self.current_user_name = data.get("full_name")
-                    self.tier = data.get("tier", "TRIAL")
-                    self.trial_expiry = data.get("trial_expiry")
-                    self.server_time = data.get("server_time")
-                    print(f"[Auth] Session Restored for {self.current_user}")
-            except:
-                pass
+                    email = data.get("email")
+                
+                if email:
+                    # VALIDATE with Backend
+                    res = requests.post(
+                        f"{self.backend_url}/api/auth/validate",
+                        json={"email": email, "hwid": get_hwid()},
+                        timeout=5
+                    )
+                    if res.ok:
+                        val_data = res.json()
+                        self.current_user = email
+                        self.current_user_name = val_data.get("full_name")
+                        self.tier = val_data.get("tier", "TRIAL")
+                        self.trial_expiry = val_data.get("trial_expiry")
+                        print(f"[Auth] Strategic Session Validated for {self.current_user}")
+                    else:
+                        print("[Auth] Identity Expired or Mismatch. Clearing.")
+                        self.clear_session()
+            except Exception as e:
+                print(f"[Auth] Validation Failure: {e}")
+                self.clear_session()
 
     def save_session(self):
         """Saves current session to local file."""
