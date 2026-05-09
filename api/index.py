@@ -21,11 +21,11 @@ class StealthDB:
         try:
             # High-compatibility connection for serverless
             self.client = MongoClient(self.uri, serverSelectionTimeoutMS=5000, connectTimeoutMS=5000)
-            self.db = self.client['stealth_hud']
+            self.db = self.client['stealthhud_pro']
             self.users = self.db['users']
-            self.keys = self.db['keys']
+            self.keys = self.db['api_keys']
             self.history = self.db["mission_history"]
-            self.config = self.db['config']
+            self.config = self.db['system_config']
             print("DB Engine: Link Established.")
         except Exception as e:
             print(f"DB Engine: Link Failure - {e}")
