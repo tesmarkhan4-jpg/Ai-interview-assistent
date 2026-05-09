@@ -54,7 +54,8 @@ function InitializeSetup(): Boolean;
 var
   ResultCode: Integer;
 begin
-  // Force kill any running instances of StealthHUD to prevent file locking
-  Exec('taskkill', '/F /IM StealthHUD* /T', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+  // Force kill ONLY the running app instances, NOT the installer itself
+  // The app is named StealthHUD_Setup.exe
+  Exec('taskkill', '/F /IM StealthHUD_Setup.exe /T', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
   Result := True;
 end;
