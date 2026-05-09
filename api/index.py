@@ -156,7 +156,7 @@ async def login(user: UserLogin):
         raise HTTPException(status_code=500, detail=f"Database connection failed: {str(e)}")
 
 # --- AUTOMATED PAYMENTS (STRIPE WEBHOOK) ---
-@app.post("/api/webhook/stripe")
+@app.post("/webhook/stripe")
 async def stripe_webhook(request: Request):
     payload = await request.body()
     sig_header = request.headers.get("stripe-signature")
@@ -190,7 +190,7 @@ async def stripe_webhook(request: Request):
     return {"status": "success"}
 
 # --- PROXY ---
-@app.post("/api/v1/ai")
+@app.post("/v1/ai")
 async def get_ai_response(req: ProxyRequest):
     conn = get_db()
     if conn.get_config().get("maintenance_mode", False): raise HTTPException(status_code=503, detail="Strategic System Maintenance.")
@@ -211,7 +211,7 @@ async def get_ai_response(req: ProxyRequest):
         raise HTTPException(status_code=500, detail="Intelligence Stream Interrupted.")
 
 # --- ADMIN ---
-@app.get("/api/v1/history")
+@app.get("/v1/history")
 async def get_history(email: str):
     conn = get_db()
     history = conn.get_history(email)
