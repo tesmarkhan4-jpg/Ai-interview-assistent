@@ -121,6 +121,7 @@
                             <th>Email</th>
                             <th>Tier</th>
                             <th>Joined</th>
+                            <th>HWID (Lock)</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -131,51 +132,57 @@
             </div>
         </div>
 
-        <!-- Key Pool Tab (Hidden by default) -->
-        <div id="content-keys" style="display: none;">
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <span class="stat-label">Gemini Keys</span>
-                    <div class="stat-value">12</div>
-                    <span class="stat-trend trend-up">All Healthy</span>
+        <!-- Payments Tab (Hidden by default) -->
+        <div id="content-payments" style="display: none;">
+            <div class="grid-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+                <div class="data-card p-24">
+                    <div class="card-header">
+                        <span class="card-title">Monetization Hub</span>
+                    </div>
+                    <div class="form-group" style="margin-top: 20px;">
+                        <label style="font-size: 0.7rem; font-weight: 800; color: var(--text-muted); display: block; margin-bottom: 8px;">AUTO-UPGRADE WEBHOOK URL</label>
+                        <input type="text" id="webhook-url-display" readonly style="width: 100%; background: var(--bg); border: 1px solid var(--border); padding: 12px; border-radius: 12px; font-size: 0.8rem; font-family: monospace;">
+                    </div>
+                    <div class="form-group" style="margin-top: 20px;">
+                        <label style="font-size: 0.7rem; font-weight: 800; color: var(--text-muted); display: block; margin-bottom: 8px;">ACTIVE UPGRADE URL (SHOWN TO USERS)</label>
+                        <input type="text" id="cfg-checkout-url" placeholder="https://buy.stripe.com/..." style="width: 100%; border: 1px solid var(--border); padding: 12px; border-radius: 12px; font-size: 0.8rem;">
+                    </div>
                 </div>
-                <div class="stat-card">
-                    <span class="stat-label">Groq Keys</span>
-                    <div class="stat-value">8</div>
-                    <span class="stat-trend trend-down">1 Exhausted</span>
-                </div>
-                <div class="stat-card">
-                    <span class="stat-label">Deepgram Keys</span>
-                    <div class="stat-value">4</div>
-                    <span class="stat-trend">Stable</span>
+
+                <div class="data-card p-24" style="background: #0f172a; color: white;">
+                    <div class="card-header">
+                        <span class="card-title" style="color: white;">Stripe Strategy Engine</span>
+                    </div>
+                    <div class="form-group" style="margin-top: 20px;">
+                        <label style="font-size: 0.7rem; font-weight: 800; color: #64748b; display: block; margin-bottom: 8px;">STRIPE SECRET KEY (SK_LIVE_...)</label>
+                        <input type="password" id="cfg-stripe-key" placeholder="••••••••••••••••••••" style="width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 12px; border-radius: 12px; color: white; outline: none;">
+                    </div>
+                    <div class="form-group" style="margin-top: 20px;">
+                        <label style="font-size: 0.7rem; font-weight: 800; color: #64748b; display: block; margin-bottom: 8px;">WEBHOOK SIGNING SECRET (WHSEC_...)</label>
+                        <input type="password" id="cfg-webhook-secret" placeholder="••••••••••••••••••••" style="width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 12px; border-radius: 12px; color: white; outline: none;">
+                    </div>
+                    <button class="btn-action" onclick="updateConfig()" style="width: 100%; margin-top: 20px; background: var(--primary); color: white; border: none; padding: 14px; font-weight: 800;">DEPLOY STRATEGY</button>
                 </div>
             </div>
+        </div>
 
-            <div class="data-card">
+        <!-- Settings Tab (Hidden by default) -->
+        <div id="content-settings" style="display: none;">
+            <div class="data-card p-24">
                 <div class="card-header">
-                    <span class="card-title">Active Key Rotation</span>
-                    <button class="btn-action" style="background: var(--primary); color: white; border: none;">+ Add New Key</button>
+                    <span class="card-title">Global System Settings</span>
                 </div>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Provider</th>
-                            <th>Key Mask</th>
-                            <th>Status</th>
-                            <th>Calls</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td><b>Gemini-1.5-Pro</b></td>
-                            <td>AIza...k9L2</td>
-                            <td><span class="status-pill status-active">Healthy</span></td>
-                            <td>1,240</td>
-                            <td><button class="btn-action btn-delete">Revoke</button></td>
-                        </tr>
-                    </tbody>
-                </table>
+                <div class="grid-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 24px;">
+                    <div class="form-group">
+                        <label style="font-size: 0.7rem; font-weight: 800; color: var(--text-muted); display: block; margin-bottom: 8px;">TRIAL VALIDITY (DAYS)</label>
+                        <input type="number" id="cfg-trial-days" value="7" style="width: 100%; border: 1px solid var(--border); padding: 12px; border-radius: 12px;">
+                    </div>
+                    <div class="form-group">
+                        <label style="font-size: 0.7rem; font-weight: 800; color: var(--text-muted); display: block; margin-bottom: 8px;">BRANDING NAME</label>
+                        <input type="text" id="cfg-branding" value="StealthHUD" style="width: 100%; border: 1px solid var(--border); padding: 12px; border-radius: 12px;">
+                    </div>
+                </div>
+                <button class="btn-action" onclick="updateConfig()" style="margin-top: 24px; background: var(--primary); color: white; border: none; padding: 12px 24px; font-weight: 800;">SAVE GLOBAL CONFIG</button>
             </div>
         </div>
     </main>
@@ -193,8 +200,8 @@
             overview: document.getElementById('content-overview'),
             users: document.getElementById('content-users'),
             keys: document.getElementById('content-keys'),
-            payments: document.getElementById('content-overview'),
-            settings: document.getElementById('content-overview')
+            payments: document.getElementById('content-payments'),
+            settings: document.getElementById('content-settings')
         };
 
         navLinks.forEach(link => {
@@ -209,8 +216,43 @@
                 
                 if(tab === 'users') fetchUsers();
                 if(tab === 'keys') fetchKeys();
+                if(tab === 'payments' || tab === 'settings') fetchConfig();
+                
+                if(tab === 'payments') {
+                    document.getElementById('webhook-url-display').value = window.location.origin + "/api/webhook/stripe";
+                }
             });
         });
+
+        async function fetchConfig() {
+            try {
+                const res = await fetch(`/api/admin/config`);
+                const data = await res.json();
+                document.getElementById('cfg-checkout-url').value = data.checkout_url || '';
+                document.getElementById('cfg-stripe-key').value = data.stripe_secret_key || '';
+                document.getElementById('cfg-webhook-secret').value = data.stripe_webhook_secret || '';
+                document.getElementById('cfg-trial-days').value = data.trial_days || 7;
+                document.getElementById('cfg-branding').value = data.branding || 'StealthHUD';
+            } catch (e) { console.error("Config fetch failed", e); }
+        }
+
+        async function updateConfig() {
+            const config = {
+                checkout_url: document.getElementById('cfg-checkout-url').value,
+                stripe_secret_key: document.getElementById('cfg-stripe-key').value,
+                stripe_webhook_secret: document.getElementById('cfg-webhook-secret').value,
+                trial_days: parseInt(document.getElementById('cfg-trial-days').value),
+                branding: document.getElementById('cfg-branding').value
+            };
+            try {
+                await fetch(`/api/admin/config`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(config)
+                });
+                alert("Strategic Infrastructure Updated Successfully");
+            } catch (e) { alert("Failed to update config"); }
+        }
 
         // --- Backend Integration ---
 
@@ -240,6 +282,7 @@
                         <td><b>${u.email}</b></td>
                         <td><span class="status-pill status-${u.tier.toLowerCase()}">${u.tier}</span></td>
                         <td>${new Date(u.joined_at).toLocaleDateString()}</td>
+                        <td><code style="font-size: 0.7rem; color: #94a3b8;">${u.hwid ? u.hwid.substring(0, 12) + '...' : 'NONE'}</code></td>
                         <td><button class="btn-action">Manage</button></td>
                     </tr>
                 `).join('');
