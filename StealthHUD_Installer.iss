@@ -28,6 +28,8 @@ SetupIconFile=app_icon.ico
 Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
+CloseApplications=yes
+AppMutex=StealthHUD_MICA_MUTEX
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
@@ -53,6 +55,6 @@ var
   ResultCode: Integer;
 begin
   // Force kill any running instances of StealthHUD to prevent file locking
-  Exec('taskkill', '/F /IM StealthHUD.exe /T', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+  Exec('taskkill', '/F /IM StealthHUD* /T', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
   Result := True;
 end;
