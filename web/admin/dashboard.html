@@ -217,18 +217,22 @@
 
                 <div class="data-card p-24" style="background: #0f172a; color: white;">
                     <div class="card-header">
-                        <span class="card-title" style="color: white;">Stripe Strategy Engine</span>
+                        <span class="card-title" style="color: white;">Strategy Engine</span>
                     </div>
                     <div class="form-group" style="margin-top: 20px;">
-                        <label style="font-size: 0.7rem; font-weight: 800; color: #64748b; display: block; margin-bottom: 8px;">STRIPE SECRET KEY (SK_LIVE_...)</label>
-                        <input type="password" id="cfg-stripe-key" placeholder="••••••••••••••••••••" style="width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 12px; border-radius: 12px; color: white; outline: none;">
+                        <label style="font-size: 0.7rem; font-weight: 800; color: #64748b; display: block; margin-bottom: 8px;">STRIPE SECRET KEY</label>
+                        <input type="password" id="cfg-stripe-key" placeholder="sk_live_..." style="width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 12px; border-radius: 12px; color: white; outline: none;">
                     </div>
                     <div class="form-group" style="margin-top: 20px;">
-                        <label style="font-size: 0.7rem; font-weight: 800; color: #64748b; display: block; margin-bottom: 8px;">WEBHOOK SIGNING SECRET (WHSEC_...)</label>
-                        <input type="password" id="cfg-webhook-secret" placeholder="••••••••••••••••••••" style="width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 12px; border-radius: 12px; color: white; outline: none;">
+                        <label style="font-size: 0.7rem; font-weight: 800; color: #64748b; display: block; margin-bottom: 8px;">LEMONSQUEEZY API KEY</label>
+                        <input type="password" id="cfg-ls-key" placeholder="ls_..." style="width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 12px; border-radius: 12px; color: white; outline: none;">
                     </div>
                     <button class="btn-action" onclick="updateConfig()" style="width: 100%; margin-top: 20px; background: var(--primary); color: white; border: none; padding: 14px; font-weight: 800;">DEPLOY STRATEGY</button>
                 </div>
+            </div>
+            <div class="data-card p-24" style="margin-top: 24px;">
+                <div class="card-header"><span class="card-title">LemonSqueezy Webhook URL</span></div>
+                <input type="text" id="ls-webhook-url" readonly style="width: 100%; background: var(--bg); border: 1px solid var(--border); padding: 12px; border-radius: 12px; font-family: monospace; margin-top: 10px;">
             </div>
         </div>
 
@@ -246,6 +250,25 @@
                     <div class="form-group">
                         <label style="font-size: 0.7rem; font-weight: 800; color: var(--text-muted); display: block; margin-bottom: 8px;">BRANDING NAME</label>
                         <input type="text" id="cfg-branding" value="StealthHUD" style="width: 100%; border: 1px solid var(--border); padding: 12px; border-radius: 12px;">
+                    </div>
+                </div>
+                <div class="form-group" style="margin-top: 24px;">
+                    <label style="font-size: 0.7rem; font-weight: 800; color: var(--text-muted); display: block; margin-bottom: 8px;">MAINTENANCE MESSAGE</label>
+                    <input type="text" id="cfg-maint-msg" placeholder="Strategic calibration in progress..." style="width: 100%; border: 1px solid var(--border); padding: 12px; border-radius: 12px;">
+                </div>
+
+                <div class="grid-2" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; margin-top: 24px; border-top: 1px solid var(--border); padding-top: 24px;">
+                    <div class="form-group">
+                        <label style="font-size: 0.7rem; font-weight: 800; color: var(--text-muted); display: block; margin-bottom: 8px;">GMAIL SMTP USER</label>
+                        <input type="text" id="cfg-smtp-user" placeholder="example@gmail.com" style="width: 100%; border: 1px solid var(--border); padding: 12px; border-radius: 12px;">
+                    </div>
+                    <div class="form-group">
+                        <label style="font-size: 0.7rem; font-weight: 800; color: var(--text-muted); display: block; margin-bottom: 8px;">GMAIL APP PASSWORD</label>
+                        <input type="password" id="cfg-smtp-pass" placeholder="•••• •••• •••• ••••" style="width: 100%; border: 1px solid var(--border); padding: 12px; border-radius: 12px;">
+                    </div>
+                    <div class="form-group">
+                        <label style="font-size: 0.7rem; font-weight: 800; color: var(--text-muted); display: block; margin-bottom: 8px;">SMTP HOST</label>
+                        <input type="text" id="cfg-smtp-host" value="smtp.gmail.com" style="width: 100%; border: 1px solid var(--border); padding: 12px; border-radius: 12px;">
                     </div>
                 </div>
                 <button class="btn-action" onclick="updateConfig()" style="margin-top: 24px; background: var(--primary); color: white; border: none; padding: 12px 24px; font-weight: 800;">SAVE GLOBAL CONFIG</button>
@@ -286,6 +309,7 @@
                 
                 if(tab === 'payments') {
                     document.getElementById('webhook-url-display').value = window.location.origin + "/api/webhook/stripe";
+                    document.getElementById('ls-webhook-url').value = window.location.origin + "/api/webhook/lemonsqueezy";
                 }
             });
         });
@@ -296,9 +320,13 @@
                 const data = await res.json();
                 document.getElementById('cfg-checkout-url').value = data.checkout_url || '';
                 document.getElementById('cfg-stripe-key').value = data.stripe_secret_key || '';
-                document.getElementById('cfg-webhook-secret').value = data.stripe_webhook_secret || '';
+                document.getElementById('cfg-ls-key').value = data.ls_api_key || '';
                 document.getElementById('cfg-trial-days').value = data.trial_days || 7;
                 document.getElementById('cfg-branding').value = data.branding || 'StealthHUD';
+                document.getElementById('cfg-maint-msg').value = data.maintenance_message || '';
+                document.getElementById('cfg-smtp-user').value = data.SMTP_USER || '';
+                document.getElementById('cfg-smtp-pass').value = data.SMTP_PASS || '';
+                document.getElementById('cfg-smtp-host').value = data.SMTP_HOST || 'smtp.gmail.com';
             } catch (e) { console.error("Config fetch failed", e); }
         }
 
@@ -306,9 +334,13 @@
             const config = {
                 checkout_url: document.getElementById('cfg-checkout-url').value,
                 stripe_secret_key: document.getElementById('cfg-stripe-key').value,
-                stripe_webhook_secret: document.getElementById('cfg-webhook-secret').value,
+                ls_api_key: document.getElementById('cfg-ls-key').value,
                 trial_days: parseInt(document.getElementById('cfg-trial-days').value),
-                branding: document.getElementById('cfg-branding').value
+                branding: document.getElementById('cfg-branding').value,
+                maintenance_message: document.getElementById('cfg-maint-msg').value,
+                SMTP_USER: document.getElementById('cfg-smtp-user').value,
+                SMTP_PASS: document.getElementById('cfg-smtp-pass').value,
+                SMTP_HOST: document.getElementById('cfg-smtp-host').value
             };
             try {
                 await fetch(`/api/admin/config`, {

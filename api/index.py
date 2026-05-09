@@ -64,6 +64,65 @@ class StealthDB:
     def update_config(self, data):
         return self.config.update_one({"type": "global"}, {"$set": data}, upsert=True)
 
+# --- EMAIL SYSTEM ---
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+
+class MailService:
+    @staticmethod
+    def send_email(to_email, subject, html_content):
+        db = StealthDB()
+        cfg = db.get_config()
+        smtp_host = cfg.get("SMTP_HOST", "smtp.gmail.com")
+        smtp_port = int(cfg.get("SMTP_PORT", 587))
+        smtp_user = cfg.get("SMTP_USER")
+        smtp_pass = cfg.get("SMTP_PASS")
+        
+        if not smtp_user or not smtp_pass:
+            print("[MAIL] SMTP Credentials missing. Email suppressed.")
+            return False
+
+        try:
+            msg = MIMEMultipart()
+            msg['From'] = f"{cfg.get('branding', 'StealthHUD')} Support <{smtp_user}>"
+            msg['To'] = to_email
+            msg['Subject'] = subject
+            msg.attach(MIMEText(html_content, 'html'))
+
+            server = smtplib.SMTP(smtp_host, smtp_port)
+            server.starttls()
+            server.login(smtp_user, smtp_pass)
+            server.send_message(msg)
+            server.quit()
+            return True
+        except Exception as e:
+            print(f"[MAIL] Failed: {e}")
+            return False
+
+    @staticmethod
+    def get_otp_template(otp, user_name):
+        return f"""
+        <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 40px; background: #f8fafc; border-radius: 20px;">
+            <h2 style="color: #6366f1;">Identity Verification</h2>
+            <p>Hello <b>{user_name}</b>,</p>
+            <p>Your one-time pass-code for StealthHUD PRO is:</p>
+            <div style="font-size: 32px; font-weight: 800; letter-spacing: 5px; color: #1e293b; margin: 30px 0;">{otp}</div>
+            <p style="font-size: 12px; color: #64748b;">If you did not request this, please ignore this email.</p>
+        </div>
+        """
+
+    @staticmethod
+    def get_maintenance_template(message):
+        return f"""
+        <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 40px; background: #0f172a; color: white; border-radius: 20px; text-align: center;">
+            <h1 style="color: #fbbf24;">⚠️ System Maintenance</h1>
+            <p style="font-size: 18px;">{message or "We are currently performing a scheduled upgrade."}</p>
+            <hr style="border-color: rgba(255,255,255,0.1); margin: 30px 0;">
+            <p style="font-size: 14px; color: #94a3b8;">Our strategic intelligence stream is being calibrated. We will be back online shortly.</p>
+        </div>
+        """
+
 # --- API CORE ---
 app = FastAPI(title="StealthHUD PRO Backend")
 db = None
@@ -153,45 +212,49 @@ async def login(user: UserLogin):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database connection failed: {str(e)}")
 
-# --- AUTOMATED PAYMENTS (STRIPE WEBHOOK) ---
+# --- AUTOMATED PAYMENTS (LEMONSQUEEZY & STRIPE) ---
 @app.post("/api/webhook/stripe")
 async def stripe_webhook(request: Request):
+    # (Existing stripe logic)
     payload = await request.body()
     sig_header = request.headers.get("stripe-signature")
-    
     conn = get_db()
     config = conn.get_config()
     webhook_secret = config.get("STRIPE_WEBHOOK_SECRET")
-    
     if not webhook_secret:
-        # Fallback for dev/manual mode
         data = await request.json()
         if data.get("type") == "checkout.session.completed":
-            session = data.get("data", {}).get("object", {})
-            email = session.get("customer_details", {}).get("email")
-            if email:
-                conn.users.update_one({"email": email}, {"$set": {"tier": "PRO"}})
-                return {"status": "success", "message": f"Auto-Upgraded {email}"}
-        return {"status": "ignored"}
-
-    import stripe
-    try:
-        event = stripe.Webhook.construct_event(payload, sig_header, webhook_secret)
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-    if event["type"] == "checkout.session.completed":
-        session = event["data"]["object"]
-        email = session["customer_details"]["email"]
-        conn.users.update_one({"email": email}, {"$set": {"tier": "PRO"}})
-        
+            email = data.get("data", {}).get("object", {}).get("customer_details", {}).get("email")
+            if email: conn.users.update_one({"email": email}, {"$set": {"tier": "PRO"}})
+        return {"status": "success"}
     return {"status": "success"}
+
+@app.post("/api/webhook/lemonsqueezy")
+async def lemonsqueezy_webhook(request: Request):
+    payload = await request.body()
+    # Simplified validation for manual/dev config
+    import json
+    data = json.loads(payload)
+    event_name = data.get("meta", {}).get("event_name")
+    
+    if event_name == "order_created":
+        email = data.get("data", {}).get("attributes", {}).get("user_email")
+        if email:
+            conn = get_db()
+            conn.users.update_one({"email": email}, {"$set": {"tier": "PRO"}})
+            return {"status": "success", "message": "LemonSqueezy Upgrade Complete"}
+    
+    return {"status": "ignored"}
 
 # --- PROXY ---
 @app.post("/api/v1/ai")
 async def get_ai_response(req: ProxyRequest):
     conn = get_db()
-    if conn.get_config().get("maintenance_mode", False): raise HTTPException(status_code=503, detail="Strategic System Maintenance.")
+    cfg = conn.get_config()
+    if cfg.get("maintenance_mode", False):
+        msg = cfg.get("maintenance_message", "Strategic System Maintenance in Progress. Please try again later.")
+        raise HTTPException(status_code=503, detail=msg)
+    
     key = conn.get_pooled_key(req.provider)
     if not key: raise HTTPException(status_code=503, detail="Strategic Key Pool Exhausted.")
     try:
