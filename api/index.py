@@ -154,7 +154,7 @@ async def login(user: UserLogin):
         raise HTTPException(status_code=500, detail=f"Database connection failed: {str(e)}")
 
 # --- AUTOMATED PAYMENTS (STRIPE WEBHOOK) ---
-@app.post("/webhook/stripe")
+@app.post("/api/webhook/stripe")
 async def stripe_webhook(request: Request):
     payload = await request.body()
     sig_header = request.headers.get("stripe-signature")
@@ -188,7 +188,7 @@ async def stripe_webhook(request: Request):
     return {"status": "success"}
 
 # --- PROXY ---
-@app.post("/v1/ai")
+@app.post("/api/v1/ai")
 async def get_ai_response(req: ProxyRequest):
     conn = get_db()
     if conn.get_config().get("maintenance_mode", False): raise HTTPException(status_code=503, detail="Strategic System Maintenance.")
@@ -209,14 +209,14 @@ async def get_ai_response(req: ProxyRequest):
         raise HTTPException(status_code=500, detail="Intelligence Stream Interrupted.")
 
 # --- ADMIN ---
-@app.get("/v1/history")
+@app.get("/api/v1/history")
 async def get_history(email: str):
     conn = get_db()
     history = conn.get_history(email)
     for h in history: h["_id"] = str(h["_id"])
     return {"history": history}
 
-@app.get("/admin/stats")
+@app.get("/api/admin/stats")
 async def get_stats():
     try:
         conn = StealthDB()
@@ -233,7 +233,7 @@ async def get_stats():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/admin/users")
+@app.get("/api/admin/users")
 async def get_users():
     try:
         conn = StealthDB()
@@ -248,7 +248,7 @@ async def get_users():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/admin/keys")
+@app.get("/api/admin/keys")
 async def get_keys():
     conn = get_db()
     keys = conn.get_all_keys()
@@ -261,7 +261,7 @@ async def remove_key(key_id: str):
     conn.remove_key(key_id)
     return {"status": "success"}
 
-@app.post("/admin/keys")
+@app.post("/api/admin/keys")
 async def add_key(provider: str, key_value: str):
     try:
         conn = StealthDB()
@@ -294,14 +294,14 @@ async def upgrade_user(email: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/admin/config")
+@app.post("/api/admin/config")
 async def update_global_config(request: Request):
     data = await request.json()
     conn = get_db()
     conn.update_config(data)
     return {"status": "success"}
 
-@app.get("/admin/config")
+@app.get("/api/admin/config")
 async def get_global_config():
     conn = get_db()
     return conn.get_config()
