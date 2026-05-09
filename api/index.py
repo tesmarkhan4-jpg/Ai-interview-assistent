@@ -218,7 +218,7 @@ async def get_history(email: str):
     for h in history: h["_id"] = str(h["_id"])
     return {"history": history}
 
-@app.get("/api/admin/stats")
+@app.get("/admin/stats")
 async def get_stats():
     try:
         conn = StealthDB()
@@ -235,7 +235,7 @@ async def get_stats():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/api/admin/users")
+@app.get("/admin/users")
 async def get_users():
     try:
         conn = StealthDB()
@@ -250,7 +250,7 @@ async def get_users():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/api/admin/keys")
+@app.get("/admin/keys")
 async def get_keys():
     conn = get_db()
     keys = conn.get_all_keys()
@@ -263,7 +263,7 @@ async def remove_key(key_id: str):
     conn.remove_key(key_id)
     return {"status": "success"}
 
-@app.post("/api/admin/keys")
+@app.post("/admin/keys")
 async def add_key(provider: str, key_value: str):
     try:
         conn = StealthDB()
@@ -281,7 +281,7 @@ async def delete_user(email: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/api/admin/maintenance")
+@app.post("/admin/maintenance")
 async def set_maintenance(active: bool):
     conn = get_db()
     conn.set_maintenance(active)
@@ -296,14 +296,14 @@ async def upgrade_user(email: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/api/admin/config")
+@app.post("/admin/config")
 async def update_global_config(request: Request):
     data = await request.json()
     conn = get_db()
     conn.update_config(data)
     return {"status": "success"}
 
-@app.get("/api/admin/config")
+@app.get("/admin/config")
 async def get_global_config():
     conn = get_db()
     return conn.get_config()
