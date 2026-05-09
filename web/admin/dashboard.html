@@ -113,15 +113,19 @@
             <div class="data-card">
                 <div class="card-header">
                     <span class="card-title">User Fleet Management</span>
-                    <input type="text" placeholder="Search by email..." style="padding: 8px 16px; border-radius: 8px; border: 1px solid var(--border); outline: none;">
+                    <div style="display: flex; gap: 12px;">
+                        <input type="text" placeholder="Search by email..." style="padding: 8px 16px; border-radius: 8px; border: 1px solid var(--border); outline: none;">
+                        <button class="btn-action" onclick="showAddUserModal()" style="background: var(--primary); color: white; border: none;">+ Deploy New User</button>
+                    </div>
                 </div>
                 <table>
                     <thead>
                         <tr>
                             <th>Email</th>
                             <th>Tier</th>
-                            <th>Joined</th>
-                            <th>HWID (Lock)</th>
+                            <th>Trial Left</th>
+                            <th>Sub Left</th>
+                            <th>HWID</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -400,12 +404,45 @@
                     <tr>
                         <td><b>${u.email}</b></td>
                         <td><span class="status-pill status-${u.tier.toLowerCase()}">${u.tier}</span></td>
-                        <td>${new Date(u.joined_at).toLocaleDateString()}</td>
-                        <td><code style="font-size: 0.7rem; color: #94a3b8;">${u.hwid ? u.hwid.substring(0, 12) + '...' : 'NONE'}</code></td>
-                        <td><button class="btn-action">Manage</button></td>
+                        <td style="font-weight: 700; color: #f43f5e;">${u.trial_timer}</td>
+                        <td style="font-weight: 700; color: #10b981;">${u.sub_timer}</td>
+                        <td><code style="font-size: 0.7rem;">${u.hwid ? u.hwid.substring(0, 10) + '...' : 'NONE'}</code></td>
+                        <td>
+                            <button class="btn-action" onclick="upgradeUser('${u.email}')" style="font-size: 0.7rem; padding: 4px 8px;">PRO</button>
+                            <button class="btn-action btn-delete" onclick="deleteUser('${u.email}')" style="font-size: 0.7rem; padding: 4px 8px;">DEL</button>
+                        </td>
                     </tr>
                 `).join('');
             } catch (e) { console.error("User fetch failed", e); }
+        }
+
+        async function upgradeUser(email) {
+            if(confirm("Manually upgrade " + email + " to PRO?")) {
+                await fetch(`/api/admin/users/upgrade?email=${email}`, { method: 'POST' });
+                fetchUsers();
+            }
+        }
+
+        async function deleteUser(email) {
+            if(confirm("Terminate user " + email + " permanently?")) {
+                await fetch(`/api/admin/users/${email}`, { method: 'DELETE' });
+                fetchUsers();
+            }
+        }
+
+        function showAddUserModal() {
+            const email = prompt("Enter Email:");
+            const pass = prompt("Enter Password:");
+            const name = prompt("Enter Full Name:");
+            const hwid = prompt("Enter HWID (Optional):") || "MANUAL_ENTRY";
+            
+            if(email && pass) {
+                fetch(`/api/admin/users`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({email, password: pass, full_name: name, hwid})
+                }).then(() => fetchUsers());
+            }
         }
 
         async function fetchKeys() {

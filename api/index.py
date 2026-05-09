@@ -303,15 +303,49 @@ async def get_users():
     try:
         conn = StealthDB()
         users = conn.get_all_users()
+        now = datetime.datetime.utcnow()
         for u in users: 
             u["_id"] = str(u["_id"])
-            if "trial_expiry" in u and isinstance(u["trial_expiry"], datetime.datetime):
+            # Calculate Timers
+            if u.get("trial_expiry"):
+                diff = u["trial_expiry"] - now
+                u["trial_timer"] = f"{max(0, diff.days)}d {max(0, diff.seconds // 3600)}h"
                 u["trial_expiry"] = u["trial_expiry"].isoformat()
+            else:
+                u["trial_timer"] = "EXPIRED"
+
+            if u.get("tier") == "PRO" and u.get("sub_expiry"):
+                diff = u["sub_expiry"] - now
+                u["sub_timer"] = f"{max(0, diff.days)}d {max(0, diff.seconds // 3600)}h"
+            else:
+                u["sub_timer"] = "N/A"
+
             if "joined_at" in u and isinstance(u["joined_at"], datetime.datetime):
                 u["joined_at"] = u["joined_at"].isoformat()
         return {"users": users}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/admin/users")
+async def admin_create_user(req: UserRegister):
+    conn = get_db()
+    if conn.get_user(req.email):
+        raise HTTPException(status_code=400, detail="User already exists")
+    conn.create_user(req.email, hash_password(req.password), req.full_name, req.hwid)
+    return {"status": "success"}
+
+@app.post("/api/admin/users/upgrade")
+async def upgrade_user(email: str, tier: str = "PRO"):
+    conn = get_db()
+    expiry = datetime.datetime.utcnow() + datetime.timedelta(days=30)
+    conn.users.update_one({"email": email}, {"$set": {"tier": tier, "sub_expiry": expiry}})
+    return {"status": "success"}
+
+@app.delete("/api/admin/users/{email}")
+async def delete_user(email: str):
+    conn = get_db()
+    conn.users.delete_one({"email": email})
+    return {"status": "success"}
 
 @app.get("/api/admin/keys")
 async def get_keys():
