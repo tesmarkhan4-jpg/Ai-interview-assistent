@@ -15,12 +15,10 @@ import traceback
 # --- DATABASE ENGINE ---
 class StealthDB:
     def __init__(self):
-        self.uri = os.getenv("MONGO_URI")
-        if not self.uri:
-            raise Exception("MONGO_URI missing from environment.")
+        self.uri = os.getenv("MONGO_URI") or "mongodb+srv://admin:mannat08112025@cluster0.r7zajqb.mongodb.net/?appName=Cluster0"
         try:
             # High-compatibility connection for serverless
-            self.client = MongoClient(self.uri, serverSelectionTimeoutMS=5000, connectTimeoutMS=5000)
+            self.client = MongoClient(self.uri, serverSelectionTimeoutMS=10000, connectTimeoutMS=10000)
             self.db = self.client['stealthhud_pro']
             self.users = self.db['users']
             self.keys = self.db['api_keys']
