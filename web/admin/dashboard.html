@@ -132,6 +132,72 @@
             </div>
         </div>
 
+        <!-- Key Pool Tab (Hidden by default) -->
+        <div id="content-keys" style="display: none;">
+            <div class="grid-2" style="display: grid; grid-template-columns: 1fr 2fr; gap: 24px; margin-bottom: 24px;">
+                <div class="data-card p-24">
+                    <div class="card-header">
+                        <span class="card-title">Inject AI Credentials</span>
+                    </div>
+                    <div style="margin-top: 20px; display: grid; gap: 16px;">
+                        <div>
+                            <label style="font-size: 0.65rem; font-weight: 900; color: var(--text-muted); display: block; margin-bottom: 6px;">MODEL PROVIDER</label>
+                            <select id="new-key-provider" style="width: 100%; border: 1px solid var(--border); padding: 12px; border-radius: 12px; font-weight: 600; outline: none; background: white;">
+                                <option value="gemini">Google Gemini 1.5</option>
+                                <option value="groq">Groq Llama 3</option>
+                                <option value="deepgram">Deepgram STT</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="font-size: 0.65rem; font-weight: 900; color: var(--text-muted); display: block; margin-bottom: 6px;">SECRET KEY TOKEN</label>
+                            <input type="password" id="new-key-value" placeholder="Paste credential string..." style="width: 100%; border: 1px solid var(--border); padding: 12px; border-radius: 12px; font-weight: 600; outline: none;">
+                        </div>
+                        <button class="btn-action" onclick="addKey()" style="background: var(--primary); color: white; border: none; padding: 14px; font-weight: 800; border-radius: 12px;">INJECT INTO POOL</button>
+                    </div>
+                </div>
+
+                <div class="data-card p-24">
+                    <div class="card-header">
+                        <span class="card-title">Infrastructure Health</span>
+                    </div>
+                    <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr); margin-top: 20px;">
+                        <div class="stat-card" style="padding: 16px; border: 1px solid var(--border);">
+                            <span class="stat-label">Gemini</span>
+                            <div class="stat-value" id="count-gemini" style="font-size: 1.2rem;">--</div>
+                        </div>
+                        <div class="stat-card" style="padding: 16px; border: 1px solid var(--border);">
+                            <span class="stat-label">Groq</span>
+                            <div class="stat-value" id="count-groq" style="font-size: 1.2rem;">--</div>
+                        </div>
+                        <div class="stat-card" style="padding: 16px; border: 1px solid var(--border);">
+                            <span class="stat-label">Deepgram</span>
+                            <div class="stat-value" id="count-deepgram" style="font-size: 1.2rem;">--</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="data-card">
+                <div class="card-header">
+                    <span class="card-title">Active Key Rotation Pool</span>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Provider</th>
+                            <th>Key Mask</th>
+                            <th>Status</th>
+                            <th>Calls</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="key-pool-body">
+                        <!-- Dynamically filled -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
         <!-- Payments Tab (Hidden by default) -->
         <div id="content-payments" style="display: none;">
             <div class="grid-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
@@ -244,14 +310,26 @@
                 trial_days: parseInt(document.getElementById('cfg-trial-days').value),
                 branding: document.getElementById('cfg-branding').value
             };
-            try {
-                await fetch(`/api/admin/config`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(config)
-                });
-                alert("Strategic Infrastructure Updated Successfully");
             } catch (e) { alert("Failed to update config"); }
+        }
+
+        async function addKey() {
+            const provider = document.getElementById('new-key-provider').value;
+            const key_value = document.getElementById('new-key-value').value;
+            if(!key_value) return alert("Please enter a key value");
+
+            try {
+                const res = await fetch(`/api/admin/keys?provider=${provider}&key_value=${encodeURIComponent(key_value)}`, {
+                    method: 'POST'
+                });
+                if(res.ok) {
+                    alert("Key injected into rotation pool");
+                    document.getElementById('new-key-value').value = '';
+                    fetchKeys();
+                } else {
+                    alert("Failed to inject key");
+                }
+            } catch (e) { alert("Error connecting to infrastructure"); }
         }
 
         // --- Backend Integration ---
@@ -294,9 +372,8 @@
             try {
                 const res = await fetch(`/api/admin/keys?_=${Date.now()}`);
                 const data = await res.json();
-                console.log("Keys Data:", data);
                 
-                const list = document.querySelector('#content-keys tbody');
+                const list = document.getElementById('key-pool-body');
                 if (!list) return;
 
                 list.innerHTML = data.keys.map(k => `
@@ -310,12 +387,9 @@
                 `).join('');
                 
                 // Update key counts
-                const statValues = document.querySelectorAll('#content-keys .stat-value');
-                if (statValues.length >= 3) {
-                    statValues[0].innerText = data.keys.filter(k => k.provider === 'gemini').length;
-                    statValues[1].innerText = data.keys.filter(k => k.provider === 'groq').length;
-                    statValues[2].innerText = data.keys.filter(k => k.provider === 'deepgram').length;
-                }
+                document.getElementById('count-gemini').innerText = data.keys.filter(k => k.provider === 'gemini').length;
+                document.getElementById('count-groq').innerText = data.keys.filter(k => k.provider === 'groq').length;
+                document.getElementById('count-deepgram').innerText = data.keys.filter(k => k.provider === 'deepgram').length;
             } catch (e) { console.error("Keys fetch failed", e); }
         }
 
