@@ -27,6 +27,17 @@ import traceback
 def exception_hook(exctype, value, tb):
     error_msg = "".join(traceback.format_exception(exctype, value, tb))
     print(error_msg)
+    
+    # Log to file for debugging
+    try:
+        data_dir = os.path.join(os.environ.get('APPDATA', os.path.expanduser('~')), "StealthHUD")
+        os.makedirs(data_dir, exist_ok=True)
+        log_path = os.path.join(data_dir, "crash_log.txt")
+        with open(log_path, "w") as f:
+            f.write(error_msg)
+    except:
+        pass
+
     msg = QMessageBox()
     msg.setIcon(QMessageBox.Icon.Critical)
     msg.setText("StealthHUD - Application Error")
@@ -46,7 +57,14 @@ class StealthController(QObject):
         self.login_win = None
         self.dash_win = None
         self.hud_win = None
-        self.show_login()
+        
+        # Check if already signed in
+        from auth_manager import auth_manager
+        if auth_manager.current_user:
+            print(f"[Launcher] Session detected: {auth_manager.current_user}. Skipping Login.")
+            self.transition_to_cv()
+        else:
+            self.show_login()
 
     def show_login(self):
         self.login_win = LoginWindow()
@@ -63,10 +81,10 @@ class StealthController(QObject):
             self.login_win.close()
             self.login_win = None
 
-    def transition_to_hud(self, cv_text, jd_text, link_text):
+    def transition_to_hud(self, cv_text, jd_text, link_text, linkedin_url):
         pos = self.dash_win.pos() if self.dash_win else None
         # Pass full context to HUD
-        self.hud_win = StealthHUD(cv_text, jd_text, link_text)
+        self.hud_win = StealthHUD(cv_text, jd_text, link_text, linkedin_url)
         if pos: self.hud_win.move(pos)
         self.hud_win.show()
         if self.dash_win:
@@ -74,7 +92,16 @@ class StealthController(QObject):
             self.dash_win = None
 
 if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    app.setQuitOnLastWindowClosed(False)
-    controller = StealthController()
-    sys.exit(app.exec())
+    try:
+        print("[Launcher] Starting StealthHUD Engine...")
+        app = QApplication(sys.argv)
+        app.setQuitOnLastWindowClosed(False)
+        controller = StealthController()
+        print("[Launcher] Controller initialized. Entering Event Loop.")
+        sys.exit(app.exec())
+    except Exception as e:
+        print(f"[Launcher] CRITICAL STARTUP ERROR: {e}")
+        import traceback
+        with open("critical_boot_error.txt", "w") as f:
+            f.write(traceback.format_exc())
+        input("Press Enter to close...") # Keep console open

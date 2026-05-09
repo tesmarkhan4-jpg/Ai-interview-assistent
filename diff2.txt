@@ -1,0 +1,374 @@
+﻿diff --git a/login_window.py b/login_window.py
+index 3168766..8ebc50f 100644
+--- a/login_window.py
++++ b/login_window.py
+@@ -10,10 +10,9 @@ class LoginWindow(QWidget):
+ 
+     def __init__(self):
+         super().__init__()
+-        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.NoDropShadowWindowHint)
+-        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+-        self.setAttribute(Qt.WidgetAttribute.WA_NoSystemBackground)
+-        self.setFixedSize(550, 750)
++        self.setWindowFlags(Qt.WindowType.FramelessWindowHint)
++        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground)
++        self.setFixedSize(900, 600)
+         
+         self.init_ui()
+         self.old_pos = None
+@@ -24,61 +23,88 @@ class LoginWindow(QWidget):
+         self.pending_pass = ""
+ 
+     def init_ui(self):
+-        # Main Layout
+-        self.root_layout = QVBoxLayout()
+-        self.root_layout.setContentsMargins(25, 25, 25, 25)
++        # Main Layout (Horizontal Split)
++        self.root_layout = QHBoxLayout()
++        self.root_layout.setContentsMargins(0, 0, 0, 0)
++        self.root_layout.setSpacing(0)
+         self.setLayout(self.root_layout)
+ 
+-        # Jelly Glass Panel
+-        self.glass_panel = QFrame()
+-        self.glass_panel.setObjectName("glassPanel")
+-        self.glass_panel.setStyleSheet("""
+-            #glassPanel {
+-                background: qlineargradient(x1:0, y1:0, x2:1, y2:1, 
+-                                            stop:0 rgba(220, 255, 250, 0.4), 
+-                                            stop:1 rgba(190, 245, 235, 0.2));
+-                border-radius: 50px;
+-                border: 2px solid rgba(255, 255, 255, 0.6);
++        # LEFT PANEL (BRAND ZONE)
++        self.left_panel = QFrame()
++        self.left_panel.setFixedWidth(400)
++        self.left_panel.setStyleSheet("""
++            QFrame {
++                background-color: #064E3B;
++                border-top-left-radius: 12px;
++                border-bottom-left-radius: 12px;
+             }
+         """)
+-        self.root_layout.addWidget(self.glass_panel)
++        self.left_layout = QVBoxLayout(self.left_panel)
++        self.left_layout.setContentsMargins(40, 60, 40, 60)
+         
+-        self.panel_layout = QVBoxLayout(self.glass_panel)
+-        self.panel_layout.setContentsMargins(50, 50, 50, 50)
+-        self.panel_layout.setSpacing(20)
+-
+-        # Top Bar (Close)
+-        close_btn = QPushButton("Γ£ò")
+-        close_btn.setFixedSize(45, 45)
+-        close_btn.setStyleSheet("""
+-            QPushButton {
+-                background: rgba(45, 74, 69, 0.1);
+-                color: #2D4A45;
+-                border-radius: 22px;
+-                font-size: 20px;
++        # Animated Neural Logo (Simple pulsing circle placeholder)
++        self.logo_label = QLabel("ΓùÅ")
++        self.logo_label.setStyleSheet("color: #10B981; font-size: 120px;")
++        self.logo_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
++        self.left_layout.addWidget(self.logo_label)
++        
++        # Pulsing Animation for Logo
++        self.logo_anim = QPropertyAnimation(self.logo_label, b"windowOpacity")
++        self.logo_anim.setDuration(2000)
++        self.logo_anim.setStartValue(0.4)
++        self.logo_anim.setEndValue(1.0)
++        self.logo_anim.setEasingCurve(QEasingCurve.Type.InOutQuad)
++        self.logo_anim.setLoopCount(-1)
++        self.logo_anim.start()
++
++        self.left_layout.addStretch()
++        
++        brand_title = QLabel("STEALTH ASSIST")
++        brand_title.setStyleSheet("color: #FFFFFF; font-size: 28px; font-weight: 800; letter-spacing: 2px;")
++        self.left_layout.addWidget(brand_title)
++        
++        brand_desc = QLabel("Autonomous Intelligence for\nHigh-Stakes Career Strategy.")
++        brand_desc.setStyleSheet("color: #D1FAE5; font-size: 14px; font-weight: 500; line-height: 1.5;")
++        self.left_layout.addWidget(brand_desc)
++        
++        self.root_layout.addWidget(self.left_panel)
++
++        # RIGHT PANEL (FORM ZONE)
++        self.right_panel = QFrame()
++        self.right_panel.setStyleSheet("""
++            QFrame {
++                background-color: #FFFFFF;
++                border-top-right-radius: 12px;
++                border-bottom-right-radius: 12px;
+             }
+-            QPushButton:hover { background: rgba(211, 47, 47, 0.2); color: #D32F2F; }
+         """)
+-        close_btn.clicked.connect(self.close)
+-        close_btn.move(430, 25)
+-        close_btn.setParent(self.glass_panel)
+-
+-        # Header Section
+-        self.title_label = QLabel("STEALTH ACCESS")
+-        self.title_label.setStyleSheet("color: #D4AF37; font-size: 28px; font-weight: 900; letter-spacing: 10px; background: transparent;")
+-        self.title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+-        self.panel_layout.addWidget(self.title_label)
+-
+-        self.subtitle_label = QLabel("SECURE LUXURY AUTHENTICATION")
+-        self.subtitle_label.setStyleSheet("color: rgba(0, 0, 0, 0.4); font-size: 10px; font-weight: 900; letter-spacing: 3px;")
+-        self.subtitle_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+-        self.panel_layout.addWidget(self.subtitle_label)
++        self.right_layout = QVBoxLayout(self.right_panel)
++        self.right_layout.setContentsMargins(60, 40, 60, 40)
++        
++        # Close Button (Top Right)
++        self.close_btn = QPushButton("Γ£ò")
++        self.close_btn.setFixedSize(32, 32)
++        self.close_btn.setStyleSheet("""
++            QPushButton { background: transparent; color: #94A3B8; border-radius: 16px; font-size: 16px; font-weight: bold; }
++            QPushButton:hover { background: #F1F5F9; color: #0F172A; }
++        """)
++        self.close_btn.clicked.connect(self.close)
++        self.close_btn.move(450, 15)
++        self.close_btn.setParent(self.right_panel)
+ 
+-        self.panel_layout.addStretch()
++        self.right_layout.addStretch()
++        
++        form_title = QLabel("Welcome Back")
++        form_title.setStyleSheet("color: #0F172A; font-size: 24px; font-weight: 700;")
++        self.right_layout.addWidget(form_title)
++        
++        form_sub = QLabel("Please sign in to your command center")
++        form_sub.setStyleSheet("color: #64748B; font-size: 14px; margin-bottom: 20px;")
++        self.right_layout.addWidget(form_sub)
+ 
+         # Dynamic View Container
+         self.view_container = QStackedWidget()
+-        self.panel_layout.addWidget(self.view_container)
++        self.right_layout.addWidget(self.view_container)
+ 
+         self.setup_login_view()
+         self.setup_signup_view()
+@@ -86,29 +112,30 @@ class LoginWindow(QWidget):
+         self.setup_forgot_view()
+         self.setup_reset_view()
+ 
+-        self.panel_layout.addStretch()
++        self.right_layout.addStretch()
+         
+         # Status Label
+         self.status_label = QLabel("")
+-        self.status_label.setStyleSheet("color: #D32F2F; font-size: 13px; font-weight: bold;")
++        self.status_label.setStyleSheet("color: #EF4444; font-size: 13px; font-weight: 600;")
+         self.status_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+-        self.panel_layout.addWidget(self.status_label)
++        self.right_layout.addWidget(self.status_label)
+ 
++        self.root_layout.addWidget(self.right_panel)
+         self.view_container.setCurrentIndex(0)
+ 
+     def get_input_style(self):
+         return """
+             QLineEdit {
+-                background: rgba(255, 255, 255, 0.4);
+-                border: 1px solid rgba(45, 74, 69, 0.1);
+-                border-radius: 20px;
+-                padding: 15px;
+-                color: #1A2E2A;
++                background: #F8FAFC;
++                border: 1px solid #E2E8F0;
++                border-radius: 8px;
++                padding: 14px;
++                color: #1E293B;
+                 font-size: 14px;
+             }
+             QLineEdit:focus {
+-                border: 1px solid rgba(0, 230, 118, 0.3);
+-                background: rgba(255, 255, 255, 0.6);
++                border: 2px solid #10B981;
++                background: #FFFFFF;
+             }
+         """
+ 
+@@ -116,25 +143,25 @@ class LoginWindow(QWidget):
+         if primary:
+             return """
+                 QPushButton {
+-                    background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #007E44, stop:1 #009688);
+-                    color: white;
+-                    border-radius: 25px;
+-                    padding: 15px;
+-                    font-weight: 900;
+-                    letter-spacing: 2px;
+-                    font-size: 13px;
++                    background-color: #059669;
++                    color: #FFFFFF;
++                    border-radius: 8px;
++                    padding: 16px;
++                    font-weight: 700;
++                    font-size: 14px;
+                 }
+-                QPushButton:hover { background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #009688, stop:1 #26A69A); }
++                QPushButton:hover { background-color: #047857; }
++                QPushButton:pressed { background-color: #065F46; }
+             """
+         else:
+             return """
+                 QPushButton {
+                     background: transparent;
+-                    color: #007E44;
+-                    font-weight: 900;
+-                    font-size: 11px;
++                    color: #059669;
++                    font-weight: 600;
++                    font-size: 13px;
+                 }
+-                QPushButton:hover { color: #00B0FF; }
++                QPushButton:hover { color: #047857; text-decoration: underline; }
+             """
+ 
+     def setup_login_view(self):
+diff --git a/main.py b/main.py
+index f83598e..09d4487 100644
+--- a/main.py
++++ b/main.py
+@@ -94,13 +94,13 @@ class KeyboardThread(QThread):
+         keyboard.wait()
+ 
+ class StealthHUD(QMainWindow):
+-    def __init__(self, cv_text="", jd_text="", link_text=""):
++    def __init__(self, cv_text="", jd_text="", link_text="", linkedin_url=""):
+         super().__init__()
+         
+         # Initialize AI Context
+         from ai_engine import ai_engine
+         ai_engine.set_cv_context(cv_text)
+-        ai_engine.set_job_context(jd_text, link_text)
++        ai_engine.set_job_context(jd_text, link_text, linkedin_url)
+         self.setWindowTitle("StealthHUD AI Assistant")
+         # Added Tool flag to hide from taskbar
+         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint | Qt.WindowType.Tool)
+@@ -119,7 +119,7 @@ class StealthHUD(QMainWindow):
+         self.interim_active = False
+         self.streaming_active = False
+         self.last_voice_text = ""
+-        self.current_voice_worker = None
++        self.active_worker = None # Unified worker for Voice, Text, and Vision
+         
+         self.is_reading_screen = False
+         self.last_ai_response = ""
+@@ -437,9 +437,11 @@ class StealthHUD(QMainWindow):
+         else:
+             query = "Identify any questions or logic on screen and provide a natural, conversational answer."
+             
+-        self.ai_worker = AIWorker(query, mode="vision", image_path=path)
+-        self.ai_worker.finished.connect(self.handle_vision_finished)
+-        self.ai_worker.start()
++        # Unified AI routing
++        self.stop_active_worker()
++        self.active_worker = AIWorker(query, mode="vision", image_path=path)
++        self.active_worker.finished.connect(self.handle_vision_finished)
++        self.active_worker.start()
+ 
+     def handle_vision_finished(self, sender, message):
+         """Resets the button after analysis is complete."""
+@@ -450,24 +452,18 @@ class StealthHUD(QMainWindow):
+ 
+     def perform_screen_analysis(self):
+         path = vision_handler.capture_fullscreen()
+-        self.ai_worker = AIWorker("Analyze this screen and provide the answer.", mode="vision", image_path=path)
+-        self.ai_worker.finished.connect(self.handle_ai_finished)
+-        self.ai_worker.start()
++        self.stop_active_worker()
++        self.active_worker = AIWorker("Analyze this screen and provide the answer.", mode="vision", image_path=path)
++        self.active_worker.finished.connect(self.handle_ai_finished)
++        self.active_worker.start()
+ 
+     def handle_partial_transcript(self, text):
+         # --- SMART INTERRUPTION HANDLING ---
+-        # If the AI worker is active AND hasn't started streaming, kill it.
++        # If the active worker is running AND hasn't started streaming, kill it.
+         # We don't rollback the UI, we just let the AI read the stacked history.
+-        if self.current_voice_worker and self.current_voice_worker.isRunning():
+-            if not self.streaming_active: 
+-                print("[System] Interruption detected! Aborting previous AI task...")
+-                try:
+-                    self.current_voice_worker.chunk_received.disconnect()
+-                    self.current_voice_worker.finished.disconnect()
+-                    self.current_voice_worker.terminate()
+-                except:
+-                    pass
+-                self.current_voice_worker = None
++        if self.active_worker and self.active_worker.isRunning() and not self.streaming_active:
++            print("[System] Interruption detected! Aborting previous AI task...")
++            self.stop_active_worker()
+ 
+         cursor = self.chat_display.textCursor()
+         cursor.movePosition(QTextCursor.MoveOperation.End)
+@@ -496,27 +492,31 @@ class StealthHUD(QMainWindow):
+         self.log_message(f"<span style='color:#00B0FF;'><b>INTERVIEWER:</b> {text}</span>")
+         self.last_voice_text = text
+         
+-        # --- SINGLETON WORKER PATTERN (SAFETY) ---
+-        if self.current_voice_worker and self.current_voice_worker.isRunning():
++        # --- UNIFIED WORKER ROUTING ---
++        self.stop_active_worker()
++        
++        # Automatically get AI response for interviewer voice
++        self.active_worker = AIWorker(text, mode="text")
++        self.active_worker.chunk_received.connect(self.handle_ai_chunk)
++        self.active_worker.finished.connect(self.handle_ai_finished)
++        self.active_worker.start()
++
++    def stop_active_worker(self):
++        """Safely stops any running AI generation to prevent race conditions."""
++        if hasattr(self, 'active_worker') and self.active_worker and self.active_worker.isRunning():
+             try:
+-                self.current_voice_worker.chunk_received.disconnect()
+-                self.current_voice_worker.finished.disconnect()
+-                self.current_voice_worker.terminate()
+-                self.current_voice_worker.wait(500) # Short wait for cleanup
++                self.active_worker.chunk_received.disconnect()
++            except: pass
++            try:
++                self.active_worker.finished.disconnect()
++            except: pass
++            
++            try:
++                self.active_worker.terminate()
++                self.active_worker.wait(500)
+             except: pass
+         
+-        # Reset streaming state for the new answer
+-        self.streaming_active = False
+-        
+-        # Automatically get AI response for interviewer voice
+-        self.current_voice_worker = AIWorker(text, mode="text")
+-        self.current_voice_worker.chunk_received.connect(self.handle_ai_chunk)
+-        self.current_voice_worker.finished.connect(self.handle_ai_voice_finished)
+-        self.current_voice_worker.start()
+-
+-    def handle_ai_voice_finished(self, sender, message):
+-        # We handle the bulk through chunks now, this just updates the final state if needed
+-        self.last_ai_response = message
++        self.active_worker = None
+         self.streaming_active = False
+ 
+     def handle_ai_chunk(self, sender, chunk):
+@@ -536,10 +536,12 @@ class StealthHUD(QMainWindow):
+         if text:
+             self.log_message(f"<span style='color:#D4AF37;'><b>YOU:</b> {text}</span>")
+             self.input_field.clear()
+-            self.ai_worker = AIWorker(text, mode="text")
+-            self.ai_worker.chunk_received.connect(self.handle_ai_chunk)
+-            self.ai_worker.finished.connect(self.handle_ai_finished)
+-            self.ai_worker.start()
++            
++            self.stop_active_worker()
++            self.active_worker = AIWorker(text, mode="text")
++            self.active_worker.chunk_received.connect(self.handle_ai_chunk)
++            self.active_worker.finished.connect(self.handle_ai_finished)
++            self.active_worker.start()
+         else:
+             # Empty ENTER key press: Manually flush the audio buffer and trigger AI!
+             if self.is_listening:

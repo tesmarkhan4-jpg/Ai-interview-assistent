@@ -1,0 +1,1217 @@
+﻿diff --git a/ai_engine.py b/ai_engine.py
+index e29112b..b1223ed 100644
+--- a/ai_engine.py
++++ b/ai_engine.py
+@@ -3,9 +3,13 @@ from groq import Groq
+ import google.generativeai as genai
+ from keys import key_manager
+ import base64
++import base64
+ from typing import List, Dict
+ from PIL import Image
+ import io
++from memory_manager import memory_manager
++from knowledge_base import kb
++from linkedin_scraper import enrich_brain_with_linkedin
+ 
+ import os
+ import requests
+@@ -20,6 +24,7 @@ class AIEngine:
+         self.cv_context = "No CV uploaded yet."
+         self.jd_context = "No Job Description provided."
+         self.company_link = "No company link provided."
++        self.linkedin_url = "No LinkedIn URL provided."
+         
+         self.groq_keys = []
+         # --- LIVE API KEY POOL ---
+@@ -34,36 +39,79 @@ class AIEngine:
+         # --- INTELLIGENCE MODES ---
+         self.mode = "interview" # interview, code, mcq
+         self.intelligence_tier = "turbo" # turbo (8b), savant (70b)
+-        
+         self.prompts = {
+             "interview": (
+-                "ROLE: You are an elite candidate. Speak as 'I'. Use SIMPLE, EASY ENGLISH that is easy to understand.\n"
+-                "HUMAN VOICE: Sound like a real person, not a robot. Use simple words. Be humble and helpful.\n"
+-                "DYNAMIC LENGTH: Match the length of the question. Short question = 1 short sentence. Deep question = 2-3 simple sentences.\n"
+-                "CONTEXT:\n- EXPERIENCE: {cv_data}\n- ROLE: {jd_data}\n\n"
+-                "STRICT RULES:\n"
+-                "1. NO markdown (*, #), NO structural symbols, NO lists.\n"
+-                "2. MAX 3 sentences. Usually 1 or 2 is enough.\n"
+-                "3. Avoid 'big' words. Use 'I built' instead of 'I implemented'. Use 'I lead' instead of 'I spearheaded'.\n"
+-                "4. Be natural. If they say 'How are you?', just say 'I am doing great, thank you for asking!'"
++                "### SOURCE DATA ###\n"
++                "{cv_data}\n"
++                "\n"
++                "### CONVERSATIONAL RULES ###\n"
++                "1. MIRROR BREVITY: If the user is brief (e.g. 'Hi'), you MUST be brief. (Max 10 words).\n"
++                "2. NO INFO DUMP: Never mention your job, city, or history unless specifically asked.\n"
++                "3. BE HUMAN: Use short, warm sentences. Don't sound like a resume.\n"
++                "4. OUTPUT ONLY SPEECH: No headers or thinking labels.\n"
++                "\n"
++                "### START CONVERSATION ###"
+             ),
+-            "code": (
+-                "ROLE: Senior Software Architect.\n"
+-                "TASK: Solve the challenge with elite efficiency.\n"
+-                "FORMAT: Code first. Max 1 sentence explanation. Clean, copy-paste ready. NO markdown symbols except code blocks."
++            "code_challenge": (
++                "SYSTEM (HIDDEN): Output ONLY the solution.\n"
++                "**BOLD SOLUTION AT TOP.** Clean Code."
+             ),
+             "mcq": (
+-                "ROLE: Subject Matter Expert.\n"
+-                "TASK: Letter only + 5-word professional rationale. Speed is priority."
++                "SYSTEM (HIDDEN): Output ONLY the option.\n"
++                "**BOLD OPTION.** 3-word logic."
+             )
+         }
+ 
+     def set_cv_context(self, text: str):
+-        self.cv_context = text
++        """Ingests the FULL RAW TEXT of the CV for Photographic Memory."""
++        if not text or len(text.strip()) < 50:
++            return
++
++        print("[AIEngine] Neural Core: Ingesting FULL CV Text for Total Recall...")
++        self.cv_context = text # Store the full raw text
++        
++        # Mapping facts into SQLite for backup
++        kb.init_db()
++        kb.clear_brain()
++        
++        architect_prompt = (
++            "TASK: Extract basic identity from this CV into JSON.\n"
++            "FORMAT: { \"name\": \"\", \"email\": \"\", \"whatsapp\": \"\", \"location\": \"\", \"current_role\": \"\", \"current_company\": \"\" }\n"
++            "CV: " + text[:3000]
++        )
++        
++        try:
++            import json
++            chat_completion = self.groq_client.chat.completions.create(
++                messages=[{"role": "user", "content": architect_prompt}],
++                model="llama-3.3-70b-specdec",
++                response_format={"type": "json_object"}
++            )
++            data = json.loads(chat_completion.choices[0].message.content)
++            
++            kb.add_identity("name", data.get("name", "Faheem Khan"))
++            kb.add_identity("email", data.get("email", ""))
++            kb.add_identity("whatsapp", data.get("whatsapp", ""))
++            kb.add_identity("location", data.get("location", "Islamabad, Pakistan"))
++            
++            # Save raw text into a specialized 'Deep Memory' key
++            kb.add_identity("deep_memory_cv", text)
++            
++            print(f"[AIEngine] Photographic Memory Locked for {data.get('name')}.")
++        except Exception as e:
++            print(f"[AIEngine] Memory Mapping Error: {e}")
+ 
+-    def set_job_context(self, jd: str, link: str):
++    def set_job_context(self, jd: str, link: str, linkedin: str = ""):
+         self.jd_context = jd
+         self.company_link = link
++        self.linkedin_url = linkedin
++        
++        # Optionally enrich brain with LinkedIn data in background
++        if linkedin and len(linkedin.strip()) > 5:
++            try:
++                enrich_brain_with_linkedin(linkedin.strip(), self.groq_client, kb)
++            except Exception as e:
++                print(f"[AIEngine] LinkedIn enrichment skipped: {e}")
+ 
+     def set_mode(self, mode: str):
+         if mode in self.prompts:
+@@ -72,12 +120,53 @@ class AIEngine:
+     def set_tier(self, tier: str):
+         self.intelligence_tier = tier
+ 
+-    def get_current_system_prompt(self):
++    def get_current_system_prompt(self, user_query: str = ""):
+         base_prompt = self.prompts.get(self.mode, self.prompts["interview"])
++        
++        # DYNAMIC EXTRACTION (ABSOLUTE TRUTH)
++        identity = {r['key']: r['value'] for r in kb.query_identity()}
++        raw_cv = identity.get('deep_memory_cv', self.cv_context)
++        all_exp = kb.query_brain("all")
++        
++        # Identity Logic
++        name = identity.get('name', 'FAHEEM KHAN')
++        location = identity.get('location', 'Isl─üm─üb─üd, Pakistan')
++        
++        # TEMPORAL LOGIC: Find CURRENT role
++        current_role = "AI Automation Specialist"
++        current_company = "Try Soft AI"
++        for exp in all_exp:
++            if "present" in exp.get('duration', '').lower():
++                current_role = exp['role']
++                current_company = exp['company']
++                break
++
++        # AGENTIC SEARCH (DEEP RECALL)
++        query_lower = user_query.lower()
++        recalled_facts = []
++        for exp in all_exp:
++            if any(k in exp['company'].lower() for k in query_lower.split() if len(k) > 3):
++                recalled_facts.append(f"VERIFIED RECORD: {exp['role']} at {exp['company']} ({exp['duration']})")
++
++        # Construct the High-Fidelity Context
++        brain_context = f"## ACTIVE PERSONA ##\n"
++        brain_context += f"NAME: {name}\n"
++        brain_context += f"LOCATION: {location}\n"
++        brain_context += f"CURRENT STATUS: Working as {current_role} at {current_company} (May 2025 - Present)\n"
++        brain_context += f"HEADLINE: {identity.get('linkedin_headline', 'AI Automation Specialist')}\n\n"
++        
++        if recalled_facts:
++            brain_context += "### HISTORICAL RECALL ###\n"
++            brain_context += "\n".join(recalled_facts) + "\n\n"
++            
++        brain_context += "### SOURCE CV TEXT (FULL RECALL) ###\n"
++        brain_context += f"{raw_cv[:5000]}\n"
++            
+         return base_prompt.format(
+-            cv_data=self.cv_context, 
++            cv_data=brain_context, 
+             jd_data=self.jd_context, 
+-            company_link=self.company_link
++            company_link=self.company_link,
++            linkedin_url=self.linkedin_url
+         )
+ 
+     def _get_next_client(self):
+@@ -154,13 +243,15 @@ class AIEngine:
+             
+             # Integrated Savant Eye Vision Prompt
+             vision_prompt = (
+-                "ROLE: You are an elite candidate taking an assessment or interview. Speak as 'I'. Use SIMPLE, EASY ENGLISH.\n"
+-                "TASK: Look at the screen. Identify the main technical question, code test, or MCQ. Solve it instantly.\n"
+-                "STRICT RULES:\n"
+-                "1. MAX 3 sentences TOTAL for your entire response. Be extremely brief.\n"
+-                "2. NO markdown (*, #), NO lists, NO long paragraphs.\n"
+-                "3. If there are multiple questions on screen, only answer the first or most prominent one.\n"
+-                "4. Sound like a real human in an interview, not a textbook."
++                "ROLE: You are an elite candidate taking an interview. Speak as 'I'. Use SIMPLE, NATURAL ENGLISH.\n"
++                "TASK: Look at the screen. Identify all questions and provide short answers.\n"
++                "STRICT FORMATTING RULES:\n"
++                "1. For every question found, write it as 'Q: [Short Question Text]'.\n"
++                "2. Write the answer on the next line as 'A: [Your Answer]'.\n"
++                "3. Use a NEW LINE between each Q and A pair.\n"
++                "4. Answer like a human ('I built...', 'For me...'), not a textbook.\n"
++                "5. MAX 2 sentences per answer. Be extremely direct.\n"
++                "6. NO markdown symbols (*, #), NO bullet points."
+             )
+             
+             # Use a robust fallback loop to handle High Demand (503) or Not Found (404) errors
+diff --git a/audio_handler.py b/audio_handler.py
+index 58686bd..3ef8056 100644
+--- a/audio_handler.py
++++ b/audio_handler.py
+@@ -20,6 +20,8 @@ class AudioThread(QThread):
+         self.rate = 16000
+         self.channels = 1
+         self.ws = None
++        self.transcript_buffer = []
++        self.last_transcript_time = time.time()
+ 
+     def run(self):
+         self.is_running = True
+@@ -35,21 +37,21 @@ class AudioThread(QThread):
+                     time.sleep(1)
+         
+     def start_streaming(self):
+-        # --- SYNC WITH LIVE DASHBOARD KEYS ---
++        # --- KEY ROTATION & SYNC ---
+         from keys import key_manager
+         api_key = key_manager.get_key("DEEPGRAM")
+         
+         if not api_key:
+-            # Fallback to .env if dashboard is empty/failed
+             dg_keys = [k.strip() for k in os.getenv("DEEPGRAM_API_KEYS", os.getenv("DEEPGRAM_API_KEY", "")).split(",") if k.strip()]
+             if dg_keys:
+                 api_key = dg_keys[int(time.time()) % len(dg_keys)]
+             else:
+-                self.error_occurred.emit("Deepgram API Keys not found! Please check dashboard.")
++                self.error_occurred.emit("Deepgram API Key Missing!")
+                 self.is_running = False
+                 return
+ 
+-        uri = f"wss://api.deepgram.com/v1/listen?model=nova-3&language=en-US&smart_format=true&encoding=linear16&sample_rate={self.rate}&channels={self.channels}&endpointing=750&interim_results=true&diarize=false&punctuate=true"
++        # Using NOVA-2 for Production Stability
++        uri = f"wss://api.deepgram.com/v1/listen?model=nova-2&language=en-US&smart_format=true&encoding=linear16&sample_rate={self.rate}&channels={self.channels}&endpointing=300&interim_results=true&diarize=false&punctuate=true"
+         
+         try:
+             import ssl
+@@ -61,50 +63,39 @@ class AudioThread(QThread):
+             )
+             print(f"[Audio] Intelligence Bridge Established. (Key: {api_key[:8]}...)")
+             
+-            audio_queue = queue.Queue(maxsize=100) # Cap to ~10s of audio to prevent lag
++            audio_queue = queue.Queue(maxsize=100)
+             self.transcript_buffer = []
+             self.last_transcript_time = time.time()
+ 
+-            # --- Thread 1: Mic Reader ---
++            # --- Thread 1: Robust Mic Reader (Loopback Focus) ---
+             def mic_reader():
+-                print(f"[Audio] Initializing capture at {self.rate}Hz...")
+                 try:
+                     speaker = sc.default_speaker()
+-                    mic = None
+-                    
+-                    # Try Loopback first (to hear interviewer)
+                     try:
+-                        print(f"[Audio] Attempting loopback on: {speaker.name}")
++                        print(f"[Audio] Syncing Loopback: {speaker.name}")
+                         mic = sc.get_microphone(id=speaker.name, include_loopback=True)
+-                    except Exception as e:
+-                        print(f"[Audio] Loopback failed: {e}. Falling back to default mic.")
++                    except:
++                        print("[Audio] Loopback failed. Using default mic.")
+                         mic = sc.default_microphone()
+                     
+-                    if not mic:
+-                        self.error_occurred.emit("No audio capture device found.")
+-                        return
++                    if not mic: return
+ 
+-                    print(f"[Audio] Active Device: {mic.name}")
+-                    
+                     with mic.recorder(samplerate=self.rate) as recorder:
+                         while self.is_running and self.ws and self.ws.connected:
+                             try:
+                                 data = recorder.record(numframes=int(self.rate * 0.1))
+                                 
+-                                # Boost quiet voices
++                                # Smooth Auto-Gain
+                                 max_val = np.max(np.abs(data))
+-                                if 0 < max_val < 0.05: data = data * 8.0
+-                                elif 0.05 <= max_val < 0.2: data = data * 3.0
++                                if 0 < max_val < 0.05: data = data * 6.0
++                                elif 0.05 <= max_val < 0.2: data = data * 2.5
+                                     
+                                 data_int16 = (data[:, 0] * 32767).astype(np.int16)
+                                 if not audio_queue.full():
+                                     audio_queue.put(data_int16.tobytes())
+-                            except Exception as e:
+-                                print(f"[Audio] Mic Stream Error: {e}")
+-                                break
++                            except: break
+                 except Exception as e:
+-                    print(f"[Audio] Device Error: {e}")
+-                    self.error_occurred.emit(f"Audio Device Error: {str(e)}")
++                    print(f"[Audio] Mic Error: {e}")
+ 
+             threading.Thread(target=mic_reader, daemon=True).start()
+ 
+@@ -112,29 +103,48 @@ class AudioThread(QThread):
+             def sender():
+                 last_send_time = time.time()
+                 silence_chunk = np.zeros(int(self.rate * 0.1), dtype=np.int16).tobytes()
+-                
+                 while self.is_running and self.ws and self.ws.connected:
+                     try:
+-                        # Send real audio or keep-alive silence
+                         try:
+                             chunk = audio_queue.get(timeout=0.1)
+                         except queue.Empty:
+                             chunk = silence_chunk
+                         
+                         self.ws.send_binary(chunk)
+-                        
+-                        # Aggressive Keep-Alive (every 5 seconds)
+                         if time.time() - last_send_time > 5:
+                             self.ws.send(json.dumps({"type": "KeepAlive"}))
+                             last_send_time = time.time()
+-                            
+-                    except Exception as e:
+-                        print(f"[Audio] Sender error: {e}")
+-                        break
++                    except: break
+ 
+             threading.Thread(target=sender, daemon=True).start()
+ 
+-            # --- Thread 3: Intelligence Receiver ---
++            # --- Thread 3: 'Smart Patient' Logic ---
++            def flush_timer():
++                while self.is_running and self.ws and self.ws.connected:
++                    if self.transcript_buffer:
++                        full_text = " ".join(self.transcript_buffer).strip()
++                        low_text = full_text.lower()
++                        
++                        # 1. Question Trigger: (0.9s) - Respond fast to clear queries
++                        if any(full_text.endswith(s) for s in ["?", "right", "correct"]):
++                            threshold = 0.9
++                        # 2. Cliffhangers: (5.0s) - Wait during thinking pauses
++                        elif any(low_text.endswith(w) for w in ["the", "and", "your", "my", "about", "your", "how", "can", "could", "would", "is", "are", "for", "with", "of", "to", "but", "or", "really", "very", "mostly", "if", "when", "be", "was", "were"]):
++                            threshold = 5.0
++                        # 3. Sentence Finish: (3.0s)
++                        elif any(full_text.endswith(s) for s in [".", "!"]):
++                            threshold = 3.0
++                        # 4. Standard Pause: (2.5s)
++                        else:
++                            threshold = 2.5
++                            
++                        if (time.time() - self.last_transcript_time > threshold):
++                            self.flush_now()
++                    time.sleep(0.1)
++
++            threading.Thread(target=flush_timer, daemon=True).start()
++
++            # --- Intelligence Receiver ---
+             self.ws.settimeout(0.5)
+             while self.is_running and self.ws and self.ws.connected:
+                 try:
+@@ -143,41 +153,37 @@ class AudioThread(QThread):
+                     msg = json.loads(raw_msg)
+                     
+                     if "channel" in msg:
+-                        transcript = msg["channel"]["alternatives"][0]["transcript"]
++                        transcript = msg["channel"]["alternatives"][0]["transcript"].strip()
+                         is_final = msg.get("is_final", False)
+                         
+                         if transcript:
+                             if is_final:
+                                 self.transcript_buffer.append(transcript)
+                                 self.last_transcript_time = time.time()
++                                self.partial_transcript_received.emit(" ".join(self.transcript_buffer))
+                             else:
+                                 current_full = " ".join(self.transcript_buffer + [transcript])
+                                 self.partial_transcript_received.emit(current_full)
+                                 self.last_transcript_time = time.time()
+-                except websocket.WebSocketTimeoutException:
+-                    pass # Normal timeout to allow silence check
+-                except Exception as e:
+-                    print(f"[Audio] Receiver error: {e}")
+-                    break
+-
+-                # --- NATURAL PAUSE DETECTION ---
+-                # If we have text and haven't heard anything for 1.5s, trigger AI
+-                if self.transcript_buffer and (time.time() - self.last_transcript_time > 1.5):
+-                    full_text = " ".join(self.transcript_buffer).strip()
+-                    if len(full_text) > 10: # Minimum length to avoid noise
+-                        self.transcript_received.emit(full_text)
+-                    self.transcript_buffer = []
++                except websocket.WebSocketTimeoutException: pass
++                except: break
+ 
+         except Exception as e:
+-            print(f"[Audio] WebSocket Critical Error: {e}")
++            print(f"[Audio] Critical Error: {e}")
+         finally:
+             self.stop()
+ 
+     def stop(self):
+         self.is_running = False
+         if self.ws:
+-            try:
+-                self.ws.close()
+-            except:
+-                pass
++            try: self.ws.close()
++            except: pass
+             self.ws = None
++
++    def flush_now(self):
++        if hasattr(self, 'transcript_buffer') and self.transcript_buffer:
++            full_text = " ".join(self.transcript_buffer).strip()
++            if len(full_text) > 8:
++                self.transcript_received.emit(full_text)
++            self.transcript_buffer = []
++            self.last_transcript_time = time.time()
+diff --git a/build.py b/build.py
+index a1d2859..0cf044d 100644
+--- a/build.py
++++ b/build.py
+@@ -33,6 +33,12 @@ def build_app():
+         print(" Error: PyInstaller not found. Please run 'pip install pyinstaller'.")
+ 
+ if __name__ == "__main__":
+-    # Ensure pyinstaller is installed
+-    subprocess.run(["pip", "install", "pyinstaller"], check=True)
++    # Ensure all requirements are installed
++    print(" Installing dependencies...")
++    deps = [
++        "pyinstaller", "PyQt6", "groq", "google-generativeai", "mss", 
++        "win32mica", "keyboard", "soundcard", "deepgram-sdk", "python-dotenv", 
++        "requests", "bcrypt", "pymongo", "dnspython", "numpy", "pillow"
++    ]
++    subprocess.run(["pip", "install"] + deps, check=True)
+     build_app()
+diff --git a/cv_panel.py b/cv_panel.py
+index e3685e5..934e4b2 100644
+--- a/cv_panel.py
++++ b/cv_panel.py
+@@ -1,6 +1,6 @@
+ import os
+ import sys
+-from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QTextEdit, 
++from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QTextEdit, QLineEdit, 
+                              QPushButton, QLabel, QFrame, QFileDialog, QApplication)
+ from PyQt6.QtCore import Qt, pyqtSignal, QThread
+ from PyQt6.QtGui import QColor, QFont, QLinearGradient
+@@ -91,14 +91,13 @@ class InterviewCard(QFrame):
+         webbrowser.open('file://' + path)
+ 
+ class UserDashboard(QWidget):
+-    cv_submitted = pyqtSignal(str, str, str) # CV, JD, Link
++    cv_submitted = pyqtSignal(str, str, str, str) # CV, JD, Link, LinkedIn
+ 
+     def __init__(self):
+         super().__init__()
+-        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.NoDropShadowWindowHint)
+-        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+-        self.setAttribute(Qt.WidgetAttribute.WA_NoSystemBackground)
+-        self.setFixedSize(550, 750)
++        self.setWindowFlags(Qt.WindowType.FramelessWindowHint)
++        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground)
++        self.setFixedSize(1000, 700)
+         
+         self.cv_text = ""
+         self.init_ui()
+@@ -115,148 +114,166 @@ class UserDashboard(QWidget):
+     def init_ui(self):
+         # Main Layout
+         self.root_layout = QVBoxLayout()
+-        self.root_layout.setContentsMargins(30, 30, 30, 30)
++        self.root_layout.setContentsMargins(0, 0, 0, 0)
+         self.setLayout(self.root_layout)
+ 
+-        # Jelly Glass Panel
+-        self.glass_panel = QFrame()
+-        self.glass_panel.setObjectName("glassPanel")
+-        self.glass_panel.setStyleSheet("""
+-            #glassPanel {
+-                background: qlineargradient(x1:0, y1:0, x2:1, y2:1, 
+-                                            stop:0 rgba(220, 255, 250, 0.4), 
+-                                            stop:1 rgba(190, 245, 235, 0.2));
+-                border-radius: 50px;
+-                border: 2px solid rgba(255, 255, 255, 0.6);
++        # Main Container
++        self.main_container = QFrame()
++        self.main_container.setObjectName("mainContainer")
++        self.main_container.setStyleSheet("""
++            #mainContainer {
++                background-color: #F8FAFC;
++                border: 1px solid #E2E8F0;
++                border-radius: 12px;
+             }
+         """)
+-        self.root_layout.addWidget(self.glass_panel)
++        self.root_layout.addWidget(self.main_container)
+         
+-        panel_layout = QVBoxLayout(self.glass_panel)
+-        panel_layout.setContentsMargins(50, 50, 50, 50)
+-        panel_layout.setSpacing(25)
++        self.container_layout = QVBoxLayout(self.main_container)
++        self.container_layout.setContentsMargins(0, 0, 0, 0)
++        self.container_layout.setSpacing(0)
++
++        # TOP NAVIGATION
++        self.nav_bar = QFrame()
++        self.nav_bar.setFixedHeight(70)
++        self.nav_bar.setStyleSheet("background-color: #FFFFFF; border-bottom: 1px solid #E2E8F0; border-top-left-radius: 12px; border-top-right-radius: 12px;")
++        self.nav_layout = QHBoxLayout(self.nav_bar)
++        self.nav_layout.setContentsMargins(30, 0, 30, 0)
+ 
+-        # --- Dashboard Greeting ---
+         self.greet_label = QLabel(self.get_greeting())
+-        self.greet_label.setStyleSheet("color: #007E44; font-size: 24px; font-weight: 900; background: transparent;")
+-        panel_layout.addWidget(self.greet_label)
++        self.greet_label.setStyleSheet("color: #0F172A; font-size: 18px; font-weight: 800;")
++        self.nav_layout.addWidget(self.greet_label)
+ 
+-        # --- Recent Interviews Section ---
+-        hist_label = QLabel("RECENT INTERVIEWS")
+-        hist_label.setStyleSheet("color: rgba(0, 0, 0, 0.4); font-size: 11px; font-weight: 900; letter-spacing: 2px;")
+-        panel_layout.addWidget(hist_label)
+-        
+-        self.scroll = QScrollArea()
+-        self.scroll.setWidgetResizable(True)
+-        self.scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+-        self.scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+-        self.scroll.setStyleSheet("background: transparent; border: none;")
+-        self.scroll.setFixedHeight(180)
+-        
+-        self.scroll_content = QWidget()
+-        self.scroll_content.setStyleSheet("background: transparent;")
+-        self.scroll_layout = QHBoxLayout(self.scroll_content)
+-        self.scroll_layout.setSpacing(15)
+-        self.scroll_layout.setContentsMargins(0, 0, 0, 0)
+-        
+-        self.refresh_history()
++        self.nav_layout.addStretch()
++
++        self.close_btn = QPushButton("Γ£ò")
++        self.close_btn.setFixedSize(32, 32)
++        self.close_btn.setStyleSheet("""
++            QPushButton { background: transparent; color: #94A3B8; border-radius: 16px; font-size: 16px; font-weight: bold; }
++            QPushButton:hover { background: #F1F5F9; color: #0F172A; }
++        """)
++        self.close_btn.clicked.connect(self.close)
++        self.nav_layout.addWidget(self.close_btn)
+         
+-        self.scroll.setWidget(self.scroll_content)
+-        panel_layout.addWidget(self.scroll)
++        self.container_layout.addWidget(self.nav_bar)
+ 
+-        # --- CV Management Section ---
+-        cv_label = QLabel("CONTEXT: YOUR CV")
+-        cv_label.setStyleSheet("color: rgba(0, 0, 0, 0.4); font-size: 11px; font-weight: 900; letter-spacing: 2px;")
+-        panel_layout.addWidget(cv_label)
++        # DASHBOARD CONTENT (GRID SPLIT)
++        self.dashboard_frame = QFrame()
++        self.dashboard_layout = QHBoxLayout(self.dashboard_frame)
++        self.dashboard_layout.setContentsMargins(30, 30, 30, 30)
++        self.dashboard_layout.setSpacing(30)
+ 
+-        # PDF Upload Section
+-        self.upload_btn = QPushButton("≡ƒôä UPLOAD CV (PDF)")
++        # --- LEFT COLUMN: THE LABORATORY (INPUTS) ---
++        self.left_col = QFrame()
++        self.left_col.setFixedWidth(450)
++        self.left_layout = QVBoxLayout(self.left_col)
++        self.left_layout.setContentsMargins(0, 0, 0, 0)
++        self.left_layout.setSpacing(20)
++
++        # CV Card
++        self.cv_card = QFrame()
++        self.cv_card.setStyleSheet("background-color: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 10px;")
++        self.cv_layout = QVBoxLayout(self.cv_card)
++        self.cv_layout.setContentsMargins(20, 20, 20, 20)
++        
++        cv_label = QLabel("CONTEXT: CANDIDATE RECALL")
++        cv_label.setStyleSheet("color: #64748B; font-size: 10px; font-weight: 800; letter-spacing: 1px;")
++        self.cv_layout.addWidget(cv_label)
++
++        self.upload_btn = QPushButton("≡ƒôä SYNC PROFESSIONAL CV (PDF)")
++        self.upload_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+         self.upload_btn.setStyleSheet("""
+-            QPushButton {
+-                background: rgba(0, 0, 0, 0.05);
+-                color: #000000;
+-                border: 2px dashed rgba(0, 0, 0, 0.1);
+-                border-radius: 20px;
+-                padding: 12px;
+-                font-weight: 900;
+-                font-size: 12px;
+-            }
+-            QPushButton:hover { background: rgba(0, 230, 118, 0.1); border: 2px dashed rgba(0, 230, 118, 0.4); }
++            QPushButton { background: #F8FAFC; color: #1E293B; border: 2px dashed #CBD5E1; border-radius: 8px; padding: 15px; font-weight: 700; font-size: 12px; }
++            QPushButton:hover { border-color: #10B981; color: #059669; }
+         """)
+         self.upload_btn.clicked.connect(self.handle_upload)
+-        panel_layout.addWidget(self.upload_btn)
++        self.cv_layout.addWidget(self.upload_btn)
+ 
+-        # Text Area (CV)
+         self.text_area = QTextEdit()
+-        self.text_area.setPlaceholderText("Paste CV text if not uploading...")
+-        self.text_area.setMaximumHeight(80)
+-        self.text_area.setStyleSheet("""
+-            QTextEdit { background: rgba(255, 255, 255, 0.5); border-radius: 20px; padding: 10px; color: #000000; font-size: 12px; }
+-        """)
+-        panel_layout.addWidget(self.text_area)
++        self.text_area.setPlaceholderText("Or paste raw CV history here...")
++        self.text_area.setMaximumHeight(100)
++        self.text_area.setStyleSheet("QTextEdit { background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 10px; font-size: 13px; } QTextEdit:focus { border: 2px solid #10B981; background: #FFFFFF; }")
++        self.cv_layout.addWidget(self.text_area)
++        self.left_layout.addWidget(self.cv_card)
+ 
+-        # --- Job Context Section ---
+-        jd_label = QLabel("CONTEXT: JOB DESCRIPTION & LINK")
+-        jd_label.setStyleSheet("color: rgba(0, 0, 0, 0.4); font-size: 11px; font-weight: 900; letter-spacing: 2px; margin-top: 10px;")
+-        panel_layout.addWidget(jd_label)
++        # JD Card
++        self.jd_card = QFrame()
++        self.jd_card.setStyleSheet("background-color: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 10px;")
++        self.jd_layout = QVBoxLayout(self.jd_card)
++        self.jd_layout.setContentsMargins(20, 20, 20, 20)
++        
++        jd_label = QLabel("MISSION: TARGET MISSION")
++        jd_label.setStyleSheet("color: #64748B; font-size: 10px; font-weight: 800; letter-spacing: 1px;")
++        self.jd_layout.addWidget(jd_label)
+ 
+         self.jd_area = QTextEdit()
+-        self.jd_area.setPlaceholderText("Paste the Job Description (JD) here for a tailored strategy...")
+-        self.jd_area.setMaximumHeight(80)
+-        self.jd_area.setStyleSheet("""
+-            QTextEdit { background: rgba(255, 255, 255, 0.5); border-radius: 20px; padding: 10px; color: #000000; font-size: 12px; }
+-        """)
+-        panel_layout.addWidget(self.jd_area)
++        self.jd_area.setPlaceholderText("Paste the Target Job Description...")
++        self.jd_area.setStyleSheet("QTextEdit { background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 10px; font-size: 13px; } QTextEdit:focus { border: 2px solid #10B981; background: #FFFFFF; }")
++        self.jd_layout.addWidget(self.jd_area)
++        
++        self.link_field = QLineEdit()
++        self.link_field.setPlaceholderText("Company Website / Mission Link")
++        self.link_field.setStyleSheet("QLineEdit { background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 12px; } QLineEdit:focus { border: 2px solid #10B981; }")
++        self.jd_layout.addWidget(self.link_field)
+ 
+-        self.link_field = QTextEdit() # Using QTextEdit for potentially long links/notes
+-        self.link_field.setPlaceholderText("Paste Company Link or Mission Statement...")
+-        self.link_field.setMaximumHeight(50)
+-        self.link_field.setStyleSheet("""
+-            QTextEdit { background: rgba(255, 255, 255, 0.5); border-radius: 20px; padding: 10px; color: #000000; font-size: 12px; }
+-        """)
+-        panel_layout.addWidget(self.link_field)
++        self.linkedin_field = QLineEdit()
++        self.linkedin_field.setPlaceholderText("Personal LinkedIn Profile (Optional)")
++        self.linkedin_field.setStyleSheet("QLineEdit { background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 12px; } QLineEdit:focus { border: 2px solid #10B981; }")
++        self.jd_layout.addWidget(self.linkedin_field)
++        self.left_layout.addWidget(self.jd_card)
++
++        self.dashboard_layout.addWidget(self.left_col)
++
++        # --- RIGHT COLUMN: THE HUB (ACTIVITY & LAUNCH) ---
++        self.right_col = QFrame()
++        self.right_layout = QVBoxLayout(self.right_col)
++        self.right_layout.setContentsMargins(0, 0, 0, 0)
++        self.right_layout.setSpacing(20)
++
++        # Recent Activity
++        self.activity_card = QFrame()
++        self.activity_card.setStyleSheet("background-color: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 10px;")
++        self.activity_layout = QVBoxLayout(self.activity_card)
++        self.activity_layout.setContentsMargins(20, 20, 20, 20)
++        
++        act_label = QLabel("RECENT DEBRIEFS")
++        act_label.setStyleSheet("color: #64748B; font-size: 10px; font-weight: 800; letter-spacing: 1px;")
++        self.activity_layout.addWidget(act_label)
++        
++        self.scroll = QScrollArea()
++        self.scroll.setWidgetResizable(True)
++        self.scroll.setStyleSheet("background: transparent; border: none;")
++        self.scroll_content = QWidget()
++        self.scroll_layout = QVBoxLayout(self.scroll_content)
++        self.scroll_layout.setSpacing(10)
++        self.refresh_history()
++        self.scroll.setWidget(self.scroll_content)
++        self.activity_layout.addWidget(self.scroll)
++        self.right_layout.addWidget(self.activity_card)
+ 
+-        # Launch Button
+-        self.launch_btn = QPushButton("LAUNCH STEALTH HUD")
++        # Launch Card
++        self.launch_card = QFrame()
++        self.launch_card.setFixedHeight(120)
++        self.launch_card.setStyleSheet("background-color: #0F172A; border-radius: 10px;")
++        self.launch_layout = QVBoxLayout(self.launch_card)
++        self.launch_layout.setContentsMargins(20, 20, 20, 20)
++        
++        self.launch_btn = QPushButton("INITIALIZE STEALTH COMMAND")
+         self.launch_btn.setEnabled(False)
++        self.launch_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+         self.launch_btn.setStyleSheet("""
+-            QPushButton:enabled {
+-                background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #007E44, stop:1 #00B0FF);
+-                color: white;
+-                border-radius: 25px;
+-                padding: 15px;
+-                font-weight: 900;
+-                letter-spacing: 2px;
+-            }
+-            QPushButton:disabled {
+-                background: rgba(0, 0, 0, 0.1);
+-                color: rgba(0, 0, 0, 0.3);
+-                border-radius: 25px;
+-                padding: 15px;
+-                font-weight: 900;
+-            }
++            QPushButton:enabled { background-color: #10B981; color: #FFFFFF; border-radius: 8px; font-weight: 800; font-size: 16px; padding: 15px; }
++            QPushButton:enabled:hover { background-color: #059669; }
++            QPushButton:disabled { background-color: #1E293B; color: #475569; border-radius: 8px; font-weight: 800; padding: 15px; }
+         """)
+         self.text_area.textChanged.connect(self.validate_input)
+         self.launch_btn.clicked.connect(self.handle_launch)
+-        panel_layout.addWidget(self.launch_btn)
+-        # Close Button
+-        close_btn = QPushButton("Γ£ò")
+-        close_btn.setFixedSize(45, 45)
+-        close_btn.setStyleSheet("""
+-            QPushButton {
+-                background: rgba(0, 0, 0, 0.05);
+-                color: #000000;
+-                border-radius: 22px;
+-                font-size: 20px;
+-            }
+-            QPushButton:hover {
+-                background: rgba(211, 47, 47, 0.2);
+-                color: #D32F2F;
+-            }
+-        """)
+-        close_btn.clicked.connect(self.close)
+-        close_btn.move(430, 25)
+-        close_btn.setParent(self.glass_panel)
++        self.launch_layout.addWidget(self.launch_btn)
++        
++        self.right_layout.addWidget(self.launch_card)
++        self.dashboard_layout.addWidget(self.right_col)
++        
++        self.container_layout.addWidget(self.dashboard_frame)
+ 
+     def refresh_history(self):
+         # Clear existing
+@@ -274,7 +291,7 @@ class UserDashboard(QWidget):
+                     self.scroll_layout.addWidget(card)
+             else:
+                 placeholder = QLabel("No interviews yet. Launch HUD to begin!")
+-                placeholder.setStyleSheet("color: rgba(0,0,0,0.3); font-size: 12px; font-weight: bold;")
++                placeholder.setStyleSheet("color: #94A3B8; font-size: 12px; font-weight: bold; padding: 20px;")
+                 self.scroll_layout.addWidget(placeholder)
+         self.scroll_layout.addStretch()
+ 
+@@ -302,7 +319,7 @@ class UserDashboard(QWidget):
+         if success:
+             self.cv_text = text
+             self.upload_btn.setText(f"Γ£à {os.path.basename(file_path)} SYNCED")
+-            self.upload_btn.setStyleSheet(self.upload_btn.styleSheet().replace("dashed rgba(0, 0, 0, 0.1)", "solid #00E676"))
++            self.upload_btn.setStyleSheet(self.upload_btn.styleSheet().replace("dashed #CBD5E1", "solid #10B981"))
+             self.validate_input()
+         else:
+             self.upload_btn.setText(f"Γ¥î Error: {text[:20]}...")
+@@ -314,8 +331,9 @@ class UserDashboard(QWidget):
+     def handle_launch(self):
+         final_cv = self.text_area.toPlainText().strip() or self.cv_text
+         final_jd = self.jd_area.toPlainText().strip()
+-        final_link = self.link_field.toPlainText().strip()
+-        self.cv_submitted.emit(final_cv, final_jd, final_link)
++        final_link = self.link_field.text().strip()
++        final_linkedin = self.linkedin_field.text().strip()
++        self.cv_submitted.emit(final_cv, final_jd, final_link, final_linkedin)
+         self.close()
+ 
+     def mousePressEvent(self, event):
+diff --git a/keys.py b/keys.py
+index 6c11edf..26f7fc3 100644
+--- a/keys.py
++++ b/keys.py
+@@ -1,5 +1,6 @@
+ import os
+ import random
++import requests
+ from typing import List, Dict
+ 
+ class KeyManager:
+@@ -80,6 +81,14 @@ class KeyManager:
+         except Exception as e:
+             print(f"[KeyManager] Dashboard Sync Failed (Using Fallback): {e}")
+ 
++
+ # Global instance
+-import requests # Ensure requests is available
+-key_manager = KeyManager()
++try:
++    key_manager = KeyManager()
++except Exception as e:
++    print(f"[KeyManager] Critical initialization failure: {e}")
++    # Create a dummy instance to avoid import errors
++    class DummyKeyManager:
++        def refresh_from_dashboard(self): pass
++        def get_key(self, svc): return ""
++    key_manager = DummyKeyManager()
+diff --git a/launcher.py b/launcher.py
+index fbe57a0..42eebcd 100644
+--- a/launcher.py
++++ b/launcher.py
+@@ -27,6 +27,14 @@ import traceback
+ def exception_hook(exctype, value, tb):
+     error_msg = "".join(traceback.format_exception(exctype, value, tb))
+     print(error_msg)
++    
++    # Log to file for debugging
++    try:
++        with open("crash_log.txt", "w") as f:
++            f.write(error_msg)
++    except:
++        pass
++
+     msg = QMessageBox()
+     msg.setIcon(QMessageBox.Icon.Critical)
+     msg.setText("StealthHUD - Application Error")
+@@ -63,10 +71,10 @@ class StealthController(QObject):
+             self.login_win.close()
+             self.login_win = None
+ 
+-    def transition_to_hud(self, cv_text, jd_text, link_text):
++    def transition_to_hud(self, cv_text, jd_text, link_text, linkedin_url):
+         pos = self.dash_win.pos() if self.dash_win else None
+         # Pass full context to HUD
+-        self.hud_win = StealthHUD(cv_text, jd_text, link_text)
++        self.hud_win = StealthHUD(cv_text, jd_text, link_text, linkedin_url)
+         if pos: self.hud_win.move(pos)
+         self.hud_win.show()
+         if self.dash_win:
+diff --git a/login_window.py b/login_window.py
+index 3168766..8ebc50f 100644
+--- a/login_window.py
++++ b/login_window.py
+@@ -10,10 +10,9 @@ class LoginWindow(QWidget):
+ 
+     def __init__(self):
+         super().__init__()
+-        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.NoDropShadowWindowHint)
+-        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+-        self.setAttribute(Qt.WidgetAttribute.WA_NoSystemBackground)
+-        self.setFixedSize(550, 750)
++        self.setWindowFlags(Qt.WindowType.FramelessWindowHint)
++        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground)
++        self.setFixedSize(900, 600)
+         
+         self.init_ui()
+         self.old_pos = None
+@@ -24,61 +23,88 @@ class LoginWindow(QWidget):
+         self.pending_pass = ""
+ 
+     def init_ui(self):
+-        # Main Layout
+-        self.root_layout = QVBoxLayout()
+-        self.root_layout.setContentsMargins(25, 25, 25, 25)
++        # Main Layout (Horizontal Split)
++        self.root_layout = QHBoxLayout()
++        self.root_layout.setContentsMargins(0, 0, 0, 0)
++        self.root_layout.setSpacing(0)
+         self.setLayout(self.root_layout)
+ 
+-        # Jelly Glass Panel
+-        self.glass_panel = QFrame()
+-        self.glass_panel.setObjectName("glassPanel")
+-        self.glass_panel.setStyleSheet("""
+-            #glassPanel {
+-                background: qlineargradient(x1:0, y1:0, x2:1, y2:1, 
+-                                            stop:0 rgba(220, 255, 250, 0.4), 
+-                                            stop:1 rgba(190, 245, 235, 0.2));
+-                border-radius: 50px;
+-                border: 2px solid rgba(255, 255, 255, 0.6);
++        # LEFT PANEL (BRAND ZONE)
++        self.left_panel = QFrame()
++        self.left_panel.setFixedWidth(400)
++        self.left_panel.setStyleSheet("""
++            QFrame {
++                background-color: #064E3B;
++                border-top-left-radius: 12px;
++                border-bottom-left-radius: 12px;
+             }
+         """)
+-        self.root_layout.addWidget(self.glass_panel)
++        self.left_layout = QVBoxLayout(self.left_panel)
++        self.left_layout.setContentsMargins(40, 60, 40, 60)
+         
+-        self.panel_layout = QVBoxLayout(self.glass_panel)
+-        self.panel_layout.setContentsMargins(50, 50, 50, 50)
+-        self.panel_layout.setSpacing(20)
+-
+-        # Top Bar (Close)
+-        close_btn = QPushButton("Γ£ò")
+-        close_btn.setFixedSize(45, 45)
+-        close_btn.setStyleSheet("""
+-            QPushButton {
+-                background: rgba(45, 74, 69, 0.1);
+-                color: #2D4A45;
+-                border-radius: 22px;
+-                font-size: 20px;
++        # Animated Neural Logo (Simple pulsing circle placeholder)
++        self.logo_label = QLabel("ΓùÅ")
++        self.logo_label.setStyleSheet("color: #10B981; font-size: 120px;")
++        self.logo_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
++        self.left_layout.addWidget(self.logo_label)
++        
++        # Pulsing Animation for Logo
++        self.logo_anim = QPropertyAnimation(self.logo_label, b"windowOpacity")
++        self.logo_anim.setDuration(2000)
++        self.logo_anim.setStartValue(0.4)
++        self.logo_anim.setEndValue(1.0)
++        self.logo_anim.setEasingCurve(QEasingCurve.Type.InOutQuad)
++        self.logo_anim.setLoopCount(-1)
++        self.logo_anim.start()
++
++        self.left_layout.addStretch()
++        
++        brand_title = QLabel("STEALTH ASSIST")
++        brand_title.setStyleSheet("color: #FFFFFF; font-size: 28px; font-weight: 800; letter-spacing: 2px;")
++        self.left_layout.addWidget(brand_title)
++        
++        brand_desc = QLabel("Autonomous Intelligence for\nHigh-Stakes Career Strategy.")
++        brand_desc.setStyleSheet("color: #D1FAE5; font-size: 14px; font-weight: 500; line-height: 1.5;")
++        self.left_layout.addWidget(brand_desc)
++        
++        self.root_layout.addWidget(self.left_panel)
++
++        # RIGHT PANEL (FORM ZONE)
++        self.right_panel = QFrame()
++        self.right_panel.setStyleSheet("""
++            QFrame {
++                background-color: #FFFFFF;
++                border-top-right-radius: 12px;
++                border-bottom-right-radius: 12px;
+             }
+-            QPushButton:hover { background: rgba(211, 47, 47, 0.2); color: #D32F2F; }
+         """)
+-        close_btn.clicked.connect(self.close)
+-        close_btn.move(430, 25)
+-        close_btn.setParent(self.glass_panel)
+-
+-        # Header Section
+-        self.title_label = QLabel("STEALTH ACCESS")
+-        self.title_label.setStyleSheet("color: #D4AF37; font-size: 28px; font-weight: 900; letter-spacing: 10px; background: transparent;")
+-        self.title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+-        self.panel_layout.addWidget(self.title_label)
+-
+-        self.subtitle_label = QLabel("SECURE LUXURY AUTHENTICATION")
+-        self.subtitle_label.setStyleSheet("color: rgba(0, 0, 0, 0.4); font-size: 10px; font-weight: 900; letter-spacing: 3px;")
+-        self.subtitle_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+-        self.panel_layout.addWidget(self.subtitle_label)
++        self.right_layout = QVBoxLayout(self.right_panel)
++        self.right_layout.setContentsMargins(60, 40, 60, 40)
++        
++        # Close Button (Top Right)
++        self.close_btn = QPushButton("Γ£ò")
++        self.close_btn.setFixedSize(32, 32)
++        self.close_btn.setStyleSheet("""
++            QPushButton { background: transparent; color: #94A3B8; border-radius: 16px; font-size: 16px; font-weight: bold; }
++            QPushButton:hover { background: #F1F5F9; color: #0F172A; }
++        """)
++        self.close_btn.clicked.connect(self.close)
++        self.close_btn.move(450, 15)
++        self.close_btn.setParent(self.right_panel)
+ 
+-        self.panel_layout.addStretch()
++        self.right_layout.addStretch()
++        
++        form_title = QLabel("Welcome Back")
++        form_title.setStyleSheet("color: #0F172A; font-size: 24px; font-weight: 700;")
++        self.right_layout.addWidget(form_title)
++        
++        form_sub = QLabel("Please sign in to your command center")
++        form_sub.setStyleSheet("color: #64748B; font-size: 14px; margin-bottom: 20px;")
++        self.right_layout.addWidget(form_sub)
+ 
+         # Dynamic View Container
+         self.view_container = QStackedWidget()
+-        self.panel_layout.addWidget(self.view_container)
++        self.right_layout.addWidget(self.view_container)
+ 
+         self.setup_login_view()
+         self.setup_signup_view()
+@@ -86,29 +112,30 @@ class LoginWindow(QWidget):
+         self.setup_forgot_view()
+         self.setup_reset_view()
+ 
+-        self.panel_layout.addStretch()
++        self.right_layout.addStretch()
+         
+         # Status Label
+         self.status_label = QLabel("")
+-        self.status_label.setStyleSheet("color: #D32F2F; font-size: 13px; font-weight: bold;")
++        self.status_label.setStyleSheet("color: #EF4444; font-size: 13px; font-weight: 600;")
+         self.status_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+-        self.panel_layout.addWidget(self.status_label)
++        self.right_layout.addWidget(self.status_label)
+ 
++        self.root_layout.addWidget(self.right_panel)
+         self.view_container.setCurrentIndex(0)
+ 
+     def get_input_style(self):
+         return """
+             QLineEdit {
+-                background: rgba(255, 255, 255, 0.4);
+-                border: 1px solid rgba(45, 74, 69, 0.1);
+-                border-radius: 20px;
+-                padding: 15px;
+-                color: #1A2E2A;
++                background: #F8FAFC;
++                border: 1px solid #E2E8F0;
++                border-radius: 8px;
++                padding: 14px;
++                color: #1E293B;
+                 font-size: 14px;
+             }
+             QLineEdit:focus {
+-                border: 1px solid rgba(0, 230, 118, 0.3);
+-                background: rgba(255, 255, 255, 0.6);
++                border: 2px solid #10B981;
++                background: #FFFFFF;
+             }
+         """
+ 
+@@ -116,25 +143,25 @@ class LoginWindow(QWidget):
+         if primary:
+             return """
+                 QPushButton {
+-                    background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #007E44, stop:1 #009688);
+-                    color: white;
+-                    border-radius: 25px;
+-                    padding: 15px;
+-                    font-weight: 900;
+-                    letter-spacing: 2px;
+-                    font-size: 13px;
++                    background-color: #059669;
++                    color: #FFFFFF;
++                    border-radius: 8px;
++                    padding: 16px;
++                    font-weight: 700;
++                    font-size: 14px;
+                 }
+-                QPushButton:hover { background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #009688, stop:1 #26A69A); }
++                QPushButton:hover { background-color: #047857; }
++                QPushButton:pressed { background-color: #065F46; }
+             """
+         else:
+             return """
+                 QPushButton {
+                     background: transparent;
+-                    color: #007E44;
+-                    font-weight: 900;
+-                    font-size: 11px;
++                    color: #059669;
++                    font-weight: 600;
++                    font-size: 13px;
+                 }
+-                QPushButton:hover { color: #00B0FF; }
++                QPushButton:hover { color: #047857; text-decoration: underline; }
+             """
+ 
+     def setup_login_view(self):
+diff --git a/main.py b/main.py
+index f83598e..09d4487 100644
+--- a/main.py
++++ b/main.py
+@@ -94,13 +94,13 @@ class KeyboardThread(QThread):
+         keyboard.wait()
+ 
+ class StealthHUD(QMainWindow):
+-    def __init__(self, cv_text="", jd_text="", link_text=""):
++    def __init__(self, cv_text="", jd_text="", link_text="", linkedin_url=""):
+         super().__init__()
+         
+         # Initialize AI Context
+         from ai_engine import ai_engine
+         ai_engine.set_cv_context(cv_text)
+-        ai_engine.set_job_context(jd_text, link_text)
++        ai_engine.set_job_context(jd_text, link_text, linkedin_url)
+         self.setWindowTitle("StealthHUD AI Assistant")
+         # Added Tool flag to hide from taskbar
+         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint | Qt.WindowType.Tool)
+@@ -119,7 +119,7 @@ class StealthHUD(QMainWindow):
+         self.interim_active = False
+         self.streaming_active = False
+         self.last_voice_text = ""
+-        self.current_voice_worker = None
++        self.active_worker = None # Unified worker for Voice, Text, and Vision
+         
+         self.is_reading_screen = False
+         self.last_ai_response = ""
+@@ -437,9 +437,11 @@ class StealthHUD(QMainWindow):
+         else:
+             query = "Identify any questions or logic on screen and provide a natural, conversational answer."
+             
+-        self.ai_worker = AIWorker(query, mode="vision", image_path=path)
+-        self.ai_worker.finished.connect(self.handle_vision_finished)
+-        self.ai_worker.start()
++        # Unified AI routing
++        self.stop_active_worker()
++        self.active_worker = AIWorker(query, mode="vision", image_path=path)
++        self.active_worker.finished.connect(self.handle_vision_finished)
++        self.active_worker.start()
+ 
+     def handle_vision_finished(self, sender, message):
+         """Resets the button after analysis is complete."""
+@@ -450,24 +452,18 @@ class StealthHUD(QMainWindow):
+ 
+     def perform_screen_analysis(self):
+         path = vision_handler.capture_fullscreen()
+-        self.ai_worker = AIWorker("Analyze this screen and provide the answer.", mode="vision", image_path=path)
+-        self.ai_worker.finished.connect(self.handle_ai_finished)
+-        self.ai_worker.start()
++        self.stop_active_worker()
++        self.active_worker = AIWorker("Analyze this screen and provide the answer.", mode="vision", image_path=path)
++        self.active_worker.finished.connect(self.handle_ai_finished)
++        self.active_worker.start()
+ 
+     def handle_partial_transcript(self, text):
+         # --- SMART INTERRUPTION HANDLING ---
+-        # If the AI worker is active AND hasn't started streaming, kill it.
++        # If the active worker is running AND hasn't started streaming, kill it.
+         # We don't rollback the UI, we just let the AI read the stacked history.
+-        if self.current_voice_worker and self.current_voice_worker.isRunning():
+-            if not self.streaming_active: 
+-                print("[System] Interruption detected! Aborting previous AI task...")
+-                try:
+-                    self.current_voice_worker.chunk_received.disconnect()
+-                    self.current_voice_worker.finished.disconnect()
+-                    self.current_voice_worker.terminate()
+-                except:
+-                    pass
+-                self.current_voice_worker = None
++        if self.active_worker and self.active_worker.isRunning() and not self.streaming_active:
++            print("[System] Interruption detected! Aborting previous AI task...")
++            self.stop_active_worker()
+ 
+         cursor = self.chat_display.textCursor()
+         cursor.movePosition(QTextCursor.MoveOperation.End)
+@@ -496,27 +492,31 @@ class StealthHUD(QMainWindow):
+         self.log_message(f"<span style='color:#00B0FF;'><b>INTERVIEWER:</b> {text}</span>")
+         self.last_voice_text = text
+         
+-        # --- SINGLETON WORKER PATTERN (SAFETY) ---
+-        if self.current_voice_worker and self.current_voice_worker.isRunning():
++        # --- UNIFIED WORKER ROUTING ---
++        self.stop_active_worker()
++        
++        # Automatically get AI response for interviewer voice
++        self.active_worker = AIWorker(text, mode="text")
++        self.active_worker.chunk_received.connect(self.handle_ai_chunk)
++        self.active_worker.finished.connect(self.handle_ai_finished)
++        self.active_worker.start()
++
++    def stop_active_worker(self):
++        """Safely stops any running AI generation to prevent race conditions."""
++        if hasattr(self, 'active_worker') and self.active_worker and self.active_worker.isRunning():
+             try:
+-                self.current_voice_worker.chunk_received.disconnect()
+-                self.current_voice_worker.finished.disconnect()
+-                self.current_voice_worker.terminate()
+-                self.current_voice_worker.wait(500) # Short wait for cleanup
++                self.active_worker.chunk_received.disconnect()
++            except: pass
++            try:
++                self.active_worker.finished.disconnect()
++            except: pass
++            
++            try:
++                self.active_worker.terminate()
++                self.active_worker.wait(500)
+             except: pass
+         
+-        # Reset streaming state for the new answer
+-        self.streaming_active = False
+-        
+-        # Automatically get AI response for interviewer voice
+-        self.current_voice_worker = AIWorker(text, mode="text")
+-        self.current_voice_worker.chunk_received.connect(self.handle_ai_chunk)
+-        self.current_voice_worker.finished.connect(self.handle_ai_voice_finished)
+-        self.current_voice_worker.start()
+-
+-    def handle_ai_voice_finished(self, sender, message):
+-        # We handle the bulk through chunks now, this just updates the final state if needed
+-        self.last_ai_response = message
++        self.active_worker = None
+         self.streaming_active = False
+ 
+     def handle_ai_chunk(self, sender, chunk):
+@@ -536,10 +536,12 @@ class StealthHUD(QMainWindow):
+         if text:
+             self.log_message(f"<span style='color:#D4AF37;'><b>YOU:</b> {text}</span>")
+             self.input_field.clear()
+-            self.ai_worker = AIWorker(text, mode="text")
+-            self.ai_worker.chunk_received.connect(self.handle_ai_chunk)
+-            self.ai_worker.finished.connect(self.handle_ai_finished)
+-            self.ai_worker.start()
++            
++            self.stop_active_worker()
++            self.active_worker = AIWorker(text, mode="text")
++            self.active_worker.chunk_received.connect(self.handle_ai_chunk)
++            self.active_worker.finished.connect(self.handle_ai_finished)
++            self.active_worker.start()
+         else:
+             # Empty ENTER key press: Manually flush the audio buffer and trigger AI!
+             if self.is_listening:

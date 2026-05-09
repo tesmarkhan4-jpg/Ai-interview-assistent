@@ -20,6 +20,8 @@ class AudioThread(QThread):
         self.rate = 16000
         self.channels = 1
         self.ws = None
+        self.transcript_buffer = []
+        self.last_transcript_time = time.time()
 
     def run(self):
         self.is_running = True
@@ -35,21 +37,21 @@ class AudioThread(QThread):
                     time.sleep(1)
         
     def start_streaming(self):
-        # --- SYNC WITH LIVE DASHBOARD KEYS ---
+        # --- KEY ROTATION & SYNC ---
         from keys import key_manager
         api_key = key_manager.get_key("DEEPGRAM")
         
         if not api_key:
-            # Fallback to .env if dashboard is empty/failed
             dg_keys = [k.strip() for k in os.getenv("DEEPGRAM_API_KEYS", os.getenv("DEEPGRAM_API_KEY", "")).split(",") if k.strip()]
             if dg_keys:
                 api_key = dg_keys[int(time.time()) % len(dg_keys)]
             else:
-                self.error_occurred.emit("Deepgram API Keys not found! Please check dashboard.")
+                self.error_occurred.emit("Deepgram API Key Missing!")
                 self.is_running = False
                 return
 
-        uri = f"wss://api.deepgram.com/v1/listen?model=nova-3&language=en-US&smart_format=true&encoding=linear16&sample_rate={self.rate}&channels={self.channels}&endpointing=750&interim_results=true&diarize=false&punctuate=true"
+        # Using NOVA-2 for Production Stability
+        uri = f"wss://api.deepgram.com/v1/listen?model=nova-2&language=en-US&smart_format=true&encoding=linear16&sample_rate={self.rate}&channels={self.channels}&endpointing=300&interim_results=true&diarize=false&punctuate=true"
         
         try:
             import ssl
@@ -61,50 +63,43 @@ class AudioThread(QThread):
             )
             print(f"[Audio] Intelligence Bridge Established. (Key: {api_key[:8]}...)")
             
-            audio_queue = queue.Queue(maxsize=100) # Cap to ~10s of audio to prevent lag
+            audio_queue = queue.Queue(maxsize=100)
             self.transcript_buffer = []
             self.last_transcript_time = time.time()
 
-            # --- Thread 1: Mic Reader ---
+            # --- Thread 1: Robust System Audio & Mic Reader ---
             def mic_reader():
-                print(f"[Audio] Initializing capture at {self.rate}Hz...")
                 try:
-                    speaker = sc.default_speaker()
                     mic = None
-                    
-                    # Try Loopback first (to hear interviewer)
-                    try:
-                        print(f"[Audio] Attempting loopback on: {speaker.name}")
-                        mic = sc.get_microphone(id=speaker.name, include_loopback=True)
-                    except Exception as e:
-                        print(f"[Audio] Loopback failed: {e}. Falling back to default mic.")
-                        mic = sc.default_microphone()
-                    
+                    all_mics = sc.all_microphones(include_loopback=True)
+                    speaker = sc.default_speaker()
+                    for m in all_mics:
+                        if m.isloopback and speaker.name in m.name:
+                            mic = m
+                            break
                     if not mic:
-                        self.error_occurred.emit("No audio capture device found.")
-                        return
+                        for m in all_mics:
+                            if m.isloopback:
+                                mic = m
+                                break
+                    if not mic:
+                        try: mic = sc.get_microphone(id=speaker.name, include_loopback=True)
+                        except: pass
+                    if not mic: mic = sc.default_microphone()
+                    if not mic: return
 
-                    print(f"[Audio] Active Device: {mic.name}")
-                    
                     with mic.recorder(samplerate=self.rate) as recorder:
                         while self.is_running and self.ws and self.ws.connected:
                             try:
                                 data = recorder.record(numframes=int(self.rate * 0.1))
-                                
-                                # Boost quiet voices
-                                max_val = np.max(np.abs(data))
-                                if 0 < max_val < 0.05: data = data * 8.0
-                                elif 0.05 <= max_val < 0.2: data = data * 3.0
-                                    
-                                data_int16 = (data[:, 0] * 32767).astype(np.int16)
-                                if not audio_queue.full():
-                                    audio_queue.put(data_int16.tobytes())
-                            except Exception as e:
-                                print(f"[Audio] Mic Stream Error: {e}")
-                                break
-                except Exception as e:
-                    print(f"[Audio] Device Error: {e}")
-                    self.error_occurred.emit(f"Audio Device Error: {str(e)}")
+                                data_mono = data[:, 0] if len(data.shape) > 1 else data
+                                max_val = np.max(np.abs(data_mono))
+                                if 0 < max_val < 0.05: data_mono = data_mono * 7.0
+                                elif 0.05 <= max_val < 0.2: data_mono = data_mono * 3.0
+                                data_int16 = (data_mono * 32767).astype(np.int16)
+                                if not audio_queue.full(): audio_queue.put(data_int16.tobytes())
+                            except: break
+                except: pass
 
             threading.Thread(target=mic_reader, daemon=True).start()
 
@@ -112,29 +107,48 @@ class AudioThread(QThread):
             def sender():
                 last_send_time = time.time()
                 silence_chunk = np.zeros(int(self.rate * 0.1), dtype=np.int16).tobytes()
-                
                 while self.is_running and self.ws and self.ws.connected:
                     try:
-                        # Send real audio or keep-alive silence
                         try:
                             chunk = audio_queue.get(timeout=0.1)
                         except queue.Empty:
                             chunk = silence_chunk
                         
                         self.ws.send_binary(chunk)
-                        
-                        # Aggressive Keep-Alive (every 5 seconds)
                         if time.time() - last_send_time > 5:
                             self.ws.send(json.dumps({"type": "KeepAlive"}))
                             last_send_time = time.time()
-                            
-                    except Exception as e:
-                        print(f"[Audio] Sender error: {e}")
-                        break
+                    except: break
 
             threading.Thread(target=sender, daemon=True).start()
 
-            # --- Thread 3: Intelligence Receiver ---
+            # --- Thread 3: 'Smart Patient' Logic ---
+            def flush_timer():
+                while self.is_running and self.ws and self.ws.connected:
+                    if self.transcript_buffer:
+                        full_text = " ".join(self.transcript_buffer).strip()
+                        low_text = full_text.lower()
+                        
+                        # 1. Question Trigger: (0.9s) - Respond fast to clear queries
+                        if any(full_text.endswith(s) for s in ["?", "right", "correct"]):
+                            threshold = 0.9
+                        # 2. Cliffhangers: (5.0s) - Wait during thinking pauses
+                        elif any(low_text.endswith(w) for w in ["the", "and", "your", "my", "about", "your", "how", "can", "could", "would", "is", "are", "for", "with", "of", "to", "but", "or", "really", "very", "mostly", "if", "when", "be", "was", "were"]):
+                            threshold = 5.0
+                        # 3. Sentence Finish: (3.0s)
+                        elif any(full_text.endswith(s) for s in [".", "!"]):
+                            threshold = 3.0
+                        # 4. Standard Pause: (2.5s)
+                        else:
+                            threshold = 2.5
+                            
+                        if (time.time() - self.last_transcript_time > threshold):
+                            self.flush_now()
+                    time.sleep(0.1)
+
+            threading.Thread(target=flush_timer, daemon=True).start()
+
+            # --- Intelligence Receiver ---
             self.ws.settimeout(0.5)
             while self.is_running and self.ws and self.ws.connected:
                 try:
@@ -143,41 +157,37 @@ class AudioThread(QThread):
                     msg = json.loads(raw_msg)
                     
                     if "channel" in msg:
-                        transcript = msg["channel"]["alternatives"][0]["transcript"]
+                        transcript = msg["channel"]["alternatives"][0]["transcript"].strip()
                         is_final = msg.get("is_final", False)
                         
                         if transcript:
                             if is_final:
                                 self.transcript_buffer.append(transcript)
                                 self.last_transcript_time = time.time()
+                                self.partial_transcript_received.emit(" ".join(self.transcript_buffer))
                             else:
                                 current_full = " ".join(self.transcript_buffer + [transcript])
                                 self.partial_transcript_received.emit(current_full)
                                 self.last_transcript_time = time.time()
-                except websocket.WebSocketTimeoutException:
-                    pass # Normal timeout to allow silence check
-                except Exception as e:
-                    print(f"[Audio] Receiver error: {e}")
-                    break
-
-                # --- NATURAL PAUSE DETECTION ---
-                # If we have text and haven't heard anything for 1.5s, trigger AI
-                if self.transcript_buffer and (time.time() - self.last_transcript_time > 1.5):
-                    full_text = " ".join(self.transcript_buffer).strip()
-                    if len(full_text) > 10: # Minimum length to avoid noise
-                        self.transcript_received.emit(full_text)
-                    self.transcript_buffer = []
+                except websocket.WebSocketTimeoutException: pass
+                except: break
 
         except Exception as e:
-            print(f"[Audio] WebSocket Critical Error: {e}")
+            print(f"[Audio] Critical Error: {e}")
         finally:
             self.stop()
 
     def stop(self):
         self.is_running = False
         if self.ws:
-            try:
-                self.ws.close()
-            except:
-                pass
+            try: self.ws.close()
+            except: pass
             self.ws = None
+
+    def flush_now(self):
+        if hasattr(self, 'transcript_buffer') and self.transcript_buffer:
+            full_text = " ".join(self.transcript_buffer).strip()
+            if len(full_text) > 8:
+                self.transcript_received.emit(full_text)
+            self.transcript_buffer = []
+            self.last_transcript_time = time.time()

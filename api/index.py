@@ -32,8 +32,19 @@ class StealthDB:
             raise e
 
     def get_user(self, email): return self.users.find_one({"email": email})
-    def create_user(self, email, password_hash, full_name):
-        return self.users.insert_one({"email": email, "password": password_hash, "full_name": full_name, "tier": "TRIAL", "joined_at": datetime.datetime.utcnow(), "status": "active"})
+    def create_user(self, email, password_hash, full_name, hwid=None):
+        # 7-day Trial Expiry
+        expiry = datetime.datetime.utcnow() + datetime.timedelta(days=7)
+        return self.users.insert_one({
+            "email": email, 
+            "password": password_hash, 
+            "full_name": full_name, 
+            "hwid": hwid,
+            "tier": "TRIAL", 
+            "trial_expiry": expiry,
+            "joined_at": datetime.datetime.utcnow(), 
+            "status": "active"
+        })
     def add_key(self, provider, key_value):
         return self.keys.insert_one({"provider": provider, "key_value": key_value, "status": "healthy", "usage_count": 0, "last_used": datetime.datetime.utcnow()})
     def get_pooled_key(self, provider):
@@ -52,6 +63,8 @@ class StealthDB:
         from bson import ObjectId
         return self.keys.delete_one({"_id": ObjectId(key_id)})
     def get_all_users(self): return list(self.users.find({}).sort("joined_at", -1).limit(50))
+    def update_config(self, data):
+        return self.config.update_one({"type": "global"}, {"$set": data}, upsert=True)
 
 # --- API CORE ---
 app = FastAPI(title="StealthHUD PRO Backend")
@@ -81,10 +94,12 @@ class UserRegister(BaseModel):
     email: EmailStr
     password: str
     full_name: str
+    hwid: str
 
 class UserLogin(BaseModel):
     email: EmailStr
     password: str
+    hwid: str
 
 class ProxyRequest(BaseModel):
     email: str
@@ -100,10 +115,16 @@ async def ping():
 async def register(user: UserRegister):
     try:
         conn = StealthDB()
+        # Check if HWID is already linked to another trial account
+        existing_hwid = conn.users.find_one({"hwid": user.hwid})
+        if existing_hwid:
+            raise HTTPException(status_code=403, detail="System already registered. Please login with original identity.")
+            
         if conn.get_user(user.email): raise HTTPException(status_code=400, detail="Identity already registered.")
         hashed = hash_password(user.password)
-        conn.create_user(user.email, hashed, user.full_name)
+        conn.create_user(user.email, hashed, user.full_name, hwid=user.hwid)
         return {"status": "success"}
+    except HTTPException: raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database connection failed: {str(e)}")
 
@@ -114,10 +135,59 @@ async def login(user: UserLogin):
         db_user = conn.get_user(user.email)
         if not db_user or not verify_password(db_user["password"], user.password):
             raise HTTPException(status_code=401, detail="Strategic Identity Mismatch.")
-        return {"status": "success", "user": {"email": db_user["email"], "tier": db_user["tier"], "full_name": db_user["full_name"]}}
+            
+        # Verify HWID binding
+        if db_user.get("hwid") and db_user["hwid"] != user.hwid:
+            if db_user.get("tier") == "TRIAL":
+                raise HTTPException(status_code=403, detail="Identity locked to another system. Multiple trials prohibited.")
+        
+        return {
+            "status": "success", 
+            "user": {
+                "email": db_user["email"], 
+                "tier": db_user.get("tier", "TRIAL"), 
+                "full_name": db_user["full_name"],
+                "trial_expiry": db_user.get("trial_expiry", datetime.datetime.utcnow()).isoformat(),
+                "server_time": datetime.datetime.utcnow().isoformat()
+            }
+        }
     except HTTPException: raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database connection failed: {str(e)}")
+
+# --- AUTOMATED PAYMENTS (STRIPE WEBHOOK) ---
+@app.post("/api/webhook/stripe")
+async def stripe_webhook(request: Request):
+    payload = await request.body()
+    sig_header = request.headers.get("stripe-signature")
+    
+    conn = get_db()
+    config = conn.get_config()
+    webhook_secret = config.get("STRIPE_WEBHOOK_SECRET")
+    
+    if not webhook_secret:
+        # Fallback for dev/manual mode
+        data = await request.json()
+        if data.get("type") == "checkout.session.completed":
+            session = data.get("data", {}).get("object", {})
+            email = session.get("customer_details", {}).get("email")
+            if email:
+                conn.users.update_one({"email": email}, {"$set": {"tier": "PRO"}})
+                return {"status": "success", "message": f"Auto-Upgraded {email}"}
+        return {"status": "ignored"}
+
+    import stripe
+    try:
+        event = stripe.Webhook.construct_event(payload, sig_header, webhook_secret)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    if event["type"] == "checkout.session.completed":
+        session = event["data"]["object"]
+        email = session["customer_details"]["email"]
+        conn.users.update_one({"email": email}, {"$set": {"tier": "PRO"}})
+        
+    return {"status": "success"}
 
 # --- PROXY ---
 @app.post("/api/v1/ai")
@@ -150,15 +220,35 @@ async def get_history(email: str):
 
 @app.get("/api/admin/stats")
 async def get_stats():
-    conn = get_db()
-    return {"total_users": conn.users.count_documents({}), "active_sessions": conn.users.count_documents({"tier": "PRO"}), "key_health": 98.2, "maintenance_mode": conn.get_config().get("maintenance_mode", False)}
+    try:
+        conn = StealthDB()
+        total = conn.users.count_documents({})
+        pro = conn.users.count_documents({"tier": "PRO"})
+        trial = conn.users.count_documents({"tier": "TRIAL"})
+        return {
+            "total_users": total, 
+            "pro_users": pro, 
+            "trial_users": trial,
+            "key_health": 98.2, 
+            "maintenance_mode": conn.get_config().get("maintenance_mode", False)
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/admin/users")
 async def get_users():
-    conn = get_db()
-    users = conn.get_all_users()
-    for u in users: u["_id"] = str(u["_id"])
-    return {"users": users}
+    try:
+        conn = StealthDB()
+        users = conn.get_all_users()
+        for u in users: 
+            u["_id"] = str(u["_id"])
+            if "trial_expiry" in u and isinstance(u["trial_expiry"], datetime.datetime):
+                u["trial_expiry"] = u["trial_expiry"].isoformat()
+            if "joined_at" in u and isinstance(u["joined_at"], datetime.datetime):
+                u["joined_at"] = u["joined_at"].isoformat()
+        return {"users": users}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/admin/keys")
 async def get_keys():
@@ -173,11 +263,50 @@ async def remove_key(key_id: str):
     conn.remove_key(key_id)
     return {"status": "success"}
 
+@app.post("/api/admin/keys")
+async def add_key(provider: str, key_value: str):
+    try:
+        conn = StealthDB()
+        conn.add_key(provider, key_value)
+        return {"status": "success"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/api/admin/users/{email}")
+async def delete_user(email: str):
+    try:
+        conn = StealthDB()
+        conn.users.delete_one({"email": email})
+        return {"status": "success"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.post("/api/admin/maintenance")
 async def set_maintenance(active: bool):
     conn = get_db()
     conn.set_maintenance(active)
     return {"status": "success", "maintenance_mode": active}
+
+@app.post("/api/auth/upgrade")
+async def upgrade_user(email: str):
+    try:
+        conn = StealthDB()
+        conn.users.update_one({"email": email}, {"$set": {"tier": "PRO"}})
+        return {"status": "success", "message": "Identity Upgraded to PRO tier."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/admin/config")
+async def update_global_config(request: Request):
+    data = await request.json()
+    conn = get_db()
+    conn.update_config(data)
+    return {"status": "success"}
+
+@app.get("/api/admin/config")
+async def get_global_config():
+    conn = get_db()
+    return conn.get_config()
 
 @app.get("/{full_path:path}")
 async def catch_all(request: Request, full_path: str):

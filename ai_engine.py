@@ -1,11 +1,13 @@
 import os
 from groq import Groq
-import google.generativeai as genai
 from keys import key_manager
 import base64
 from typing import List, Dict
 from PIL import Image
 import io
+from memory_manager import memory_manager
+from knowledge_base import kb
+from linkedin_scraper import enrich_brain_with_linkedin
 
 import os
 import requests
@@ -20,6 +22,7 @@ class AIEngine:
         self.cv_context = "No CV uploaded yet."
         self.jd_context = "No Job Description provided."
         self.company_link = "No company link provided."
+        self.linkedin_url = "No LinkedIn URL provided."
         
         self.groq_keys = []
         # --- LIVE API KEY POOL ---
@@ -34,36 +37,79 @@ class AIEngine:
         # --- INTELLIGENCE MODES ---
         self.mode = "interview" # interview, code, mcq
         self.intelligence_tier = "turbo" # turbo (8b), savant (70b)
-        
         self.prompts = {
             "interview": (
-                "ROLE: You are an elite candidate. Speak as 'I'. Use SIMPLE, EASY ENGLISH that is easy to understand.\n"
-                "HUMAN VOICE: Sound like a real person, not a robot. Use simple words. Be humble and helpful.\n"
-                "DYNAMIC LENGTH: Match the length of the question. Short question = 1 short sentence. Deep question = 2-3 simple sentences.\n"
-                "CONTEXT:\n- EXPERIENCE: {cv_data}\n- ROLE: {jd_data}\n\n"
-                "STRICT RULES:\n"
-                "1. NO markdown (*, #), NO structural symbols, NO lists.\n"
-                "2. MAX 3 sentences. Usually 1 or 2 is enough.\n"
-                "3. Avoid 'big' words. Use 'I built' instead of 'I implemented'. Use 'I lead' instead of 'I spearheaded'.\n"
-                "4. Be natural. If they say 'How are you?', just say 'I am doing great, thank you for asking!'"
+                "### SOURCE DATA ###\n"
+                "{cv_data}\n"
+                "\n"
+                "### CONVERSATIONAL RULES ###\n"
+                "1. MIRROR BREVITY: If the user is brief (e.g. 'Hi'), you MUST be brief. (Max 10 words).\n"
+                "2. NO INFO DUMP: Never mention your job, city, or history unless specifically asked.\n"
+                "3. BE HUMAN: Use short, warm sentences. Don't sound like a resume.\n"
+                "4. OUTPUT ONLY SPEECH: No headers or thinking labels.\n"
+                "\n"
+                "### START CONVERSATION ###"
             ),
-            "code": (
-                "ROLE: Senior Software Architect.\n"
-                "TASK: Solve the challenge with elite efficiency.\n"
-                "FORMAT: Code first. Max 1 sentence explanation. Clean, copy-paste ready. NO markdown symbols except code blocks."
+            "code_challenge": (
+                "SYSTEM (HIDDEN): Output ONLY the solution.\n"
+                "**BOLD SOLUTION AT TOP.** Clean Code."
             ),
             "mcq": (
-                "ROLE: Subject Matter Expert.\n"
-                "TASK: Letter only + 5-word professional rationale. Speed is priority."
+                "SYSTEM (HIDDEN): Output ONLY the option.\n"
+                "**BOLD OPTION.** 3-word logic."
             )
         }
 
     def set_cv_context(self, text: str):
-        self.cv_context = text
+        """Ingests the FULL RAW TEXT of the CV for Photographic Memory."""
+        if not text or len(text.strip()) < 50:
+            return
 
-    def set_job_context(self, jd: str, link: str):
+        print("[AIEngine] Neural Core: Ingesting FULL CV Text for Total Recall...")
+        self.cv_context = text # Store the full raw text
+        
+        # Mapping facts into SQLite for backup
+        kb.init_db()
+        kb.clear_brain()
+        
+        architect_prompt = (
+            "TASK: Extract basic identity from this CV into JSON.\n"
+            "FORMAT: { \"name\": \"\", \"email\": \"\", \"whatsapp\": \"\", \"location\": \"\", \"current_role\": \"\", \"current_company\": \"\" }\n"
+            "CV: " + text[:3000]
+        )
+        
+        try:
+            import json
+            chat_completion = self.groq_client.chat.completions.create(
+                messages=[{"role": "user", "content": architect_prompt}],
+                model="llama-3.3-70b-specdec",
+                response_format={"type": "json_object"}
+            )
+            data = json.loads(chat_completion.choices[0].message.content)
+            
+            kb.add_identity("name", data.get("name", "Faheem Khan"))
+            kb.add_identity("email", data.get("email", ""))
+            kb.add_identity("whatsapp", data.get("whatsapp", ""))
+            kb.add_identity("location", data.get("location", "Islamabad, Pakistan"))
+            
+            # Save raw text into a specialized 'Deep Memory' key
+            kb.add_identity("deep_memory_cv", text)
+            
+            print(f"[AIEngine] Photographic Memory Locked for {data.get('name')}.")
+        except Exception as e:
+            print(f"[AIEngine] Memory Mapping Error: {e}")
+
+    def set_job_context(self, jd: str, link: str, linkedin: str = ""):
         self.jd_context = jd
         self.company_link = link
+        self.linkedin_url = linkedin
+        
+        # Optionally enrich brain with LinkedIn data in background
+        if linkedin and len(linkedin.strip()) > 5:
+            try:
+                enrich_brain_with_linkedin(linkedin.strip(), self.groq_client, kb)
+            except Exception as e:
+                print(f"[AIEngine] LinkedIn enrichment skipped: {e}")
 
     def set_mode(self, mode: str):
         if mode in self.prompts:
@@ -72,12 +118,63 @@ class AIEngine:
     def set_tier(self, tier: str):
         self.intelligence_tier = tier
 
-    def get_current_system_prompt(self):
+    def get_current_system_prompt(self, user_query: str = ""):
         base_prompt = self.prompts.get(self.mode, self.prompts["interview"])
+        
+        # DYNAMIC EXTRACTION (ABSOLUTE TRUTH)
+        identity = {r['key']: r['value'] for r in kb.query_identity()}
+        raw_cv = identity.get('deep_memory_cv', self.cv_context)
+        all_exp = kb.query_brain("all")
+        
+        # Identity Logic
+        name = identity.get('name', 'FAHEEM KHAN')
+        location = identity.get('location', 'Islāmābād, Pakistan')
+        
+        # TEMPORAL LOGIC: Find CURRENT role
+        current_role = "AI Automation Specialist"
+        current_company = "Try Soft AI"
+        for exp in all_exp:
+            if "present" in exp.get('duration', '').lower():
+                current_role = exp['role']
+                current_company = exp['company']
+                break
+
+        # AGENTIC SEARCH (DEEP RECALL)
+        query_lower = user_query.lower()
+        recalled_facts = []
+        for exp in all_exp:
+            if any(k in exp['company'].lower() for k in query_lower.split() if len(k) > 3):
+                recalled_facts.append(f"VERIFIED RECORD: {exp['role']} at {exp['company']} ({exp['duration']})")
+
+        # Construct the High-Fidelity Context
+        brain_context = f"## ACTIVE PERSONA ##\n"
+        brain_context += f"NAME: {name}\n"
+        brain_context += f"LOCATION: {location}\n"
+        brain_context += f"CURRENT STATUS: Working as {current_role} at {current_company} (May 2025 - Present)\n"
+        brain_context += f"HEADLINE: {identity.get('linkedin_headline', 'AI Automation Specialist')}\n\n"
+        
+        if recalled_facts:
+            brain_context += "### HISTORICAL RECALL ###\n"
+            brain_context += "\n".join(recalled_facts) + "\n\n"
+            
+        brain_context += "### SOURCE CV TEXT (FULL RECALL) ###\n"
+        brain_context += f"{raw_cv[:5000]}\n"
+
+        # --- CONTEXT PERSISTENCE (Fix for lost memory) ---
+        chat_history_str = ""
+        if self.conversation_history:
+            chat_history_str = "### RECENT CONVERSATION HISTORY ###\n"
+            # Include last 10 messages for deep context
+            for msg in self.conversation_history[-10:]:
+                role = "INTERVIEWER" if msg["role"] == "user" else "AI"
+                chat_history_str += f"{role}: {msg['content']}\n"
+            chat_history_str += "\n"
+            
         return base_prompt.format(
-            cv_data=self.cv_context, 
+            cv_data=brain_context + chat_history_str, 
             jd_data=self.jd_context, 
-            company_link=self.company_link
+            company_link=self.company_link,
+            linkedin_url=self.linkedin_url
         )
 
     def _get_next_client(self):
@@ -92,18 +189,24 @@ class AIEngine:
         if not user_input or len(user_input.strip()) < 2: return "..."
         if not auth_manager.current_user: return "Auth Error: Please sign in."
         
-        full_prompt = f"{self.get_current_system_prompt()}\n\nUSER: {user_input}"
+        # Record user input
+        self.conversation_history.append({"role": "user", "content": user_input})
+        
+        full_prompt = f"{self.get_current_system_prompt(user_input)}\n\nUSER: {user_input}"
         
         # Self-Healing Retry Loop
         for attempt in range(len(self.groq_keys) if self.groq_keys else 2):
             try:
                 if provider == "groq" and self.groq_client:
-                    model = "llama-3.3-70b-specdec" if self.intelligence_tier == "savant" else "llama-3.1-8b-instant"
+                    model = "llama-3.3-70b-versatile" if self.intelligence_tier == "savant" else "llama-3.1-8b-instant"
                     chat_completion = self.groq_client.chat.completions.create(
                         messages=[{"role": "user", "content": full_prompt}],
                         model=model,
                     )
-                    return chat_completion.choices[0].message.content.replace("*", "")
+                    response = chat_completion.choices[0].message.content.replace("*", "")
+                    # Record AI response
+                    self.conversation_history.append({"role": "assistant", "content": response})
+                    return response
             except Exception as e:
                 # Rotate key and try again silently
                 self.groq_client = self._get_next_client()
@@ -115,20 +218,30 @@ class AIEngine:
         """Yields chunks of the AI response with real-time rotation failsafes."""
         if not user_input or len(user_input.strip()) < 2: return
         
-        full_prompt = f"{self.get_current_system_prompt()}\n\nUSER: {user_input}"
+        # Record user input
+        self.conversation_history.append({"role": "user", "content": user_input})
+        
+        full_prompt = f"{self.get_current_system_prompt(user_input)}\n\nUSER: {user_input}"
         
         for attempt in range(2):
             try:
                 if provider == "groq" and self.groq_client:
-                    model = "llama-3.3-70b-specdec" if self.intelligence_tier == "savant" else "llama-3.1-8b-instant"
+                    model = "llama-3.3-70b-versatile" if self.intelligence_tier == "savant" else "llama-3.1-8b-instant"
                     stream = self.groq_client.chat.completions.create(
                         messages=[{"role": "user", "content": full_prompt}],
                         model=model,
                         stream=True,
                     )
+                    
+                    full_response = ""
                     for chunk in stream:
                         if chunk.choices[0].delta.content:
-                            yield chunk.choices[0].delta.content.replace("*", "")
+                            text = chunk.choices[0].delta.content.replace("*", "")
+                            full_response += text
+                            yield text
+                    
+                    # Record AI response
+                    self.conversation_history.append({"role": "assistant", "content": full_response})
                     return
             except Exception as e:
                 self.groq_client = self._get_next_client()
@@ -154,13 +267,15 @@ class AIEngine:
             
             # Integrated Savant Eye Vision Prompt
             vision_prompt = (
-                "ROLE: You are an elite candidate taking an assessment or interview. Speak as 'I'. Use SIMPLE, EASY ENGLISH.\n"
-                "TASK: Look at the screen. Identify the main technical question, code test, or MCQ. Solve it instantly.\n"
-                "STRICT RULES:\n"
-                "1. MAX 3 sentences TOTAL for your entire response. Be extremely brief.\n"
-                "2. NO markdown (*, #), NO lists, NO long paragraphs.\n"
-                "3. If there are multiple questions on screen, only answer the first or most prominent one.\n"
-                "4. Sound like a real human in an interview, not a textbook."
+                "ROLE: You are an elite candidate taking an interview. Speak as 'I'. Use SIMPLE, NATURAL ENGLISH.\n"
+                "TASK: Look at the screen. Identify all questions and provide short answers.\n"
+                "STRICT FORMATTING RULES:\n"
+                "1. For every question found, write it as 'Q: [Short Question Text]'.\n"
+                "2. Write the answer on the next line as 'A: [Your Answer]'.\n"
+                "3. Use a NEW LINE between each Q and A pair.\n"
+                "4. Answer like a human ('I built...', 'For me...'), not a textbook.\n"
+                "5. MAX 2 sentences per answer. Be extremely direct.\n"
+                "6. NO markdown symbols (*, #), NO bullet points."
             )
             
             # Use a robust fallback loop to handle High Demand (503) or Not Found (404) errors
@@ -185,6 +300,54 @@ class AIEngine:
         except Exception as e:
             print(f"[Vision] Critical Failure: {e}")
             return f"Vision Link Error: {str(e)}"
+
+    def generate_interview_report(self):
+        """Analyzes the complete interview history and generates a professional report."""
+        if not self.conversation_history:
+            return {"summary": "No conversation data to analyze."}
+
+        history_text = ""
+        for msg in self.conversation_history:
+            role = "USER" if msg["role"] == "user" else "AI"
+            history_text += f"{role}: {msg['content']}\n\n"
+
+        # Truncate if extremely long to avoid API limits (keep last 6000 words)
+        words = history_text.split()
+        if len(words) > 6000:
+            history_text = "[...Transcript Truncated for Length...]\n" + " ".join(words[-6000:])
+
+
+        report_prompt = (
+            "TASK: Analyze the following interview transcript and generate a detailed project/job report.\n"
+            "CONTEXT: This is for a technical developer or hiring manager.\n\n"
+            "TRANSCRIPT:\n" + history_text + "\n\n"
+            "OUTPUT FORMAT (JSON ONLY):\n"
+            "{\n"
+            "  \"summary\": \"Brief overview of what happened\",\n"
+            "  \"client_needs\": \"What exactly does the client/hiring manager want?\",\n"
+            "  \"project_scope\": \"Detailed understanding of the project or full-time role tasks\",\n"
+            "  \"technical_breakdown\": \"Step-by-step instructions for a developer to follow to complete this task\",\n"
+            "  \"job_requirements\": \"If full-time, what skills and commitments do they need?\",\n"
+            "  \"salary\": \"Strategic recommendation for selection\",\n"
+            "  \"market\": \"Quick market context\",\n"
+            "  \"full_transcript\": \"The stored conversation\"\n"
+            "}\n"
+        )
+
+        try:
+            import json
+            model = "llama-3.3-70b-versatile"
+            chat_completion = self.groq_client.chat.completions.create(
+                messages=[{"role": "user", "content": report_prompt}],
+                model=model,
+                response_format={"type": "json_object"}
+            )
+            report = json.loads(chat_completion.choices[0].message.content)
+            report["full_transcript"] = history_text # Ensure we keep the raw log
+            return report
+        except Exception as e:
+            print(f"[AIEngine] Report Gen Failure: {e}")
+            return {"summary": f"Failed to generate report: {str(e)}", "full_transcript": history_text}
 
 ai_engine = AIEngine()
 

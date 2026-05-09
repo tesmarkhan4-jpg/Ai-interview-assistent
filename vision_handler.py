@@ -8,15 +8,11 @@ class VisionHandler:
     def __init__(self):
         self.sct = mss.mss()
         # Use an absolute temp path next to the executable or in a reliable location
-        import sys
-        if getattr(sys, 'frozen', False):
-            base_dir = os.path.dirname(sys.executable)
-        else:
-            base_dir = os.path.dirname(os.path.abspath(__file__))
-        self.temp_dir = os.path.join(base_dir, "temp_stealth")
+        # Use APPDATA for user-writable temporary files
+        self.temp_dir = os.path.join(os.environ.get('APPDATA', os.path.expanduser('~')), "StealthHUD", "temp_stealth")
         
         if not os.path.exists(self.temp_dir):
-            os.makedirs(self.temp_dir)
+            os.makedirs(self.temp_dir, exist_ok=True)
 
     def capture_fullscreen(self):
         """Captures the entire screen and saves it as a temp file."""

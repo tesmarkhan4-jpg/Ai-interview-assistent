@@ -42,6 +42,7 @@ try:
     from vision_handler import vision_handler
     from history_manager import history_manager
     from auth_manager import auth_manager
+    from keys import is_already_running
 except ImportError as e:
     import ctypes
     msg = f"Critical Error: Missing module {e.name}. The application was not bundled correctly."
@@ -75,6 +76,24 @@ class AIWorker(QThread):
         
         self.finished.emit("AI", full_response)
 
+class ReportWorker(QThread):
+    finished = pyqtSignal()
+    error = pyqtSignal(str)
+
+    def run(self):
+        try:
+            from ai_engine import ai_engine
+            from history_manager import history_manager
+            from auth_manager import auth_manager
+            
+            report_data = ai_engine.generate_interview_report()
+            user = auth_manager.current_user
+            if user:
+                history_manager.save_interview(user, report_data)
+            self.finished.emit()
+        except Exception as e:
+            self.error.emit(str(e))
+
 class KeyboardThread(QThread):
     hotkey_pressed = pyqtSignal(str)
 
@@ -94,13 +113,13 @@ class KeyboardThread(QThread):
         keyboard.wait()
 
 class StealthHUD(QMainWindow):
-    def __init__(self, cv_text="", jd_text="", link_text=""):
+    def __init__(self, cv_text="", jd_text="", link_text="", linkedin_url=""):
         super().__init__()
         
         # Initialize AI Context
         from ai_engine import ai_engine
         ai_engine.set_cv_context(cv_text)
-        ai_engine.set_job_context(jd_text, link_text)
+        ai_engine.set_job_context(jd_text, link_text, linkedin_url)
         self.setWindowTitle("StealthHUD AI Assistant")
         # Added Tool flag to hide from taskbar
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint | Qt.WindowType.Tool)
@@ -119,7 +138,7 @@ class StealthHUD(QMainWindow):
         self.interim_active = False
         self.streaming_active = False
         self.last_voice_text = ""
-        self.current_voice_worker = None
+        self.active_worker = None # Unified worker for Voice, Text, and Vision
         
         self.is_reading_screen = False
         self.last_ai_response = ""
@@ -349,20 +368,72 @@ class StealthHUD(QMainWindow):
         self.log_message(f"<span style='color:gray;'>[SYSTEM] Operational Mode: {new_mode.upper()}</span>")
 
     def end_interview_flow(self):
-        self.end_btn.setText("⏳ GENERATING AI INSIGHTS...")
+        # Create a centered loading overlay
+        from PyQt6.QtWidgets import QDialog, QVBoxLayout, QLabel, QProgressBar
+        from PyQt6.QtCore import Qt
+        
+        self.loading_dialog = QDialog(self)
+        self.loading_dialog.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
+        self.loading_dialog.setModal(True)
+        self.loading_dialog.setStyleSheet("background-color: #ffffff; border: 1px solid #e0e0e0; border-radius: 12px;")
+        
+        layout = QVBoxLayout()
+        label = QLabel("🚀 ANALYZING INTERVIEW INTELLIGENCE...")
+        label.setStyleSheet("font-weight: bold; color: #1e293b; padding: 10px;")
+        label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        
+        progress = QProgressBar()
+        progress.setRange(0, 0) # Indeterminate
+        progress.setStyleSheet("QProgressBar { height: 6px; border: none; background: #f1f5f9; border-radius: 3px; } QProgressBar::chunk { background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #10b981, stop:1 #3b82f6); border-radius: 3px; }")
+        
+        layout.addWidget(label)
+        layout.addWidget(progress)
+        self.loading_dialog.setLayout(layout)
+        self.loading_dialog.setFixedSize(350, 100)
+        self.loading_dialog.show()
+        
+        # Move dialog to center of HUD
+        hud_center = self.geometry().center()
+        self.loading_dialog.move(hud_center.x() - 175, hud_center.y() - 50)
+
         self.end_btn.setEnabled(False)
         self.log_message("<span style='color:#D32F2F;'>[SYSTEM] Closing session and analyzing intelligence...</span>")
         
-        # We run report generation in a simple thread to avoid UI freeze
-        def process_report():
-            report_data = ai_engine.generate_interview_report()
-            user = auth_manager.current_user
-            if user:
-                history_manager.save_interview(user, report_data)
-            self.close()
+        self.report_worker = ReportWorker()
+        self.report_worker.finished.connect(self.handle_report_finished)
+        self.report_worker.error.connect(self.handle_report_error)
+        self.report_worker.start()
 
-        import threading
-        threading.Thread(target=process_report).start()
+    def handle_report_finished(self):
+        if hasattr(self, 'loading_dialog'):
+            self.loading_dialog.close()
+        # Relaunch the Dashboard (cv_panel.py)
+        import subprocess
+        import sys
+        
+        # Determine the correct path to cv_panel.py
+        if getattr(sys, 'frozen', False):
+            application_path = os.path.dirname(sys.executable)
+            # In bundled mode, we should ideally launch the main executable again 
+            # but with a flag or just let it handle the login/dashboard transition.
+            # However, launching cv_panel.py directly is what the user asked.
+            script_path = os.path.join(application_path, "_internal", "cv_panel.py")
+            if os.path.exists(script_path):
+                subprocess.Popen([sys.executable, script_path])
+            else:
+                # Fallback to just launching the main app again
+                subprocess.Popen([sys.executable])
+        else:
+            subprocess.Popen([sys.executable, "cv_panel.py"])
+        
+        self.close()
+
+    def handle_report_error(self, err):
+        if hasattr(self, 'loading_dialog'):
+            self.loading_dialog.close()
+        self.log_message(f"<span style='color:red;'>[SYSTEM ERROR] Report failed: {err}</span>")
+        self.end_btn.setText("END INTERVIEW & SYNC INSIGHTS")
+        self.end_btn.setEnabled(True)
 
     def handle_hotkey(self, key):
         if key == "read_screen":
@@ -437,9 +508,11 @@ class StealthHUD(QMainWindow):
         else:
             query = "Identify any questions or logic on screen and provide a natural, conversational answer."
             
-        self.ai_worker = AIWorker(query, mode="vision", image_path=path)
-        self.ai_worker.finished.connect(self.handle_vision_finished)
-        self.ai_worker.start()
+        # Unified AI routing
+        self.stop_active_worker()
+        self.active_worker = AIWorker(query, mode="vision", image_path=path)
+        self.active_worker.finished.connect(self.handle_vision_finished)
+        self.active_worker.start()
 
     def handle_vision_finished(self, sender, message):
         """Resets the button after analysis is complete."""
@@ -450,24 +523,18 @@ class StealthHUD(QMainWindow):
 
     def perform_screen_analysis(self):
         path = vision_handler.capture_fullscreen()
-        self.ai_worker = AIWorker("Analyze this screen and provide the answer.", mode="vision", image_path=path)
-        self.ai_worker.finished.connect(self.handle_ai_finished)
-        self.ai_worker.start()
+        self.stop_active_worker()
+        self.active_worker = AIWorker("Analyze this screen and provide the answer.", mode="vision", image_path=path)
+        self.active_worker.finished.connect(self.handle_ai_finished)
+        self.active_worker.start()
 
     def handle_partial_transcript(self, text):
         # --- SMART INTERRUPTION HANDLING ---
-        # If the AI worker is active AND hasn't started streaming, kill it.
+        # If the active worker is running AND hasn't started streaming, kill it.
         # We don't rollback the UI, we just let the AI read the stacked history.
-        if self.current_voice_worker and self.current_voice_worker.isRunning():
-            if not self.streaming_active: 
-                print("[System] Interruption detected! Aborting previous AI task...")
-                try:
-                    self.current_voice_worker.chunk_received.disconnect()
-                    self.current_voice_worker.finished.disconnect()
-                    self.current_voice_worker.terminate()
-                except:
-                    pass
-                self.current_voice_worker = None
+        if self.active_worker and self.active_worker.isRunning() and not self.streaming_active:
+            print("[System] Interruption detected! Aborting previous AI task...")
+            self.stop_active_worker()
 
         cursor = self.chat_display.textCursor()
         cursor.movePosition(QTextCursor.MoveOperation.End)
@@ -496,27 +563,31 @@ class StealthHUD(QMainWindow):
         self.log_message(f"<span style='color:#00B0FF;'><b>INTERVIEWER:</b> {text}</span>")
         self.last_voice_text = text
         
-        # --- SINGLETON WORKER PATTERN (SAFETY) ---
-        if self.current_voice_worker and self.current_voice_worker.isRunning():
-            try:
-                self.current_voice_worker.chunk_received.disconnect()
-                self.current_voice_worker.finished.disconnect()
-                self.current_voice_worker.terminate()
-                self.current_voice_worker.wait(500) # Short wait for cleanup
-            except: pass
-        
-        # Reset streaming state for the new answer
-        self.streaming_active = False
+        # --- UNIFIED WORKER ROUTING ---
+        self.stop_active_worker()
         
         # Automatically get AI response for interviewer voice
-        self.current_voice_worker = AIWorker(text, mode="text")
-        self.current_voice_worker.chunk_received.connect(self.handle_ai_chunk)
-        self.current_voice_worker.finished.connect(self.handle_ai_voice_finished)
-        self.current_voice_worker.start()
+        self.active_worker = AIWorker(text, mode="text")
+        self.active_worker.chunk_received.connect(self.handle_ai_chunk)
+        self.active_worker.finished.connect(self.handle_ai_finished)
+        self.active_worker.start()
 
-    def handle_ai_voice_finished(self, sender, message):
-        # We handle the bulk through chunks now, this just updates the final state if needed
-        self.last_ai_response = message
+    def stop_active_worker(self):
+        """Safely stops any running AI generation to prevent race conditions."""
+        if hasattr(self, 'active_worker') and self.active_worker and self.active_worker.isRunning():
+            try:
+                self.active_worker.chunk_received.disconnect()
+            except: pass
+            try:
+                self.active_worker.finished.disconnect()
+            except: pass
+            
+            try:
+                self.active_worker.terminate()
+                self.active_worker.wait(500)
+            except: pass
+        
+        self.active_worker = None
         self.streaming_active = False
 
     def handle_ai_chunk(self, sender, chunk):
@@ -536,10 +607,12 @@ class StealthHUD(QMainWindow):
         if text:
             self.log_message(f"<span style='color:#D4AF37;'><b>YOU:</b> {text}</span>")
             self.input_field.clear()
-            self.ai_worker = AIWorker(text, mode="text")
-            self.ai_worker.chunk_received.connect(self.handle_ai_chunk)
-            self.ai_worker.finished.connect(self.handle_ai_finished)
-            self.ai_worker.start()
+            
+            self.stop_active_worker()
+            self.active_worker = AIWorker(text, mode="text")
+            self.active_worker.chunk_received.connect(self.handle_ai_chunk)
+            self.active_worker.finished.connect(self.handle_ai_finished)
+            self.active_worker.start()
         else:
             # Empty ENTER key press: Manually flush the audio buffer and trigger AI!
             if self.is_listening:
@@ -575,6 +648,11 @@ class StealthHUD(QMainWindow):
         self.old_pos = None
 
 if __name__ == "__main__":
+    if is_already_running():
+        import ctypes
+        ctypes.windll.user32.MessageBoxW(0, "StealthHUD is already operational on this system.", "Instance Conflict", 16)
+        sys.exit(0)
+        
     app = QApplication(sys.argv)
     window = StealthHUD()
     window.show()
