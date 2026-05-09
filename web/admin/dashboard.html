@@ -307,8 +307,9 @@
                 if (contents[tab]) contents[tab].style.display = 'block';
                 
                 if(tab === 'users') fetchUsers();
-                if(tab === 'keys') fetchKeys();
+                if(tab === 'keys') { fetchKeys(); fetchStats(); }
                 if(tab === 'payments' || tab === 'settings') fetchConfig();
+                if(tab === 'overview') fetchStats();
                 
                 if(tab === 'payments') {
                     document.getElementById('webhook-url-display').value = window.location.origin + "/api/webhook/stripe";
@@ -479,8 +480,25 @@
 
         document.getElementById('maintenance-toggle').addEventListener('change', toggleMaintenance);
 
-        // Initial Load
-        fetchStats();
+        // --- INITIALIZATION ---
+        window.addEventListener('DOMContentLoaded', () => {
+            const activeLink = document.querySelector('.nav-link.active');
+            if (activeLink) {
+                const tab = activeLink.getAttribute('data-tab');
+                if (tab === 'users') fetchUsers();
+                if (tab === 'keys') { fetchKeys(); fetchStats(); }
+                if (tab === 'payments' || tab === 'settings') fetchConfig();
+                if (tab === 'overview') fetchStats();
+            }
+            
+            // Auto-refresh every 60 seconds
+            setInterval(() => {
+                const activeTab = document.querySelector('.nav-link.active').getAttribute('data-tab');
+                if (activeTab === 'overview') fetchStats();
+                if (activeTab === 'keys') { fetchKeys(); fetchStats(); }
+                if (activeTab === 'users') fetchUsers();
+            }, 60000);
+        });
     </script>
 </body>
 </html>
