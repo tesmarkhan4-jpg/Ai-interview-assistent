@@ -12,6 +12,10 @@ import uuid
 import traceback
 # load_dotenv() - Removed for Vercel native stability
 
+# --- API CORE ---
+app = FastAPI(title="ZenithHUD PRO Backend")
+app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
+
 # --- DATABASE ENGINE ---
 class StealthDB:
     def __init__(self):
@@ -124,8 +128,6 @@ class MailService:
         </div>
         """
 
-# --- API CORE ---
-app = FastAPI(title="ZenithHUD PRO Backend")
 db = None
 
 def get_db():
@@ -146,7 +148,6 @@ def verify_password(hashed_password, user_password):
     except:
         return False
 
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
 
 class UserRegister(BaseModel):
     email: EmailStr
