@@ -8,6 +8,17 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        .shimmer {
+            animation: shimmer 1.5s infinite ease-in-out;
+            opacity: 0.4;
+        }
+        @keyframes shimmer {
+            0% { opacity: 0.4; }
+            50% { opacity: 1; }
+            100% { opacity: 0.4; }
+        }
+    </style>
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body>
@@ -166,15 +177,15 @@
                     <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr); margin-top: 20px;">
                         <div class="stat-card" style="padding: 16px; border: 1px solid var(--border);">
                             <span class="stat-label">Gemini</span>
-                            <div class="stat-value" id="count-gemini" style="font-size: 1.2rem;">--</div>
+                            <div class="stat-value shimmer" id="count-gemini" style="font-size: 1.2rem;">...</div>
                         </div>
                         <div class="stat-card" style="padding: 16px; border: 1px solid var(--border);">
                             <span class="stat-label">Groq</span>
-                            <div class="stat-value" id="count-groq" style="font-size: 1.2rem;">--</div>
+                            <div class="stat-value shimmer" id="count-groq" style="font-size: 1.2rem;">...</div>
                         </div>
                         <div class="stat-card" style="padding: 16px; border: 1px solid var(--border);">
                             <span class="stat-label">Deepgram</span>
-                            <div class="stat-value" id="count-deepgram" style="font-size: 1.2rem;">--</div>
+                            <div class="stat-value shimmer" id="count-deepgram" style="font-size: 1.2rem;">...</div>
                         </div>
                     </div>
                 </div>
@@ -464,10 +475,15 @@
                     </tr>
                 `).join('');
                 
-                // Update key counts
-                document.getElementById('count-gemini').innerText = data.keys.filter(k => k.provider === 'gemini').length;
-                document.getElementById('count-groq').innerText = data.keys.filter(k => k.provider === 'groq').length;
-                document.getElementById('count-deepgram').innerText = data.keys.filter(k => k.provider === 'deepgram').length;
+                // Update key counts and remove shimmers
+                ['count-gemini', 'count-groq', 'count-deepgram'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) {
+                        el.classList.remove('shimmer');
+                        const provider = id.replace('count-', '');
+                        el.innerText = data.keys.filter(k => k.provider === provider).length;
+                    }
+                });
             } catch (e) { console.error("Keys fetch failed", e); }
         }
 
