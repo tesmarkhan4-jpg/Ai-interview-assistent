@@ -9,9 +9,6 @@ __pycache__/
 build/
 dist/
 *.spec
-*.png
-*.jpg
-*.jpeg
 .DS_Store
 Thumbs.db
 
