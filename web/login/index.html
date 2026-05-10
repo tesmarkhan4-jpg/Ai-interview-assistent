@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ZenithHUD | Secure Entry</title>
-    <link rel="stylesheet" href="/landing/style.css">
+    <link rel="stylesheet" href="/style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -13,25 +13,42 @@
         .login-card { 
             background: white; padding: 48px; border-radius: 32px; 
             width: 100%; max-width: 440px; border: 1px solid rgba(0,0,0,0.06);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.04);
+            box-shadow: 0 30px 60px rgba(0,0,0,0.05);
+            animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
         }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
         .form-group { margin-bottom: 24px; }
         label { display: block; font-size: 0.75rem; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 1px; }
         input { 
-            width: 100%; padding: 14px 20px; border-radius: 14px; 
+            width: 100%; padding: 16px 20px; border-radius: 14px; 
             border: 1px solid #e2e8f0; outline: none; font-size: 1rem;
-            transition: 0.2s;
+            transition: 0.2s; background: #fcfdfe;
         }
-        input:focus { border-color: #4f46e5; box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1); }
-        .error-msg { color: #f43f5e; font-size: 0.85rem; font-weight: 600; margin-bottom: 20px; display: none; }
+        input:focus { border-color: #4f46e5; box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1); background: white; }
+        .error-msg { color: #f43f5e; font-size: 0.85rem; font-weight: 600; margin-bottom: 20px; display: none; text-align: center; }
+        
+        .btn-auth {
+            width: 100%; justify-content: center; margin-top: 10px;
+            display: inline-flex; align-items: center; gap: 10px;
+            background: var(--primary); color: white;
+            padding: 16px 32px; border-radius: 14px;
+            font-weight: 700; text-decoration: none; border: none; cursor: pointer;
+            transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 10px 25px var(--primary-glow);
+            font-family: 'Inter', sans-serif;
+            font-size: 1rem;
+        }
+        .btn-auth:hover { transform: translateY(-2px); box-shadow: 0 15px 35px var(--primary-glow); }
+        .btn-auth:active { transform: scale(0.98); }
     </style>
 </head>
 <body>
     <div class="aurora"></div>
     <div class="login-card">
-        <div class="logo" style="margin-bottom: 32px; text-align: center; font-size: 1.8rem;">Zenith<span>HUD</span> PRO</div>
-        <h2 style="margin-bottom: 8px; font-weight: 900; letter-spacing: -1px;">Welcome Back</h2>
-        <p style="color: #64748b; font-size: 0.95rem; margin-bottom: 32px;">Secure identity verification required.</p>
+        <div class="logo" style="margin-bottom: 40px; text-align: center; font-size: 1.8rem; font-weight: 900; letter-spacing: -1px;">Zenith<span>HUD</span> PRO</div>
+        <h2 style="margin-bottom: 8px; font-weight: 900; letter-spacing: -1.5px; color: #1e293b; font-size: 2rem;">Welcome Back</h2>
+        <p style="color: #64748b; font-size: 1rem; margin-bottom: 32px;">Secure identity verification required.</p>
         
         <div id="error" class="error-msg">Identity Mismatch. Please check credentials.</div>
         
@@ -44,10 +61,10 @@
                 <label>Security Token (Password)</label>
                 <input type="password" id="password" placeholder="••••••••" required>
             </div>
-            <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; margin-top: 10px;">Authorize Entry</button>
+            <button type="submit" class="btn-auth">Authorize Entry</button>
         </form>
         
-        <div style="text-align: center; margin-top: 32px; font-size: 0.9rem; color: #64748b;">
+        <div style="text-align: center; margin-top: 40px; font-size: 0.95rem; color: #64748b;">
             Don't have an account? <a href="/#pricing" style="color: #4f46e5; font-weight: 700; text-decoration: none;">Deploy Trial</a>
         </div>
     </div>
@@ -58,6 +75,10 @@
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
             const error = document.getElementById('error');
+            const btn = e.submitter;
+
+            btn.innerText = "Authorizing...";
+            btn.disabled = true;
 
             try {
                 const res = await fetch('/api/auth/login', {
@@ -68,10 +89,7 @@
                 
                 const data = await res.json();
                 if (data.status === 'success') {
-                    // Store session
                     localStorage.setItem('zenith_user', JSON.stringify(data.user));
-                    
-                    // Redirect based on role
                     if (data.user.email === 'tesmarkhan4@gmail.com') {
                         window.location.href = '/admin';
                     } else {
@@ -79,9 +97,13 @@
                     }
                 } else {
                     error.style.display = 'block';
+                    btn.innerText = "Authorize Entry";
+                    btn.disabled = false;
                 }
             } catch (err) {
                 error.style.display = 'block';
+                btn.innerText = "Authorize Entry";
+                btn.disabled = false;
             }
         });
     </script>
