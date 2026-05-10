@@ -208,6 +208,8 @@ async def login(user: UserLogin):
                 "trial_expiry": db_user.get("trial_expiry", datetime.datetime.utcnow()).isoformat(),
                 "server_time": datetime.datetime.utcnow().isoformat()
             }
+        }
+    except HTTPException: raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database connection failed: {str(e)}")
 
