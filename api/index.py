@@ -2,15 +2,18 @@ import os
 import datetime
 import requests
 import certifi
+import hashlib
+import uuid
+import traceback
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from bson import ObjectId
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, EmailStr
 from pymongo import MongoClient
 from dotenv import load_dotenv
-import hashlib
-import uuid
-import traceback
-# load_dotenv() - Removed for Vercel native stability
 
 # --- API CORE ---
 app = FastAPI(title="ZenithHUD PRO Backend")
@@ -63,16 +66,12 @@ class StealthDB:
     def set_maintenance(self, status): self.config.update_one({"type": "global"}, {"$set": {"maintenance_mode": status}}, upsert=True)
     def get_all_keys(self): return list(self.keys.find({}))
     def remove_key(self, key_id): 
-        from bson import ObjectId
         return self.keys.delete_one({"_id": ObjectId(key_id)})
     def get_all_users(self): return list(self.users.find({}).sort("joined_at", -1).limit(50))
     def update_config(self, data):
         return self.config.update_one({"type": "global"}, {"$set": data}, upsert=True)
 
 # --- EMAIL SYSTEM ---
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
 
 class MailService:
     @staticmethod

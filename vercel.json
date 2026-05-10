@@ -4,10 +4,6 @@
     {
       "src": "api/index.py",
       "use": "@vercel/python"
-    },
-    {
-      "src": "web/**",
-      "use": "@vercel/static"
     }
   ],
   "rewrites": [
