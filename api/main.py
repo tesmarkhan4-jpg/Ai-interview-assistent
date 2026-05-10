@@ -220,6 +220,7 @@ async def login(user: UserLogin):
                 "email": db_user["email"], 
                 "tier": db_user.get("tier", "TRIAL"), 
                 "full_name": db_user["full_name"],
+                "hwid": db_user.get("hwid"),
                 "trial_expiry": db_user.get("trial_expiry", datetime.datetime.utcnow()).isoformat(),
                 "server_time": datetime.datetime.utcnow().isoformat()
             }
