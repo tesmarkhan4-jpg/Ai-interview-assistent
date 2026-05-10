@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZenithHUD | Create Account</title>
+    <link rel="stylesheet" href="/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        body { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: #f8fafc; padding: 40px 0; }
+        .login-card { 
+            background: white; padding: 48px; border-radius: 32px; 
+            width: 100%; max-width: 480px; border: 1px solid rgba(0,0,0,0.06);
+            box-shadow: 0 30px 60px rgba(0,0,0,0.05);
+        }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; font-size: 0.75rem; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 1px; }
+        input { 
+            width: 100%; padding: 14px 20px; border-radius: 14px; 
+            border: 1px solid #e2e8f0; outline: none; font-size: 1rem;
+            transition: 0.2s; background: #fcfdfe;
+        }
+        input:focus { border-color: #4f46e5; box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1); background: white; }
+        .otp-row { display: flex; gap: 12px; align-items: flex-end; }
+        .btn-send { background: #f1f5f9; border: 1px solid #e2e8f0; padding: 14px 20px; border-radius: 14px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+        .btn-send:disabled { opacity: 0.5; cursor: not-allowed; }
+        .error-msg { color: #f43f5e; font-size: 0.85rem; font-weight: 600; margin-bottom: 20px; display: none; text-align: center; }
+        .success-msg { color: #10b981; font-size: 0.85rem; font-weight: 600; margin-bottom: 20px; display: none; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="aurora"></div>
+    <div class="login-card">
+        <div class="logo" style="margin-bottom: 32px; text-align: center; font-size: 1.8rem; font-weight: 900; letter-spacing: -1px;">Zenith<span>HUD</span> PRO</div>
+        <h2 style="margin-bottom: 8px; font-weight: 900; letter-spacing: -1.5px; color: #1e293b; font-size: 2rem;">Start Trial</h2>
+        <p style="color: #64748b; font-size: 1rem; margin-bottom: 32px;">Deploy your intelligence partner in seconds.</p>
+        
+        <div id="error" class="error-msg">Error details here</div>
+        <div id="success" class="success-msg">Success details here</div>
+        
+        <form id="signup-form">
+            <div class="form-group">
+                <label>Full Name</label>
+                <input type="text" id="full_name" placeholder="John Doe" required>
+            </div>
+            <div class="form-group">
+                <label>Email Address</label>
+                <div class="otp-row">
+                    <input type="email" id="email" placeholder="name@example.com" required>
+                    <button type="button" id="btn-otp" class="btn-send">Send Code</button>
+                </div>
+            </div>
+            <div class="form-group" id="otp-group" style="display: none;">
+                <label>6-Digit Code</label>
+                <input type="text" id="otp" placeholder="123456" maxlength="6">
+            </div>
+            <div class="form-group">
+                <label>Create Password</label>
+                <input type="password" id="password" placeholder="••••••••" required>
+            </div>
+            <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; margin-top: 10px; border: none; cursor: pointer;">Verify & Create Account</button>
+        </form>
+        
+        <div style="text-align: center; margin-top: 32px; font-size: 0.95rem; color: #64748b;">
+            Already verified? <a href="/login" style="color: #4f46e5; font-weight: 700; text-decoration: none;">Login Here</a>
+        </div>
+    </div>
+
+    <script>
+        const btnOtp = document.getElementById('btn-otp');
+        const otpGroup = document.getElementById('otp-group');
+        const error = document.getElementById('error');
+        const success = document.getElementById('success');
+
+        btnOtp.addEventListener('click', async () => {
+            const email = document.getElementById('email').value;
+            if (!email) return alert('Email required');
+            
+            btnOtp.innerText = "Sending...";
+            btnOtp.disabled = true;
+
+            try {
+                const res = await fetch('/api/auth/send-otp', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email })
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    otpGroup.style.display = 'block';
+                    success.innerText = "Verification code sent to your email!";
+                    success.style.display = 'block';
+                    error.style.display = 'none';
+                    btnOtp.innerText = "Resend";
+                    setTimeout(() => btnOtp.disabled = false, 30000);
+                } else {
+                    error.innerText = data.detail || "Failed to send code.";
+                    error.style.display = 'block';
+                    btnOtp.innerText = "Send Code";
+                    btnOtp.disabled = false;
+                }
+            } catch (err) {
+                error.innerText = "Server error. Try again later.";
+                error.style.display = 'block';
+                btnOtp.disabled = false;
+            }
+        });
+
+        document.getElementById('signup-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const full_name = document.getElementById('full_name').value;
+            const otp = document.getElementById('otp').value;
+            
+            if (!otp) return alert('Please enter the 6-digit code sent to your email.');
+
+            try {
+                const res = await fetch('/api/auth/signup', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password, full_name, otp })
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    window.location.href = '/login?msg=Account created! Please login.';
+                } else {
+                    error.innerText = data.detail || "Signup failed.";
+                    error.style.display = 'block';
+                }
+            } catch (err) {
+                error.innerText = "Connection error.";
+                error.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>

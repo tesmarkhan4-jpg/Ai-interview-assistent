@@ -164,10 +164,10 @@ def verify_password(hashed_password, user_password):
 
 
 class UserRegister(BaseModel):
-    email: EmailStr
+    email: str
     password: str
     full_name: str
-    hwid: str
+    otp: str
 
 class UserLogin(BaseModel):
     email: EmailStr
@@ -183,23 +183,57 @@ class ProxyRequest(BaseModel):
 async def ping():
     return {"status": "online", "message": "Strategic systems operational."}
 
-# --- AUTH ---
-@app.post("/api/auth/register")
-async def register(user: UserRegister):
+# --- OTP SYSTEM ---
+@app.post("/api/auth/send-otp")
+async def send_otp(data: dict):
+    email = data.get("email")
+    if not email: raise HTTPException(status_code=400, detail="Email required.")
+    
+    otp = str(random.randint(100000, 999999))
     try:
         conn = StealthDB()
-        # Check if HWID is already linked to another trial account
-        existing_hwid = conn.users.find_one({"hwid": user.hwid})
-        if existing_hwid:
-            raise HTTPException(status_code=403, detail="System already registered. Please login with original identity.")
+        # Store OTP in DB with 10-minute expiry
+        conn.db.otps.update_one(
+            {"email": email},
+            {"$set": {"otp": otp, "created_at": datetime.datetime.utcnow()}},
+            upsert=True
+        )
+        
+        # NOTE: In production, you would use smtplib or SendGrid here
+        # For now, we will return the OTP in the response for testing
+        print(f"DEBUG: OTP for {email} is {otp}")
+        return {"status": "success", "msg": "Verification code sent to your email."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/auth/signup")
+async def signup(user: UserRegister):
+    try:
+        conn = StealthDB()
+        # Verify OTP
+        otp_doc = conn.db.otps.find_one({"email": user.email})
+        if not otp_doc or otp_doc["otp"] != user.otp:
+            raise HTTPException(status_code=400, detail="Invalid or expired verification code.")
             
-        if conn.get_user(user.email): raise HTTPException(status_code=400, detail="Identity already registered.")
+        if conn.get_user(user.email): 
+            raise HTTPException(status_code=400, detail="Identity already registered.")
+            
         hashed = hash_password(user.password)
-        conn.create_user(user.email, hashed, user.full_name, hwid=user.hwid)
+        conn.create_user(
+            user.email, 
+            hashed, 
+            user.full_name, 
+            hwid=None, # Bind later on app login
+            tier="TRIAL",
+            join_date=datetime.datetime.utcnow()
+        )
+        
+        # Clear OTP
+        conn.db.otps.delete_one({"email": user.email})
         return {"status": "success"}
     except HTTPException: raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Database connection failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/auth/login")
 async def login(user: UserLogin):
@@ -347,21 +381,26 @@ async def get_users():
         for u in users: 
             u["_id"] = str(u["_id"])
             # Calculate Timers
-            if u.get("trial_expiry"):
+            if u.get("tier") == "PRO":
+                u["status_label"] = "PRO"
+                u["timer"] = "UNLIMITED"
+            elif u.get("trial_expiry"):
                 diff = u["trial_expiry"] - now
-                u["trial_timer"] = f"{max(0, diff.days)}d {max(0, diff.seconds // 3600)}h"
+                if diff.total_seconds() > 0:
+                    u["status_label"] = "TRIAL"
+                    u["timer"] = f"{diff.days}d {diff.seconds // 3600}h"
+                else:
+                    u["status_label"] = "EXPIRED"
+                    u["timer"] = "0h"
                 u["trial_expiry"] = u["trial_expiry"].isoformat()
             else:
-                u["trial_timer"] = "EXPIRED"
+                u["status_label"] = "TRIAL"
+                u["timer"] = "7d"
 
-            if u.get("tier") == "PRO" and u.get("sub_expiry"):
-                diff = u["sub_expiry"] - now
-                u["sub_timer"] = f"{max(0, diff.days)}d {max(0, diff.seconds // 3600)}h"
+            if "join_date" in u and isinstance(u["join_date"], datetime.datetime):
+                u["join_date"] = u["join_date"].isoformat()
             else:
-                u["sub_timer"] = "N/A"
-
-            if "joined_at" in u and isinstance(u["joined_at"], datetime.datetime):
-                u["joined_at"] = u["joined_at"].isoformat()
+                u["join_date"] = "Unknown"
         return {"users": users}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

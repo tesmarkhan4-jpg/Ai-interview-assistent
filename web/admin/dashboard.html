@@ -134,8 +134,9 @@
                         <tr>
                             <th>Identity (Email)</th>
                             <th>Tier</th>
-                            <th>Trial Status</th>
-                            <th>System Lock (HWID)</th>
+                            <th>Joined</th>
+                            <th>Status / Time Left</th>
+                            <th>System ID (HWID)</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -425,19 +426,30 @@
                 const res = await fetch(`/api/admin/users`);
                 const data = await res.json();
                 const list = document.getElementById('user-list');
-                list.innerHTML = data.users.map(u => `
+                list.innerHTML = data.users.map(u => {
+                    const joined = u.join_date ? new Date(u.join_date).toLocaleDateString() : 'N/A';
+                    return `
                     <tr>
-                        <td><b>${u.email}</b></td>
-                        <td><span class="status-pill status-${u.tier.toLowerCase()}">${u.tier}</span></td>
-                        <td style="font-weight: 700; color: #f43f5e;">${u.trial_timer}</td>
-                        <td><code style="font-size: 0.7rem; color: #64748b;">${u.hwid || 'NOT_LOCKED'}</code></td>
                         <td>
-                            <button class="btn-action" onclick="upgradeUser('${u.email}')" style="font-size: 0.7rem; padding: 4px 8px;">PRO</button>
-                            <button class="btn-action" onclick="resetHWID('${u.email}')" style="font-size: 0.7rem; padding: 4px 8px; background: #fbbf24;">RESET HWID</button>
-                            <button class="btn-action btn-delete" onclick="deleteUser('${u.email}')" style="font-size: 0.7rem; padding: 4px 8px;">TERMINATE</button>
+                            <b>${u.full_name}</b><br>
+                            <span style="font-size: 0.75rem; color: var(--text-muted);">${u.email}</span>
+                        </td>
+                        <td><span class="status-pill status-${u.tier === 'PRO' ? 'active' : 'trial'}">${u.tier}</span></td>
+                        <td style="font-size: 0.85rem; color: var(--text-muted);">${joined}</td>
+                        <td>
+                            <span style="font-weight: 700;">${u.status_label}</span><br>
+                            <span style="font-size: 0.75rem; color: var(--primary);">${u.timer}</span>
+                        </td>
+                        <td><code style="font-size: 0.7rem;">${u.hwid || 'NOT LINKED'}</code></td>
+                        <td>
+                            <div style="display: flex; gap: 8px;">
+                                <button class="btn-action" onclick="upgradeUser('${u.email}')">PRO</button>
+                                <button class="btn-action" onclick="resetHWID('${u.email}')">Reset ID</button>
+                                <button class="btn-action btn-delete" onclick="deleteUser('${u.email}')">Terminate</button>
+                            </div>
                         </td>
                     </tr>
-                `).join('');
+                `}).join('');
             } catch (e) { console.error("User fetch failed", e); }
         }
 

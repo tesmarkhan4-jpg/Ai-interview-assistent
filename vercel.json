@@ -24,6 +24,10 @@
       "destination": "/api/main.py"
     },
     {
+      "source": "/signup",
+      "destination": "/web/login/signup.html"
+    },
+    {
       "source": "/login",
       "destination": "/web/login/index.html"
     },
