@@ -91,21 +91,51 @@ async def send_otp(data: dict):
             upsert=True
         )
         
-        # SMTP CONFIG (Verified Credentials)
+        # SMTP CONFIG
         smtp_user = "faheemkhan101992@gmail.com"
         smtp_pass = "pseuniogagkbbhrn" 
         
-        msg = MIMEText(f"Your ZenithHUD PRO verification code is: {otp}\n\nValid for 10 minutes.")
-        msg['Subject'] = f"{otp} is your ZenithHUD Code"
+        # HTML TEMPLATE
+        html_content = f"""
+        <html>
+            <body style="font-family: 'Inter', Helvetica, Arial, sans-serif; background-color: #f8fafc; padding: 40px; margin: 0;">
+                <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 24px; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
+                    <div style="background: linear-gradient(135deg, #4f46e5, #0ea5e9); padding: 40px; text-align: center;">
+                        <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 900; letter-spacing: -1px;">Zenith<span style="opacity: 0.8;">HUD</span> PRO</h1>
+                        <p style="color: rgba(255,255,255,0.9); margin-top: 8px; font-size: 16px;">Strategic Verification System</p>
+                    </div>
+                    <div style="padding: 40px; text-align: center;">
+                        <h2 style="color: #1e293b; margin-bottom: 8px; font-weight: 800; letter-spacing: -1px; font-size: 24px;">Confirm Your Identity</h2>
+                        <p style="color: #64748b; font-size: 16px; line-height: 1.6; margin-bottom: 32px;">Please use the code below to complete your account deployment. This code is valid for 10 minutes.</p>
+                        
+                        <div style="background: #f1f5f9; border-radius: 16px; padding: 24px; display: inline-block; min-width: 200px;">
+                            <span style="font-family: 'Courier New', monospace; font-size: 40px; font-weight: 900; color: #4f46e5; letter-spacing: 8px;">{otp}</span>
+                        </div>
+                        
+                        <p style="color: #94a3b8; font-size: 14px; margin-top: 40px;">If you did not request this verification, you can safely ignore this email.</p>
+                    </div>
+                    <div style="padding: 24px; background: #f8fafc; text-align: center; border-top: 1px solid #f1f5f9;">
+                        <p style="color: #cbd5e1; font-size: 12px; margin: 0;">&copy; 2026 ZenithHUD PRO &bull; All Rights Reserved</p>
+                    </div>
+                </div>
+            </body>
+        </html>
+        """
+        
+        msg = MIMEMultipart("alternative")
+        msg['Subject'] = f"{otp} is your ZenithHUD Verification Code"
         msg['From'] = f"ZenithHUD PRO <{smtp_user}>"
         msg['To'] = email
+        
+        msg.attach(MIMEText(f"Your ZenithHUD PRO code is: {otp}", "plain"))
+        msg.attach(MIMEText(html_content, "html"))
         
         with smtplib.SMTP("smtp.gmail.com", 587) as server:
             server.starttls()
             server.login(smtp_user, smtp_pass)
             server.send_message(msg)
             
-        return {"status": "success", "msg": "Verification code sent."}
+        return {"status": "success", "msg": "Code sent."}
     except Exception as e:
         return {"status": "error", "detail": f"System Failure: {str(e)}"}
 
