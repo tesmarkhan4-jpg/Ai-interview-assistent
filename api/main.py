@@ -23,10 +23,10 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True, 
 class StealthDB:
     def __init__(self):
         # NEW STRATEGIC CLUSTER: Ai-A (Escaped Password for @ character)
-        self.uri = os.getenv("MONGO_URI") or "mongodb+srv://admin:admin%40013970@ai-a.fqixdrd.mongodb.net/?appName=ZenithHUD"
+        self.uri = os.getenv("MONGO_URI") or "mongodb+srv://admin:admin%40013970@ai-a.fqixdrd.mongodb.net/?appName=Ai-A"
         try:
             # High-compatibility connection for serverless
-            self.client = MongoClient(self.uri, serverSelectionTimeoutMS=10000, connectTimeoutMS=10000)
+            self.client = MongoClient(self.uri, serverSelectionTimeoutMS=10000, connectTimeoutMS=10000, tlsCAFile=certifi.where())
             self.db = self.client['zenith_pro']
             self.users = self.db['users']
             self.keys = self.db['api_keys']
