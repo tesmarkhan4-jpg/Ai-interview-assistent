@@ -3,148 +3,180 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ZenithHUD | Dashboard</title>
+    <title>ZenithHUD | User Dashboard</title>
     <link rel="stylesheet" href="/admin/admin.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        .nav-link { cursor: pointer; }
-        .tab-content { display: none; animation: fadeIn 0.3s ease-out; }
-        .tab-content.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        :root { --sidebar-w: 280px; }
+        body { background: #fcfdfe; font-family: 'Inter', sans-serif; }
         
-        .download-box { 
-            background: linear-gradient(135deg, #4f46e5, #0ea5e9); 
-            color: white; padding: 40px; border-radius: 28px; 
-            display: flex; justify-content: space-between; align-items: center;
-            margin-bottom: 32px;
+        aside { width: var(--sidebar-w); background: white; border-right: 1px solid #f1f5f9; height: 100vh; position: fixed; left: 0; top: 0; padding: 32px; display: flex; flex-direction: column; }
+        main { margin-left: var(--sidebar-w); padding: 48px; max-width: 1200px; }
+
+        .nav-link { 
+            display: flex; align-items: center; gap: 12px; padding: 14px 20px; 
+            border-radius: 14px; color: #64748b; text-decoration: none; font-weight: 600; 
+            transition: 0.2s; margin-bottom: 4px; cursor: pointer;
         }
-        .guide-step { display: flex; gap: 20px; margin-bottom: 24px; align-items: flex-start; }
-        .step-num { 
-            background: rgba(79, 70, 229, 0.1); color: var(--primary); 
-            width: 32px; height: 32px; border-radius: 50%; 
-            display: flex; align-items: center; justify-content: center;
-            font-weight: 800; flex-shrink: 0;
+        .nav-link:hover { background: #f8fafc; color: var(--primary); }
+        .nav-link.active { background: rgba(79, 70, 229, 0.08); color: var(--primary); }
+
+        .tab-content { display: none; animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+        .tab-content.active { display: block; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        .stat-card { background: white; border: 1px solid #f1f5f9; border-radius: 24px; padding: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.02); }
+        .data-card { background: white; border: 1px solid #f1f5f9; border-radius: 32px; padding: 32px; box-shadow: 0 10px 40px rgba(0,0,0,0.03); margin-top: 32px; }
+
+        .interview-row { 
+            display: grid; grid-template-columns: 1fr 150px 150px 200px; 
+            padding: 20px; border-bottom: 1px solid #f8fafc; align-items: center;
+            transition: 0.2s;
         }
+        .interview-row:hover { background: #fcfdfe; }
+        .interview-row:last-child { border: none; }
+
+        .btn-mini { padding: 8px 16px; border-radius: 10px; font-size: 0.85rem; font-weight: 700; cursor: pointer; border: none; transition: 0.2s; }
+        .btn-view { background: rgba(79, 70, 229, 0.1); color: var(--primary); }
+        .btn-delete-mini { background: rgba(244, 63, 94, 0.1); color: #f43f5e; margin-left: 8px; }
+        
+        .empty-state { text-align: center; padding: 60px 20px; color: #94a3b8; }
+        .pill { padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; }
+        .pill-trial { background: #fef3c7; color: #d97706; }
+        .pill-pro { background: #dcfce7; color: #16a34a; }
     </style>
 </head>
-<body style="background: #f8fafc;">
+<body>
     <aside>
-        <div class="brand">Zenith<span>HUD</span> PRO</div>
-        <nav class="nav-group">
-            <a class="nav-link active" data-tab="home"><i data-lucide="layout-dashboard"></i> Overview</a>
-            <a class="nav-link" data-tab="download"><i data-lucide="download"></i> Download App</a>
-            <a class="nav-link" data-tab="billing"><i data-lucide="credit-card"></i> My Plan</a>
-            <a class="nav-link" data-tab="profile"><i data-lucide="user"></i> My Settings</a>
+        <div class="logo" style="font-size: 1.5rem; font-weight: 900; margin-bottom: 48px; letter-spacing: -1px;">Zenith<span>HUD</span> PRO</div>
+        
+        <nav style="flex: 1;">
+            <div class="nav-link active" data-tab="home"><i data-lucide="layout-grid"></i> Overview</div>
+            <div class="nav-link" data-tab="interviews"><i data-lucide="brain-circuit"></i> My Interviews</div>
+            <div class="nav-link" data-tab="download"><i data-lucide="download-cloud"></i> Download App</div>
+            <div class="nav-link" data-tab="billing"><i data-lucide="credit-card"></i> My Plan</div>
+            <div class="nav-link" data-tab="settings"><i data-lucide="settings"></i> Settings</div>
         </nav>
-        <div class="user-footer">
-            <a href="#" id="logout-btn" class="nav-link" style="color: var(--rose);"><i data-lucide="log-out"></i> Logout</a>
-        </div>
+
+        <div class="nav-link" id="logout-btn" style="color: #f43f5e; margin-top: auto;"><i data-lucide="log-out"></i> Logout</div>
     </aside>
 
     <main>
-        <header>
-            <h1 id="user-greeting">Welcome back!</h1>
-            <div class="status-pill status-active" id="user-tier-badge">PRO PLAN</div>
+        <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px;">
+            <div>
+                <h1 id="user-name" style="font-size: 2rem; font-weight: 900; letter-spacing: -1.5px; color: #1e293b;">Welcome, Agent</h1>
+                <p style="color: #64748b; margin-top: 4px;" id="user-email-header">Secure session active</p>
+            </div>
+            <span class="pill pill-trial" id="tier-pill">Trial Plan</span>
         </header>
 
-        <!-- OVERVIEW TAB -->
+        <!-- OVERVIEW -->
         <div id="tab-home" class="tab-content active">
-            <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr);">
+            <div class="stats-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;">
                 <div class="stat-card">
-                    <span class="stat-label">Plan Expires On</span>
-                    <div class="stat-value" id="expiry-text">--</div>
-                    <span class="stat-trend" id="expiry-subtext">Remaining time</span>
+                    <label style="font-size: 0.75rem; font-weight: 800; color: #94a3b8; text-transform: uppercase;">Time Remaining</label>
+                    <div id="days-left" style="font-size: 2rem; font-weight: 900; color: #1e293b; margin-top: 8px;">--</div>
+                    <p style="font-size: 0.85rem; color: #64748b; margin-top: 4px;">Until mission expiry</p>
                 </div>
                 <div class="stat-card">
-                    <span class="stat-label">Linked Computer</span>
-                    <div class="stat-value" style="font-size: 0.9rem; font-family: monospace;" id="hwid-text">LOCKED</div>
-                    <span class="stat-trend">Your system ID</span>
+                    <label style="font-size: 0.75rem; font-weight: 800; color: #94a3b8; text-transform: uppercase;">System ID</label>
+                    <div id="hwid-display" style="font-size: 1rem; font-family: monospace; font-weight: 700; color: #1e293b; margin-top: 14px; background: #f8fafc; padding: 12px; border-radius: 12px;">NOT LINKED</div>
+                    <p style="font-size: 0.85rem; color: #64748b; margin-top: 8px;">Bound hardware</p>
                 </div>
                 <div class="stat-card">
-                    <span class="stat-label">Total Uses</span>
-                    <div class="stat-value">0</div>
-                    <span class="stat-trend">Total interview calls</span>
+                    <label style="font-size: 0.75rem; font-weight: 800; color: #94a3b8; text-transform: uppercase;">Total Missions</label>
+                    <div id="total-interviews" style="font-size: 2rem; font-weight: 900; color: #1e293b; margin-top: 8px;">0</div>
+                    <p style="font-size: 0.85rem; color: #64748b; margin-top: 4px;">Intelligence reports</p>
                 </div>
             </div>
 
             <div class="data-card">
-                <div class="card-header"><span class="card-title">Recent Activity</span></div>
-                <table>
-                    <thead><tr><th>Date</th><th>Duration</th><th>Status</th></tr></thead>
-                    <tbody id="mission-logs"><tr><td colspan="3" style="text-align: center; color: #94a3b8; padding: 40px;">No recent sessions found.</td></tr></tbody>
-                </table>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                    <h3 style="font-size: 1.25rem; font-weight: 800; letter-spacing: -0.5px;">Recent Intelligence</h3>
+                    <button class="btn-mini btn-view" onclick="switchTab('interviews')">View All</button>
+                </div>
+                <div id="recent-list">
+                    <!-- Dynamic -->
+                </div>
             </div>
         </div>
 
-        <!-- DOWNLOAD TAB -->
+        <!-- INTERVIEWS -->
+        <div id="tab-interviews" class="tab-content">
+            <div class="data-card" style="padding: 0; overflow: hidden;">
+                <div style="padding: 32px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center;">
+                    <h3 style="font-size: 1.25rem; font-weight: 800;">Mission History</h3>
+                    <div style="font-size: 0.85rem; color: #94a3b8;">Manage your stored interview intelligence</div>
+                </div>
+                
+                <div class="interview-header" style="display: grid; grid-template-columns: 1fr 150px 150px 200px; padding: 16px 32px; background: #fcfdfe; font-size: 0.75rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px;">
+                    <div>Date & Identity</div>
+                    <div>Duration</div>
+                    <div>Status</div>
+                    <div style="text-align: right;">Actions</div>
+                </div>
+
+                <div id="full-interview-list">
+                    <!-- Dynamic -->
+                </div>
+            </div>
+        </div>
+
+        <!-- DOWNLOAD -->
         <div id="tab-download" class="tab-content">
-            <div class="download-box">
-                <div>
-                    <h2 style="color: white; margin-bottom: 8px;">ZenithHUD for Windows</h2>
-                    <p style="opacity: 0.9; margin-bottom: 24px;">Download the latest version to start your interviews.</p>
-                    <a href="/download/ZenithHUD_Setup.exe" class="btn-secondary" style="background: white; border: none; color: var(--primary);">Download App</a>
-                </div>
-                <i data-lucide="monitor" style="width: 100px; height: 100px; opacity: 0.2;"></i>
+            <div class="data-card" style="background: linear-gradient(135deg, #4f46e5, #0ea5e9); color: white; border: none;">
+                <h2 style="font-size: 2rem; font-weight: 900; margin-bottom: 16px;">Ready for Deployment?</h2>
+                <p style="opacity: 0.9; margin-bottom: 32px; font-size: 1.1rem;">Download the Windows HUD and start your interview with total confidence.</p>
+                <a href="/download/ZenithHUD_Setup.exe" class="btn-auth" style="background: white; color: var(--primary); display: inline-flex; width: auto; padding: 16px 40px;">Download ZenithHUD .EXE</a>
             </div>
-
+            
             <div class="data-card">
-                <div class="card-header"><span class="card-title">How to Set Up</span></div>
-                <div class="guide-step">
-                    <div class="step-num">1</div>
-                    <div>
-                        <h4 style="margin-bottom: 4px;">Install the App</h4>
-                        <p style="font-size: 0.9rem; color: #64748b;">Run the ZenithHUD_Setup.exe file you just downloaded.</p>
-                    </div>
-                </div>
-                <div class="guide-step">
-                    <div class="step-num">2</div>
-                    <div>
-                        <h4 style="margin-bottom: 4px;">Log In</h4>
-                        <p style="font-size: 0.9rem; color: #64748b;">Open the app and use your email and password to log in.</p>
-                    </div>
-                </div>
-                <div class="guide-step">
-                    <div class="step-num">3</div>
-                    <div>
-                        <h4 style="margin-bottom: 4px;">Start Your Call</h4>
-                        <p style="font-size: 0.9rem; color: #64748b;">Join your interview call. The help window will appear automatically.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- BILLING TAB -->
-        <div id="tab-billing" class="tab-content">
-            <div class="data-card" style="text-align: center; padding: 60px;">
-                <div style="background: rgba(79, 70, 229, 0.1); width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px;">
-                    <i data-lucide="shield-check" style="width: 40px; height: 40px; color: var(--primary);"></i>
-                </div>
-                <h2 style="margin-bottom: 12px;">Your Current Plan</h2>
-                <p style="color: #64748b; margin-bottom: 32px;" id="billing-status">Your plan is active.</p>
-                <div style="display: flex; gap: 16px; justify-content: center;">
-                    <a href="/#pricing" class="btn-primary">Upgrade Now</a>
-                </div>
-            </div>
-        </div>
-
-        <!-- PROFILE TAB -->
-        <div id="tab-profile" class="tab-content">
-            <div class="data-card">
-                <div class="card-header"><span class="card-title">My Account Details</span></div>
+                <h3 style="margin-bottom: 24px; font-weight: 800;">Quickstart Guide</h3>
                 <div style="display: grid; gap: 24px;">
+                    <div style="display: flex; gap: 20px;">
+                        <div style="width: 32px; height: 32px; background: rgba(79, 70, 229, 0.1); color: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; flex-shrink: 0;">1</div>
+                        <p style="color: #64748b;">Install and launch the **ZenithHUD PRO** application on your Windows machine.</p>
+                    </div>
+                    <div style="display: flex; gap: 20px;">
+                        <div style="width: 32px; height: 32px; background: rgba(79, 70, 229, 0.1); color: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; flex-shrink: 0;">2</div>
+                        <p style="color: #64748b;">Log in with your verified email. Your hardware will automatically bind to your account.</p>
+                    </div>
+                    <div style="display: flex; gap: 20px;">
+                        <div style="width: 32px; height: 32px; background: rgba(79, 70, 229, 0.1); color: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; flex-shrink: 0;">3</div>
+                        <p style="color: #64748b;">Join any video call. The Phantom Overlay will appear only to you, providing real-time intelligence.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- BILLING -->
+        <div id="tab-billing" class="tab-content">
+            <div class="data-card" style="text-align: center; padding: 80px 40px;">
+                <div style="font-size: 3rem; margin-bottom: 24px;">💎</div>
+                <h2 style="font-size: 2rem; font-weight: 900; margin-bottom: 12px;">Upgrade to PRO Intelligence</h2>
+                <p style="color: #64748b; margin-bottom: 40px; max-width: 500px; margin-left: auto; margin-right: auto;">Unlock unlimited missions, priority AI models, and 24/7 strategic support.</p>
+                <a href="/#pricing" class="btn-auth" style="display: inline-flex; width: auto; padding: 18px 60px;">Explore Pro Plans</a>
+            </div>
+        </div>
+
+        <!-- SETTINGS -->
+        <div id="tab-settings" class="tab-content">
+            <div class="data-card">
+                <h3 style="margin-bottom: 32px; font-weight: 800;">Account Settings</h3>
+                <div style="display: grid; gap: 24px; max-width: 500px;">
                     <div>
-                        <label class="stat-label">Your Name</label>
-                        <input type="text" id="p-name" class="btn-action" style="width: 100%; text-align: left;" readonly>
+                        <label style="font-size: 0.75rem; font-weight: 800; color: #94a3b8; text-transform: uppercase;">Full Name</label>
+                        <input type="text" id="set-name" style="width: 100%; padding: 14px; border-radius: 12px; border: 1px solid #e2e8f0; margin-top: 8px; background: #f8fafc;" readonly>
                     </div>
                     <div>
-                        <label class="stat-label">Email Address</label>
-                        <input type="text" id="p-email" class="btn-action" style="width: 100%; text-align: left;" readonly>
+                        <label style="font-size: 0.75rem; font-weight: 800; color: #94a3b8; text-transform: uppercase;">Email Address</label>
+                        <input type="text" id="set-email" style="width: 100%; padding: 14px; border-radius: 12px; border: 1px solid #e2e8f0; margin-top: 8px; background: #f8fafc;" readonly>
                     </div>
-                    <button class="btn-action" style="color: var(--primary);">Change Password</button>
-                    <button class="btn-action btn-delete">Reset Linked Computer</button>
+                    <button class="btn-auth" style="margin-top: 20px;">Update Profile</button>
+                    <button class="btn-mini btn-delete-mini" style="padding: 14px; border-radius: 14px; font-weight: 700;">Request Hardware Unlock</button>
                 </div>
             </div>
         </div>
@@ -152,45 +184,98 @@
 
     <script>
         lucide.createIcons();
-        
-        // --- AUTH & DATA ---
         const user = JSON.parse(localStorage.getItem('zenith_user'));
-        if (!user) {
-            window.location.href = '/login';
-        } else {
-            document.getElementById('user-greeting').innerText = `Welcome back, ${user.full_name}!`;
-            document.getElementById('user-tier-badge').innerText = `${user.tier} PLAN`;
-            document.getElementById('p-name').value = user.full_name;
-            document.getElementById('p-email').value = user.email;
-            document.getElementById('hwid-text').innerText = user.hwid || 'No computer linked yet';
-            
-            if (user.trial_expiry) {
-                const expiry = new Date(user.trial_expiry);
-                document.getElementById('expiry-text').innerText = expiry.toLocaleDateString();
-            }
+        if(!user) window.location.href = '/login';
+
+        // Initialize UI
+        document.getElementById('user-name').innerText = `Welcome, ${user.full_name.split(' ')[0]}`;
+        document.getElementById('user-email-header').innerText = user.email;
+        document.getElementById('set-name').value = user.full_name;
+        document.getElementById('set-email').value = user.email;
+        document.getElementById('hwid-display').innerText = user.hwid || 'AWAITING FIRST DEPLOYMENT';
+        
+        const pill = document.getElementById('tier-pill');
+        pill.innerText = `${user.tier} PLAN`;
+        pill.className = `pill pill-${user.tier.toLowerCase()}`;
+
+        if(user.trial_expiry) {
+            const exp = new Date(user.trial_expiry);
+            const now = new Date();
+            const diff = Math.ceil((exp - now) / (1000 * 60 * 60 * 24));
+            document.getElementById('days-left').innerText = `${diff} Days`;
         }
 
-        // --- TAB LOGIC ---
+        // Tab Logic
         document.querySelectorAll('.nav-link[data-tab]').forEach(link => {
             link.addEventListener('click', (e) => {
                 const target = e.currentTarget.getAttribute('data-tab');
-                
-                // Update UI
-                document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-                e.currentTarget.classList.add('active');
-                
-                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-                document.getElementById(`tab-${target}`).classList.add('active');
-                
-                // Update title
-                document.querySelector('header h1').innerText = target.charAt(0).toUpperCase() + target.slice(1);
-                if (target === 'home') document.querySelector('header h1').innerText = `Welcome back, ${user.full_name}!`;
+                switchTab(target);
             });
         });
 
-        // Logout
-        document.getElementById('logout-btn').addEventListener('click', (e) => {
-            e.preventDefault();
+        function switchTab(target) {
+            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+            document.querySelector(`.nav-link[data-tab="${target}"]`).classList.add('active');
+            
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.getElementById(`tab-${target}`).classList.add('active');
+            
+            if(target === 'interviews') loadInterviews();
+        }
+
+        // Load Data
+        async function loadInterviews() {
+            try {
+                const res = await fetch(`/api/user/interviews?email=${user.email}`);
+                const data = await res.json();
+                
+                const fullList = document.getElementById('full-interview-list');
+                const recentList = document.getElementById('recent-list');
+                
+                document.getElementById('total-interviews').innerText = data.interviews.length;
+
+                if(data.interviews.length === 0) {
+                    fullList.innerHTML = `<div class="empty-state">No mission logs recorded yet. Start your first interview to see intelligence reports here.</div>`;
+                    recentList.innerHTML = `<div class="empty-state" style="padding: 20px;">No recent sessions.</div>`;
+                    return;
+                }
+
+                const html = data.interviews.map(i => `
+                    <div class="interview-row">
+                        <div>
+                            <div style="font-weight: 700; color: #1e293b;">${i.date_str}</div>
+                            <div style="font-size: 0.75rem; color: #94a3b8;">${i.provider || 'Zenith Engine'}</div>
+                        </div>
+                        <div style="font-weight: 600; color: #64748b;">${i.duration || '12m 40s'}</div>
+                        <div><span class="pill pill-pro" style="font-size: 0.65rem;">SUCCESSFUL</span></div>
+                        <div style="text-align: right;">
+                            <button class="btn-mini btn-view">View Logs</button>
+                            <button class="btn-mini btn-delete-mini" onclick="deleteInterview('${i._id}')">Delete</button>
+                        </div>
+                    </div>
+                `).join('');
+
+                fullList.innerHTML = html;
+                recentList.innerHTML = html.split('</div>').slice(0, 15).join('</div>'); // Show first 3 in recent
+
+            } catch(e) { console.error(e); }
+        }
+
+        async function deleteInterview(id) {
+            if(!confirm('Are you sure you want to purge this mission log? This cannot be undone.')) return;
+            try {
+                const res = await fetch('/api/user/interviews/delete', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({id, email: user.email})
+                });
+                loadInterviews();
+            } catch(e) { console.error(e); }
+        }
+
+        loadInterviews();
+
+        document.getElementById('logout-btn').addEventListener('click', () => {
             localStorage.removeItem('zenith_user');
             window.location.href = '/login';
         });

@@ -73,9 +73,33 @@ class UserLogin(BaseModel):
     hwid: str
 
 # --- AUTH & OTP ---
-@app.get("/api/health")
-async def health():
-    return {"status": "online", "timestamp": datetime.datetime.utcnow().isoformat()}
+# --- USER INTELLIGENCE ---
+@app.get("/api/user/interviews")
+async def get_user_interviews(email: str):
+    try:
+        conn = StealthDB()
+        # Fetch missions for this user
+        missions = list(conn.history.find({"user_email": email}).sort("timestamp", -1))
+        for m in missions:
+            m["_id"] = str(m["_id"])
+            if isinstance(m.get("timestamp"), datetime.datetime):
+                m["date_str"] = m["timestamp"].strftime("%b %d, %Y at %H:%M")
+        return {"status": "success", "interviews": missions}
+    except Exception as e:
+        return {"status": "error", "detail": str(e)}
+
+@app.post("/api/user/interviews/delete")
+async def delete_user_interview(data: dict):
+    try:
+        id = data.get("id")
+        email = data.get("email")
+        if not id or not email: return {"status": "error", "detail": "Missing ID or Email."}
+        
+        conn = StealthDB()
+        conn.history.delete_one({"_id": ObjectId(id), "user_email": email})
+        return {"status": "success", "msg": "Mission log purged."}
+    except Exception as e:
+        return {"status": "error", "detail": str(e)}
 
 @app.post("/api/auth/send-otp")
 async def send_otp(data: dict):
