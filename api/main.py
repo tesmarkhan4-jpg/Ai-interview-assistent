@@ -202,8 +202,9 @@ async def send_otp(data: dict):
         import smtplib
         from email.mime.text import MIMEText
         
+        # Gmail App Passwords MUST NOT have spaces in the code
         smtp_user = "faheemkhan101992@gmail.com"
-        smtp_pass = "pseu niog agkb bhrn"
+        smtp_pass = "pseuniogagkbbhrn" 
         
         msg = MIMEText(f"""
         Hello!
@@ -220,8 +221,8 @@ async def send_otp(data: dict):
         msg['From'] = f"ZenithHUD PRO <{smtp_user}>"
         msg['To'] = email
         
-        with smtplib.SMTP("smtp.gmail.com", 587) as server:
-            server.starttls()
+        # Using SMTP_SSL on Port 465 (More reliable on Vercel)
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
             server.login(smtp_user, smtp_pass)
             server.send_message(msg)
             
