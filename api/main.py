@@ -56,7 +56,22 @@ class StealthDB:
     def get_pooled_key(self, provider):
         key_doc = self.keys.find_one({"provider": provider, "status": "healthy"}, sort=[("last_used", 1)])
         if key_doc:
-            self.keys.update_one({"_id": key_doc["_id"]}, {"$set": {"last_used": datetime.datetime.utcnow()}, "$inc": {"usage_count": 1}})
+            now = datetime.datetime.utcnow()
+            today_date = now.strftime("%Y-%m-%d")
+            
+            update_data = {
+                "$set": {"last_used": now},
+                "$inc": {"usage_count_total": 1}
+            }
+            
+            # Daily Reset Logic
+            if key_doc.get("last_reset_date") != today_date:
+                update_data["$set"]["usage_count_today"] = 1
+                update_data["$set"]["last_reset_date"] = today_date
+            else:
+                update_data["$inc"]["usage_count_today"] = 1
+                
+            self.keys.update_one({"_id": key_doc["_id"]}, update_data)
             return key_doc["key_value"]
         return None
     def report_key_failure(self, key_value, error): self.keys.update_one({"key_value": key_value}, {"$set": {"status": "exhausted", "error": str(error)}})

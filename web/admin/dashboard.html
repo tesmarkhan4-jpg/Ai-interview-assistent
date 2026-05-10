@@ -201,7 +201,9 @@
                             <th>Provider</th>
                             <th>Key Mask</th>
                             <th>Status</th>
-                            <th>Calls</th>
+                            <th>Today</th>
+                            <th>Total</th>
+                            <th>Last Usage</th>
                             <th>Action</th>
                         </tr>
                     </thead>
@@ -465,15 +467,19 @@
                 const list = document.getElementById('key-pool-body');
                 if (!list) return;
 
-                list.innerHTML = data.keys.map(k => `
+                list.innerHTML = data.keys.map(k => {
+                    const lastUsed = k.last_used ? new Date(k.last_used).toLocaleString() : 'NEVER';
+                    return `
                     <tr>
                         <td><b style="text-transform: capitalize;">${k.provider}</b></td>
                         <td><code>${k.key_value.substring(0, 12)}...</code></td>
                         <td><span class="status-pill status-${k.status === 'healthy' ? 'active' : 'trial'}">${k.status.toUpperCase()}</span></td>
-                        <td>${k.usage_count || 0}</td>
+                        <td style="font-weight: 700; color: var(--primary);">${k.usage_count_today || 0}</td>
+                        <td style="font-weight: 700; color: #64748b;">${k.usage_count_total || 0}</td>
+                        <td style="font-size: 0.75rem; color: #94a3b8;">${lastUsed}</td>
                         <td><button class="btn-action btn-delete" onclick="removeKey('${k._id}')">Revoke</button></td>
                     </tr>
-                `).join('');
+                `}).join('');
                 
                 // Update key counts and remove shimmers
                 ['count-gemini', 'count-groq', 'count-deepgram'].forEach(id => {
