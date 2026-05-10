@@ -192,19 +192,43 @@ async def send_otp(data: dict):
     otp = str(random.randint(100000, 999999))
     try:
         conn = StealthDB()
-        # Store OTP in DB with 10-minute expiry
         conn.db.otps.update_one(
             {"email": email},
             {"$set": {"otp": otp, "created_at": datetime.datetime.utcnow()}},
             upsert=True
         )
         
-        # NOTE: In production, you would use smtplib or SendGrid here
-        # For now, we will return the OTP in the response for testing
-        print(f"DEBUG: OTP for {email} is {otp}")
-        return {"status": "success", "msg": "Verification code sent to your email."}
+        # --- REAL SMTP SENDING ---
+        import smtplib
+        from email.mime.text import MIMEText
+        
+        smtp_user = "faheemkhan101992@gmail.com"
+        smtp_pass = "pseu niog agkb bhrn"
+        
+        msg = MIMEText(f"""
+        Hello!
+        
+        Your ZenithHUD PRO verification code is: {otp}
+        
+        This code will expire in 10 minutes. If you did not request this, please ignore this email.
+        
+        Operational Security Team,
+        ZenithHUD PRO
+        """)
+        
+        msg['Subject'] = f"{otp} is your ZenithHUD Verification Code"
+        msg['From'] = f"ZenithHUD PRO <{smtp_user}>"
+        msg['To'] = email
+        
+        with smtplib.SMTP("smtp.gmail.com", 587) as server:
+            server.starttls()
+            server.login(smtp_user, smtp_pass)
+            server.send_message(msg)
+            
+        return {"status": "success", "msg": "Verification code sent successfully."}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        print(f"SMTP Error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to send verification email.")
 
 @app.post("/api/auth/signup")
 async def signup(user: UserRegister):
