@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ZenithHUD | User Command Center</title>
+    <title>ZenithHUD | Dashboard</title>
     <link rel="stylesheet" href="/admin/admin.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -36,8 +36,8 @@
         <nav class="nav-group">
             <a class="nav-link active" data-tab="home"><i data-lucide="layout-dashboard"></i> Overview</a>
             <a class="nav-link" data-tab="download"><i data-lucide="download"></i> Download App</a>
-            <a class="nav-link" data-tab="billing"><i data-lucide="credit-card"></i> Subscription</a>
-            <a class="nav-link" data-tab="profile"><i data-lucide="user"></i> My Profile</a>
+            <a class="nav-link" data-tab="billing"><i data-lucide="credit-card"></i> My Plan</a>
+            <a class="nav-link" data-tab="profile"><i data-lucide="user"></i> My Settings</a>
         </nav>
         <div class="user-footer">
             <a href="#" id="logout-btn" class="nav-link" style="color: var(--rose);"><i data-lucide="log-out"></i> Logout</a>
@@ -46,35 +46,35 @@
 
     <main>
         <header>
-            <h1 id="user-greeting">Welcome, Operational Agent</h1>
-            <div class="status-pill status-active" id="user-tier-badge">PRO TIER</div>
+            <h1 id="user-greeting">Welcome back!</h1>
+            <div class="status-pill status-active" id="user-tier-badge">PRO PLAN</div>
         </header>
 
         <!-- OVERVIEW TAB -->
         <div id="tab-home" class="tab-content active">
             <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr);">
                 <div class="stat-card">
-                    <span class="stat-label">Mission Expiry</span>
+                    <span class="stat-label">Plan Expires On</span>
                     <div class="stat-value" id="expiry-text">--</div>
-                    <span class="stat-trend" id="expiry-subtext">Remaining trial time</span>
+                    <span class="stat-trend" id="expiry-subtext">Remaining time</span>
                 </div>
                 <div class="stat-card">
-                    <span class="stat-label">Authorized Hardware</span>
+                    <span class="stat-label">Linked Computer</span>
                     <div class="stat-value" style="font-size: 0.9rem; font-family: monospace;" id="hwid-text">LOCKED</div>
-                    <span class="stat-trend">Current system binding</span>
+                    <span class="stat-trend">Your system ID</span>
                 </div>
                 <div class="stat-card">
-                    <span class="stat-label">Intelligence Calls</span>
+                    <span class="stat-label">Total Uses</span>
                     <div class="stat-value">0</div>
-                    <span class="stat-trend">Total requests processed</span>
+                    <span class="stat-trend">Total interview calls</span>
                 </div>
             </div>
 
             <div class="data-card">
-                <div class="card-header"><span class="card-title">Latest Mission Logs</span></div>
+                <div class="card-header"><span class="card-title">Recent Activity</span></div>
                 <table>
                     <thead><tr><th>Date</th><th>Duration</th><th>Status</th></tr></thead>
-                    <tbody id="mission-logs"><tr><td colspan="3" style="text-align: center; color: #94a3b8; padding: 40px;">No recent sessions detected.</td></tr></tbody>
+                    <tbody id="mission-logs"><tr><td colspan="3" style="text-align: center; color: #94a3b8; padding: 40px;">No recent sessions found.</td></tr></tbody>
                 </table>
             </div>
         </div>
@@ -83,34 +83,34 @@
         <div id="tab-download" class="tab-content">
             <div class="download-box">
                 <div>
-                    <h2 style="color: white; margin-bottom: 8px;">ZenithHUD v3.2 for Windows</h2>
-                    <p style="opacity: 0.9; margin-bottom: 24px;">The world's most advanced invisible overlay engine.</p>
-                    <a href="/download/ZenithHUD_Setup.exe" class="btn-secondary" style="background: white; border: none; color: var(--primary);">Download Now</a>
+                    <h2 style="color: white; margin-bottom: 8px;">ZenithHUD for Windows</h2>
+                    <p style="opacity: 0.9; margin-bottom: 24px;">Download the latest version to start your interviews.</p>
+                    <a href="/download/ZenithHUD_Setup.exe" class="btn-secondary" style="background: white; border: none; color: var(--primary);">Download App</a>
                 </div>
                 <i data-lucide="monitor" style="width: 100px; height: 100px; opacity: 0.2;"></i>
             </div>
 
             <div class="data-card">
-                <div class="card-header"><span class="card-title">Quickstart Deployment Guide</span></div>
+                <div class="card-header"><span class="card-title">How to Set Up</span></div>
                 <div class="guide-step">
                     <div class="step-num">1</div>
                     <div>
-                        <h4 style="margin-bottom: 4px;">Install the Package</h4>
-                        <p style="font-size: 0.9rem; color: #64748b;">Run the ZenithHUD_Setup.exe and follow the instructions. The application will install to your system silently.</p>
+                        <h4 style="margin-bottom: 4px;">Install the App</h4>
+                        <p style="font-size: 0.9rem; color: #64748b;">Run the ZenithHUD_Setup.exe file you just downloaded.</p>
                     </div>
                 </div>
                 <div class="guide-step">
                     <div class="step-num">2</div>
                     <div>
-                        <h4 style="margin-bottom: 4px;">Authorize Identity</h4>
-                        <p style="font-size: 0.9rem; color: #64748b;">Launch the app and enter your email/password. The first launch will bind the software to your current HWID.</p>
+                        <h4 style="margin-bottom: 4px;">Log In</h4>
+                        <p style="font-size: 0.9rem; color: #64748b;">Open the app and use your email and password to log in.</p>
                     </div>
                 </div>
                 <div class="guide-step">
                     <div class="step-num">3</div>
                     <div>
-                        <h4 style="margin-bottom: 4px;">Engage Phantom Mode</h4>
-                        <p style="font-size: 0.9rem; color: #64748b;">Start your interview call. The invisible overlay will automatically appear above the meeting window.</p>
+                        <h4 style="margin-bottom: 4px;">Start Your Call</h4>
+                        <p style="font-size: 0.9rem; color: #64748b;">Join your interview call. The help window will appear automatically.</p>
                     </div>
                 </div>
             </div>
@@ -122,11 +122,10 @@
                 <div style="background: rgba(79, 70, 229, 0.1); width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px;">
                     <i data-lucide="shield-check" style="width: 40px; height: 40px; color: var(--primary);"></i>
                 </div>
-                <h2 style="margin-bottom: 12px;">Active Intelligence Tier</h2>
-                <p style="color: #64748b; margin-bottom: 32px;" id="billing-status">Your current trial is active and healthy.</p>
+                <h2 style="margin-bottom: 12px;">Your Current Plan</h2>
+                <p style="color: #64748b; margin-bottom: 32px;" id="billing-status">Your plan is active.</p>
                 <div style="display: flex; gap: 16px; justify-content: center;">
-                    <a href="/#pricing" class="btn-primary">Upgrade to PRO</a>
-                    <button class="btn-action">Redeem Gift Key</button>
+                    <a href="/#pricing" class="btn-primary">Upgrade Now</a>
                 </div>
             </div>
         </div>
@@ -134,18 +133,18 @@
         <!-- PROFILE TAB -->
         <div id="tab-profile" class="tab-content">
             <div class="data-card">
-                <div class="card-header"><span class="card-title">Identity Credentials</span></div>
+                <div class="card-header"><span class="card-title">My Account Details</span></div>
                 <div style="display: grid; gap: 24px;">
                     <div>
-                        <label class="stat-label">Full Name</label>
+                        <label class="stat-label">Your Name</label>
                         <input type="text" id="p-name" class="btn-action" style="width: 100%; text-align: left;" readonly>
                     </div>
                     <div>
                         <label class="stat-label">Email Address</label>
                         <input type="text" id="p-email" class="btn-action" style="width: 100%; text-align: left;" readonly>
                     </div>
-                    <button class="btn-action" style="color: var(--primary);">Update Security Password</button>
-                    <button class="btn-action btn-delete">Request HWID Unlock</button>
+                    <button class="btn-action" style="color: var(--primary);">Change Password</button>
+                    <button class="btn-action btn-delete">Reset Linked Computer</button>
                 </div>
             </div>
         </div>
@@ -159,11 +158,11 @@
         if (!user) {
             window.location.href = '/login';
         } else {
-            document.getElementById('user-greeting').innerText = `Welcome, ${user.full_name}`;
-            document.getElementById('user-tier-badge').innerText = `${user.tier} TIER`;
+            document.getElementById('user-greeting').innerText = `Welcome back, ${user.full_name}!`;
+            document.getElementById('user-tier-badge').innerText = `${user.tier} PLAN`;
             document.getElementById('p-name').value = user.full_name;
             document.getElementById('p-email').value = user.email;
-            document.getElementById('hwid-text').innerText = user.hwid || 'PENDING BINDING';
+            document.getElementById('hwid-text').innerText = user.hwid || 'No computer linked yet';
             
             if (user.trial_expiry) {
                 const expiry = new Date(user.trial_expiry);
@@ -185,7 +184,7 @@
                 
                 // Update title
                 document.querySelector('header h1').innerText = target.charAt(0).toUpperCase() + target.slice(1);
-                if (target === 'home') document.querySelector('header h1').innerText = `Welcome, ${user.full_name}`;
+                if (target === 'home') document.querySelector('header h1').innerText = `Welcome back, ${user.full_name}!`;
             });
         });
 
