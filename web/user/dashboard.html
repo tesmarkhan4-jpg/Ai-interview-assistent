@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZenithHUD | Personal Dashboard</title>
+    <link rel="stylesheet" href="/admin/admin.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body style="background: #f8fafc;">
+    <aside>
+        <div class="brand">Zenith<span>HUD</span> PRO</div>
+        <nav class="nav-group">
+            <a href="#" class="nav-link active">
+                <i data-lucide="layout-dashboard"></i> My Missions
+            </a>
+            <a href="#" class="nav-link">
+                <i data-lucide="settings"></i> My Profile
+            </a>
+        </nav>
+        <div class="user-footer">
+            <a href="/logout" class="nav-link" style="color: var(--rose);">
+                <i data-lucide="log-out"></i> Logout
+            </a>
+        </div>
+    </aside>
+
+    <main>
+        <header>
+            <h1 id="user-greeting">Welcome, Operational Agent</h1>
+            <div class="status-pill status-active" id="user-tier">PRO TIER</div>
+        </header>
+
+        <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr);">
+            <div class="stat-card">
+                <span class="stat-label">Mission Time Remaining</span>
+                <div class="stat-value" id="trial-timer">--:--</div>
+                <span class="stat-trend">Time until trial expires</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">System Stability</span>
+                <div class="stat-value">99.9%</div>
+                <span class="stat-trend">Optimal Link Strength</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">Average Latency</span>
+                <div class="stat-value">124ms</div>
+                <span class="stat-trend">Ultra-Fast Responses</span>
+            </div>
+        </div>
+
+        <div class="data-card">
+            <div class="card-header">
+                <span class="card-title">Recent Intelligence Sessions</span>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Mission Date</th>
+                        <th>Duration</th>
+                        <th>Provider Used</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><b>Today, 10:42 AM</b></td>
+                        <td>42 Minutes</td>
+                        <td>Google Gemini 1.5</td>
+                        <td><span class="status-pill status-active">Completed</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <div style="margin-top: 40px; padding: 30px; background: rgba(79, 70, 229, 0.05); border-radius: 24px; border: 1px dashed var(--primary);">
+            <h3 style="color: var(--primary); margin-bottom: 12px;">Need Tactical Support?</h3>
+            <p style="color: #64748b; font-size: 0.9rem;">Your account is fully active. If you need help with installation or configuration, please contact our Elite Support team at <b>support@zenithhud.pro</b></p>
+        </div>
+    </main>
+
+    <script>
+        lucide.createIcons();
+        
+        // Security Check
+        const user = JSON.parse(localStorage.getItem('zenith_user'));
+        if (!user) {
+            window.location.href = '/login';
+        } else {
+            document.getElementById('user-greeting').innerText = `Welcome, ${user.full_name}`;
+            document.getElementById('user-tier').innerText = `${user.tier} TIER`;
+        }
+
+        // Logout
+        document.querySelector('a[href="/logout"]').addEventListener('click', (e) => {
+            e.preventDefault();
+            localStorage.removeItem('zenith_user');
+            window.location.href = '/login';
+        });
+    </script>
+</body>
+</html>

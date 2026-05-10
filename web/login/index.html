@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZenithHUD | Secure Entry</title>
+    <link rel="stylesheet" href="/landing/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        body { display: flex; align-items: center; justify-content: center; height: 100vh; background: #f8fafc; }
+        .login-card { 
+            background: white; padding: 48px; border-radius: 32px; 
+            width: 100%; max-width: 440px; border: 1px solid rgba(0,0,0,0.06);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.04);
+        }
+        .form-group { margin-bottom: 24px; }
+        label { display: block; font-size: 0.75rem; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 1px; }
+        input { 
+            width: 100%; padding: 14px 20px; border-radius: 14px; 
+            border: 1px solid #e2e8f0; outline: none; font-size: 1rem;
+            transition: 0.2s;
+        }
+        input:focus { border-color: #4f46e5; box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1); }
+        .error-msg { color: #f43f5e; font-size: 0.85rem; font-weight: 600; margin-bottom: 20px; display: none; }
+    </style>
+</head>
+<body>
+    <div class="aurora"></div>
+    <div class="login-card">
+        <div class="logo" style="margin-bottom: 32px; text-align: center; font-size: 1.8rem;">Zenith<span>HUD</span> PRO</div>
+        <h2 style="margin-bottom: 8px; font-weight: 900; letter-spacing: -1px;">Welcome Back</h2>
+        <p style="color: #64748b; font-size: 0.95rem; margin-bottom: 32px;">Secure identity verification required.</p>
+        
+        <div id="error" class="error-msg">Identity Mismatch. Please check credentials.</div>
+        
+        <form id="login-form">
+            <div class="form-group">
+                <label>Strategic Identity (Email)</label>
+                <input type="email" id="email" placeholder="name@example.com" required>
+            </div>
+            <div class="form-group">
+                <label>Security Token (Password)</label>
+                <input type="password" id="password" placeholder="••••••••" required>
+            </div>
+            <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; margin-top: 10px;">Authorize Entry</button>
+        </form>
+        
+        <div style="text-align: center; margin-top: 32px; font-size: 0.9rem; color: #64748b;">
+            Don't have an account? <a href="/#pricing" style="color: #4f46e5; font-weight: 700; text-decoration: none;">Deploy Trial</a>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const error = document.getElementById('error');
+
+            try {
+                const res = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password, hwid: 'WEB_LOGIN' })
+                });
+                
+                const data = await res.json();
+                if (data.status === 'success') {
+                    // Store session
+                    localStorage.setItem('zenith_user', JSON.stringify(data.user));
+                    
+                    // Redirect based on role
+                    if (data.user.email === 'tesmarkhan4@gmail.com') {
+                        window.location.href = '/admin';
+                    } else {
+                        window.location.href = '/dashboard';
+                    }
+                } else {
+                    error.style.display = 'block';
+                }
+            } catch (err) {
+                error.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>

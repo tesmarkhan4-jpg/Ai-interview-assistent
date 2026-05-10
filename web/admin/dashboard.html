@@ -42,7 +42,7 @@
             </a>
         </nav>
         <div class="user-footer">
-            <a href="/logout" class="nav-link" style="color: var(--rose);">
+            <a href="/logout" id="admin-logout" class="nav-link" style="color: var(--rose);">
                 <i data-lucide="log-out"></i> Logout
             </a>
         </div>
@@ -293,6 +293,18 @@
     </main>
 
     <script>
+        // --- SECURITY PROTOCOL ---
+        const authUser = JSON.parse(localStorage.getItem('zenith_user'));
+        if (!authUser || authUser.email !== 'tesmarkhan4@gmail.com') {
+            window.location.href = '/login';
+        }
+
+        document.getElementById('admin-logout').addEventListener('click', (e) => {
+            e.preventDefault();
+            localStorage.removeItem('zenith_user');
+            window.location.href = '/login';
+        });
+
         // Initialize Lucide icons
         lucide.createIcons();
 
