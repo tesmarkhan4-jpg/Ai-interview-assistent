@@ -164,21 +164,9 @@ class ProxyRequest(BaseModel):
     prompt: str
     provider: str = "groq"
 
-@app.get("/api/test_db")
-async def test_db():
-    try:
-        conn = StealthDB()
-        user_count = conn.users.count_documents({})
-        key_count = conn.keys.count_documents({})
-        return {
-            "status": "connected",
-            "database": conn.db.name,
-            "users": user_count,
-            "keys": key_count,
-            "uri_mask": conn.uri.replace("admin%40013970", "****")
-        }
-    except Exception as e:
-        return {"status": "error", "message": str(e), "trace": traceback.format_exc()}
+@app.get("/api/ping")
+async def ping():
+    return {"status": "online", "message": "Strategic systems operational."}
 
 # --- AUTH ---
 @app.post("/api/auth/register")
