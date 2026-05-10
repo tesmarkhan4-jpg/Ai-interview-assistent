@@ -15,11 +15,12 @@ import traceback
 # --- DATABASE ENGINE ---
 class StealthDB:
     def __init__(self):
-        self.uri = os.getenv("MONGO_URI") or "mongodb+srv://admin:mannat08112025@cluster0.r7zajqb.mongodb.net/?appName=Cluster0"
+        # NEW STRATEGIC CLUSTER: Ai-A
+        self.uri = os.getenv("MONGO_URI") or "mongodb+srv://admin:admin@013970@ai-a.fqixdrd.mongodb.net/?appName=ZenithHUD"
         try:
             # High-compatibility connection for serverless
             self.client = MongoClient(self.uri, serverSelectionTimeoutMS=10000, connectTimeoutMS=10000)
-            self.db = self.client['stealthhud_pro']
+            self.db = self.client['zenith_pro']
             self.users = self.db['users']
             self.keys = self.db['api_keys']
             self.history = self.db["mission_history"]
@@ -85,7 +86,7 @@ class MailService:
 
         try:
             msg = MIMEMultipart()
-            msg['From'] = f"{cfg.get('branding', 'StealthHUD')} Support <{smtp_user}>"
+            msg['From'] = f"{cfg.get('branding', 'ZenithHUD')} Support <{smtp_user}>"
             msg['To'] = to_email
             msg['Subject'] = subject
             msg.attach(MIMEText(html_content, 'html'))
@@ -124,7 +125,7 @@ class MailService:
         """
 
 # --- API CORE ---
-app = FastAPI(title="StealthHUD PRO Backend")
+app = FastAPI(title="ZenithHUD PRO Backend")
 db = None
 
 def get_db():

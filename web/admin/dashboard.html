@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>StealthHUD PRO | Master Control</title>
+    <title>ZenithHUD | Command Center</title>
     <link rel="stylesheet" href="/admin/admin.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -12,7 +12,7 @@
 </head>
 <body>
     <aside>
-        <div class="brand">Stealth<span>HUD</span> PRO</div>
+        <div class="brand">Zenith<span>HUD</span> PRO</div>
         <nav class="nav-group">
             <a href="#" class="nav-link active" data-tab="overview">
                 <i data-lucide="layout-dashboard"></i> Overview
@@ -64,6 +64,9 @@
                     <div class="stat-value">184</div>
                     <span class="stat-trend">Current Live Sessions</span>
                 </div>
+                <div class="sidebar-brand">
+            ZenithHUD <span style="font-weight: 300;">PRO</span>
+        </div>
                 <div class="stat-card">
                     <span class="stat-label">Global Health</span>
                     <div class="stat-value">98.2%</div>
@@ -326,7 +329,7 @@
                 document.getElementById('cfg-stripe-key').value = data.stripe_secret_key || '';
                 document.getElementById('cfg-ls-key').value = data.ls_api_key || '';
                 document.getElementById('cfg-trial-days').value = data.trial_days || 7;
-                document.getElementById('cfg-branding').value = data.branding || 'StealthHUD';
+                document.getElementById('cfg-branding').value = data.branding || 'ZenithHUD';
                 document.getElementById('cfg-maint-msg').value = data.maintenance_message || '';
                 document.getElementById('cfg-smtp-user').value = data.SMTP_USER || '';
                 document.getElementById('cfg-smtp-pass').value = data.SMTP_PASS || '';

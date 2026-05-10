@@ -79,7 +79,7 @@ class LoginWindow(QWidget):
 
         self.left_layout.addStretch()
         
-        brand_title = QLabel("STEALTH ASSIST")
+        brand_title = QLabel("ZENITH HUD")
         brand_title.setStyleSheet("color: #064E3B; font-size: 28px; font-weight: 900; letter-spacing: 2px;")
         self.left_layout.addWidget(brand_title)
         

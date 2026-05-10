@@ -46,7 +46,7 @@ try:
 except ImportError as e:
     import ctypes
     msg = f"Critical Error: Missing module {e.name}. The application was not bundled correctly."
-    ctypes.windll.user32.MessageBoxW(0, msg, "StealthHUD Error", 16)
+    ctypes.windll.user32.MessageBoxW(0, msg, "ZenithHUD Error", 16)
     sys.exit(1)
 
 class AIWorker(QThread):
@@ -189,7 +189,7 @@ class StealthHUD(QMainWindow):
         # --- Top Bar ---
         self.top_bar = QHBoxLayout()
         
-        self.title_label = QLabel("STEALTH ASSISTANT")
+        self.title_label = QLabel("ZENITH HUD")
         self.title_label.setStyleSheet("color: #007E44; font-weight: 900; font-size: 16px; letter-spacing: 2px; background: transparent;")
         
         def get_indicator(key_name):
@@ -650,7 +650,7 @@ class StealthHUD(QMainWindow):
 if __name__ == "__main__":
     if is_already_running():
         import ctypes
-        ctypes.windll.user32.MessageBoxW(0, "StealthHUD is already operational on this system.", "Instance Conflict", 16)
+        ctypes.windll.user32.MessageBoxW(0, "ZenithHUD is already operational on this system.", "Instance Conflict", 16)
         sys.exit(0)
         
     app = QApplication(sys.argv)
