@@ -170,9 +170,10 @@
                     btnOtp.disabled = false;
                 }
             } catch (err) {
-                error.innerText = "Server error. Try again later.";
+                error.innerText = "Connection Error: " + err.message;
                 error.style.display = 'block';
                 btnOtp.disabled = false;
+                btnOtp.innerText = "Get Code";
             }
         });
 

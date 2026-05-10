@@ -227,8 +227,9 @@ async def send_otp(data: dict):
             
         return {"status": "success", "msg": "Verification code sent successfully."}
     except Exception as e:
-        print(f"SMTP Error: {e}")
-        raise HTTPException(status_code=500, detail="Failed to send verification email.")
+        error_detail = str(e)
+        print(f"SMTP Error: {error_detail}")
+        raise HTTPException(status_code=500, detail=f"Mail System Error: {error_detail}")
 
 @app.post("/api/auth/signup")
 async def signup(user: UserRegister):
