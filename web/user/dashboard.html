@@ -41,49 +41,42 @@
 
         /* PREMIUM ACTIONS */
         .btn-action {
-            display: inline-flex; align-items: center; gap: 12px;
-            background: var(--primary); color: white; padding: 16px 32px;
-            border-radius: 16px; font-weight: 800; text-decoration: none;
+            display: inline-flex; align-items: center; gap: 8px;
+            background: var(--primary); color: white; padding: 12px 24px;
+            border-radius: 12px; font-weight: 700; text-decoration: none;
             transition: 0.3s; border: none; cursor: pointer;
-            box-shadow: 0 10px 25px var(--primary-glow);
+            box-shadow: 0 8px 20px var(--primary-glow); font-size: 0.9rem;
         }
-        .btn-action:hover { transform: translateY(-3px); box-shadow: 0 15px 35px var(--primary-glow); }
+        .btn-action:hover { transform: translateY(-2px); box-shadow: 0 12px 30px var(--primary-glow); }
 
         .btn-secondary-action {
-            background: #f1f5f9; color: #1e293b; padding: 14px 28px;
-            border-radius: 14px; font-weight: 700; border: 1px solid #e2e8f0;
-            transition: 0.2s; cursor: pointer;
+            background: #f1f5f9; color: #1e293b; padding: 10px 20px;
+            border-radius: 12px; font-weight: 700; border: 1px solid #e2e8f0;
+            transition: 0.2s; cursor: pointer; font-size: 0.85rem;
         }
-        .btn-secondary-action:hover { background: #e2e8f0; }
 
         .btn-danger-action {
-            background: #fff1f2; color: #e11d48; padding: 14px 28px;
-            border-radius: 14px; font-weight: 700; border: 1px solid #fecdd3;
-            transition: 0.2s; cursor: pointer; width: 100%;
+            background: #fff1f2; color: #e11d48; padding: 12px 24px;
+            border-radius: 12px; font-weight: 700; border: 1px solid #fecdd3;
+            transition: 0.2s; cursor: pointer; width: 100%; font-size: 0.9rem;
         }
-        .btn-danger-action:hover { background: #ffe4e6; }
 
         .form-input {
-            width: 100%; padding: 14px 18px; border-radius: 14px;
+            width: 100%; padding: 12px 16px; border-radius: 12px;
             border: 1px solid #e2e8f0; background: #fcfdfe;
-            font-size: 1rem; transition: 0.2s; margin-top: 8px;
+            font-size: 0.9rem; transition: 0.2s; margin-top: 6px;
         }
         .form-input:focus { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1); outline: none; background: white; }
 
         .plan-card {
-            background: white; border: 1px solid #f1f5f9; border-radius: 32px;
-            padding: 40px; text-align: left; position: relative; overflow: hidden;
-        }
-        .plan-card::after {
-            content: ''; position: absolute; right: -50px; top: -50px;
-            width: 200px; height: 200px; background: rgba(79, 70, 229, 0.03);
-            border-radius: 50%;
+            background: white; border: 1px solid #f1f5f9; border-radius: 24px;
+            padding: 32px; text-align: left; position: relative; overflow: hidden;
         }
     </style>
 </head>
 <body>
     <aside>
-        <div class="logo" style="font-size: 1.5rem; font-weight: 900; margin-bottom: 48px; letter-spacing: -1px;">Zenith<span>HUD</span> PRO</div>
+        <div class="logo" style="font-size: 1.3rem; font-weight: 900; margin-bottom: 40px; letter-spacing: -1px;">Zenith<span>HUD</span> PRO</div>
         
         <nav style="flex: 1;">
             <div class="nav-link active" data-tab="home"><i data-lucide="layout-grid"></i> Overview</div>
@@ -96,39 +89,39 @@
         <div class="nav-link" id="logout-btn" style="color: #f43f5e; margin-top: auto;"><i data-lucide="log-out"></i> Logout</div>
     </aside>
 
-    <main>
-        <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px;">
+    <main style="padding: 40px;">
+        <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px;">
             <div>
-                <h1 id="user-name" style="font-size: 2.2rem; font-weight: 900; letter-spacing: -1.5px; color: #1e293b;">Welcome, Agent</h1>
-                <p style="color: #64748b; margin-top: 4px; font-weight: 500;" id="user-email-header">Secure session active</p>
+                <h1 id="user-name" style="font-size: 1.8rem; font-weight: 900; letter-spacing: -1px; color: #1e293b;">Welcome, Agent</h1>
+                <p style="color: #64748b; margin-top: 2px; font-weight: 500; font-size: 0.9rem;" id="user-email-header">Secure session active</p>
             </div>
-            <span class="pill pill-trial" id="tier-pill" style="padding: 8px 20px; font-size: 0.85rem;">Trial Plan</span>
+            <span class="pill pill-trial" id="tier-pill" style="padding: 6px 16px; font-size: 0.75rem;">Trial Plan</span>
         </header>
 
         <!-- OVERVIEW -->
         <div id="tab-home" class="tab-content active">
-            <div class="stats-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;">
-                <div class="stat-card">
-                    <label style="font-size: 0.75rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px;">Time Remaining</label>
-                    <div id="days-left" style="font-size: 2.5rem; font-weight: 900; color: #1e293b; margin-top: 12px; letter-spacing: -1px;">--</div>
-                    <p style="font-size: 0.85rem; color: #64748b; margin-top: 6px; font-weight: 500;">Until mission expiry</p>
+            <div class="stats-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
+                <div class="stat-card" style="padding: 20px;">
+                    <label style="font-size: 0.7rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px;">Time Remaining</label>
+                    <div id="days-left" style="font-size: 2rem; font-weight: 900; color: #1e293b; margin-top: 8px;">--</div>
+                    <p style="font-size: 0.8rem; color: #64748b; margin-top: 4px;">Until mission expiry</p>
                 </div>
-                <div class="stat-card">
-                    <label style="font-size: 0.75rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px;">System ID</label>
-                    <div id="hwid-display" style="font-size: 0.9rem; font-family: 'Courier New', monospace; font-weight: 800; color: #4f46e5; margin-top: 18px; background: #f1f5f9; padding: 14px; border-radius: 14px; border: 1px solid #e2e8f0;">NOT LINKED</div>
-                    <p style="font-size: 0.85rem; color: #64748b; margin-top: 10px; font-weight: 500;">Bound hardware fingerprint</p>
+                <div class="stat-card" style="padding: 20px;">
+                    <label style="font-size: 0.7rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px;">System ID</label>
+                    <div id="hwid-display" style="font-size: 0.85rem; font-family: monospace; font-weight: 700; color: #4f46e5; margin-top: 14px; background: #f1f5f9; padding: 10px; border-radius: 10px; border: 1px solid #e2e8f0;">NOT LINKED</div>
+                    <p style="font-size: 0.8rem; color: #64748b; margin-top: 6px;">Hardware fingerprint</p>
                 </div>
-                <div class="stat-card">
-                    <label style="font-size: 0.75rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px;">Missions Run</label>
-                    <div id="total-interviews" style="font-size: 2.5rem; font-weight: 900; color: #1e293b; margin-top: 12px; letter-spacing: -1px;">0</div>
-                    <p style="font-size: 0.85rem; color: #64748b; margin-top: 6px; font-weight: 500;">Stored intelligence</p>
+                <div class="stat-card" style="padding: 20px;">
+                    <label style="font-size: 0.7rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px;">Missions Run</label>
+                    <div id="total-interviews" style="font-size: 2rem; font-weight: 900; color: #1e293b; margin-top: 8px;">0</div>
+                    <p style="font-size: 0.8rem; color: #64748b; margin-top: 4px;">Stored intelligence</p>
                 </div>
             </div>
 
-            <div class="data-card">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px;">
-                    <h3 style="font-size: 1.5rem; font-weight: 900; letter-spacing: -0.5px; color: #1e293b;">Recent Intelligence</h3>
-                    <button class="btn-secondary-action" onclick="switchTab('interviews')">View All Missions</button>
+            <div class="data-card" style="padding: 24px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                    <h3 style="font-size: 1.25rem; font-weight: 900; color: #1e293b;">Recent Intelligence</h3>
+                    <button class="btn-secondary-action" onclick="switchTab('interviews')">View All</button>
                 </div>
                 <div id="recent-list">
                     <!-- Dynamic -->
@@ -139,12 +132,11 @@
         <!-- INTERVIEWS -->
         <div id="tab-interviews" class="tab-content">
             <div class="data-card" style="padding: 0; overflow: hidden;">
-                <div style="padding: 32px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center;">
-                    <h3 style="font-size: 1.5rem; font-weight: 900;">Mission History</h3>
-                    <div style="font-size: 0.9rem; color: #64748b; font-weight: 500;">Audit and manage your stored intelligence logs.</div>
+                <div style="padding: 24px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center;">
+                    <h3 style="font-size: 1.25rem; font-weight: 900;">Mission History</h3>
                 </div>
                 
-                <div class="interview-header" style="display: grid; grid-template-columns: 1fr 150px 150px 220px; padding: 20px 32px; background: #f8fafc; font-size: 0.75rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 1.5px; border-bottom: 1px solid #f1f5f9;">
+                <div class="interview-header" style="display: grid; grid-template-columns: 1fr 150px 150px 200px; padding: 14px 24px; background: #f8fafc; font-size: 0.7rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #f1f5f9;">
                     <div>Date & Origin</div>
                     <div>Duration</div>
                     <div>Status</div>
@@ -159,36 +151,29 @@
 
         <!-- DOWNLOAD -->
         <div id="tab-download" class="tab-content">
-            <div class="data-card" style="background: linear-gradient(135deg, #4f46e5, #0ea5e9); color: white; border: none; padding: 60px;">
-                <h2 style="font-size: 2.5rem; font-weight: 900; margin-bottom: 20px; letter-spacing: -1.5px;">Ready for Deployment?</h2>
-                <p style="opacity: 0.9; margin-bottom: 40px; font-size: 1.2rem; max-width: 600px; line-height: 1.6;">Download the ZenithHUD HUD and start your interview with absolute strategic confidence.</p>
-                <a href="/download/ZenithHUD_Setup.exe" class="btn-action" style="background: white; color: #4f46e5; font-size: 1.1rem; padding: 20px 48px;">
+            <div class="data-card" style="background: linear-gradient(135deg, #4f46e5, #0ea5e9); color: white; border: none; padding: 40px; border-radius: 24px;">
+                <h2 style="font-size: 1.8rem; font-weight: 900; margin-bottom: 12px; letter-spacing: -1px;">Ready for Deployment?</h2>
+                <p style="opacity: 0.9; margin-bottom: 24px; font-size: 1rem; max-width: 500px;">Download the ZenithHUD HUD and start your interview with strategic confidence.</p>
+                <a href="/download/ZenithHUD_Setup.exe" class="btn-action" style="background: white; color: #4f46e5; padding: 14px 32px;">
                     <i data-lucide="download"></i> Download ZenithHUD .EXE
                 </a>
             </div>
             
-            <div class="data-card" style="margin-top: 40px;">
-                <h3 style="margin-bottom: 32px; font-weight: 900; font-size: 1.5rem;">Tactical Setup Guide</h3>
-                <div style="display: grid; gap: 32px;">
-                    <div style="display: flex; gap: 24px; align-items: flex-start;">
-                        <div style="width: 40px; height: 40px; background: rgba(79, 70, 229, 0.1); color: var(--primary); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-weight: 900; flex-shrink: 0; font-size: 1.2rem;">01</div>
+            <div class="data-card" style="margin-top: 24px; padding: 24px;">
+                <h3 style="margin-bottom: 24px; font-weight: 900; font-size: 1.25rem;">Tactical Setup Guide</h3>
+                <div style="display: grid; gap: 20px;">
+                    <div style="display: flex; gap: 16px; align-items: flex-start;">
+                        <div style="width: 32px; height: 32px; background: rgba(79, 70, 229, 0.1); color: var(--primary); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 900; flex-shrink: 0; font-size: 1rem;">01</div>
                         <div>
-                            <h4 style="color: #1e293b; margin-bottom: 4px; font-weight: 800;">Hardware Installation</h4>
-                            <p style="color: #64748b; line-height: 1.5;">Install the HUD application on your Windows machine. Ensure you run as Administrator for full strategic integration.</p>
+                            <h4 style="color: #1e293b; margin-bottom: 2px; font-weight: 800; font-size: 0.95rem;">Hardware Installation</h4>
+                            <p style="color: #64748b; font-size: 0.85rem;">Install the HUD application on your Windows machine.</p>
                         </div>
                     </div>
-                    <div style="display: flex; gap: 24px; align-items: flex-start;">
-                        <div style="width: 40px; height: 40px; background: rgba(79, 70, 229, 0.1); color: var(--primary); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-weight: 900; flex-shrink: 0; font-size: 1.2rem;">02</div>
+                    <div style="display: flex; gap: 16px; align-items: flex-start;">
+                        <div style="width: 32px; height: 32px; background: rgba(79, 70, 229, 0.1); color: var(--primary); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 900; flex-shrink: 0; font-size: 1rem;">02</div>
                         <div>
-                            <h4 style="color: #1e293b; margin-bottom: 4px; font-weight: 800;">Identity Linkage</h4>
-                            <p style="color: #64748b; line-height: 1.5;">Log in using your verified email. The system will automatically capture your hardware ID and bind it to your identity.</p>
-                        </div>
-                    </div>
-                    <div style="display: flex; gap: 24px; align-items: flex-start;">
-                        <div style="width: 40px; height: 40px; background: rgba(79, 70, 229, 0.1); color: var(--primary); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-weight: 900; flex-shrink: 0; font-size: 1.2rem;">03</div>
-                        <div>
-                            <h4 style="color: #1e293b; margin-bottom: 4px; font-weight: 800;">Mission Startup</h4>
-                            <p style="color: #64748b; line-height: 1.5;">The Phantom Overlay will activate automatically during video calls. It is invisible to all screen-sharing protocols.</p>
+                            <h4 style="color: #1e293b; margin-bottom: 2px; font-weight: 800; font-size: 0.95rem;">Identity Linkage</h4>
+                            <p style="color: #64748b; font-size: 0.85rem;">Log in using your verified email to bind your hardware.</p>
                         </div>
                     </div>
                 </div>
@@ -197,63 +182,40 @@
 
         <!-- BILLING -->
         <div id="tab-billing" class="tab-content">
-            <div class="plan-card">
-                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 40px;">
+            <div class="plan-card" style="padding: 32px;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 32px;">
                     <div>
-                        <span class="pill pill-trial" style="margin-bottom: 12px; display: inline-block;">Current Plan</span>
-                        <h2 id="plan-title" style="font-size: 2.5rem; font-weight: 900; color: #1e293b; letter-spacing: -1.5px;">Zenith Trial</h2>
+                        <span class="pill pill-trial" style="margin-bottom: 8px; display: inline-block;">Current Plan</span>
+                        <h2 style="font-size: 2rem; font-weight: 900; color: #1e293b; letter-spacing: -1px;">Zenith Trial</h2>
                     </div>
                     <div style="text-align: right;">
-                        <div style="font-size: 2rem; font-weight: 900; color: #1e293b;">$0.00</div>
-                        <div style="color: #94a3b8; font-weight: 700;">per month</div>
+                        <div style="font-size: 1.5rem; font-weight: 900; color: #1e293b;">$0.00</div>
                     </div>
                 </div>
-
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-bottom: 40px;">
-                    <div>
-                        <h4 style="font-size: 0.75rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px;">Active Benefits</h4>
-                        <ul style="list-style: none; padding: 0; display: grid; gap: 12px;">
-                            <li style="display: flex; gap: 10px; color: #64748b; font-weight: 500;"><i data-lucide="check-circle-2" style="color: #10b981; width: 18px;"></i> 7-Day HUD Access</li>
-                            <li style="display: flex; gap: 10px; color: #64748b; font-weight: 500;"><i data-lucide="check-circle-2" style="color: #10b981; width: 18px;"></i> Standard AI Key Pool</li>
-                            <li style="display: flex; gap: 10px; color: #64748b; font-weight: 500;"><i data-lucide="check-circle-2" style="color: #10b981; width: 18px;"></i> 1 Mission History Log</li>
-                        </ul>
-                    </div>
-                    <div style="background: #f8fafc; padding: 24px; border-radius: 20px;">
-                        <h4 style="font-size: 0.75rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px;">Plan Expiry</h4>
-                        <div id="billing-exp" style="font-size: 1.25rem; font-weight: 800; color: #1e293b;">--</div>
-                        <p style="color: #64748b; font-size: 0.85rem; margin-top: 4px;">Automatic expiration active.</p>
-                    </div>
-                </div>
-
                 <button class="btn-action" style="width: 100%; justify-content: center;">Upgrade to PRO Intelligence</button>
             </div>
         </div>
 
         <!-- SETTINGS -->
         <div id="tab-settings" class="tab-content">
-            <div class="data-card" style="max-width: 700px;">
-                <h3 style="margin-bottom: 40px; font-weight: 900; font-size: 1.5rem; letter-spacing: -0.5px;">Account Configuration</h3>
-                <div style="display: grid; gap: 28px;">
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+            <div class="data-card" style="max-width: 600px; padding: 24px;">
+                <h3 style="margin-bottom: 24px; font-weight: 900; font-size: 1.25rem;">Account Configuration</h3>
+                <div style="display: grid; gap: 20px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
                         <div>
-                            <label style="font-size: 0.75rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px;">Full Identity</label>
+                            <label style="font-size: 0.7rem; font-weight: 800; color: #94a3b8; text-transform: uppercase;">Full Identity</label>
                             <input type="text" id="set-name" class="form-input" readonly>
                         </div>
                         <div>
-                            <label style="font-size: 0.75rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px;">Strategic Email</label>
+                            <label style="font-size: 0.7rem; font-weight: 800; color: #94a3b8; text-transform: uppercase;">Strategic Email</label>
                             <input type="text" id="set-email" class="form-input" readonly>
                         </div>
                     </div>
-                    
-                    <div style="padding-top: 20px; border-top: 1px solid #f1f5f9; display: flex; gap: 16px;">
-                        <button class="btn-action" style="flex: 1;">Update Profile Details</button>
-                        <button class="btn-secondary-action" style="flex: 1;">Change Password</button>
-                    </div>
-
-                    <div style="margin-top: 40px; padding: 32px; background: #fff1f2; border-radius: 24px; border: 1px solid #fecdd3;">
-                        <h4 style="color: #e11d48; font-weight: 900; margin-bottom: 8px;">Hardware Security Zone</h4>
-                        <p style="color: #be123c; font-size: 0.9rem; margin-bottom: 24px; line-height: 1.5;">Your account is bound to a single computer. To use ZenithHUD on a different machine, you must request a hardware unlock.</p>
-                        <button class="btn-danger-action">Request Strategic Hardware Unlock</button>
+                    <button class="btn-action">Update Profile</button>
+                    <div style="margin-top: 24px; padding: 20px; background: #fff1f2; border-radius: 16px;">
+                        <h4 style="color: #e11d48; font-weight: 800; font-size: 0.9rem; margin-bottom: 4px;">Hardware Security</h4>
+                        <p style="color: #be123c; font-size: 0.8rem; margin-bottom: 16px;">Locked to one machine.</p>
+                        <button class="btn-danger-action">Request Unlock</button>
                     </div>
                 </div>
             </div>
