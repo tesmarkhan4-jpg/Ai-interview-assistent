@@ -198,30 +198,34 @@ async def send_otp(data: dict):
             upsert=True
         )
         
-        # --- SECURE MAIL SERVICE ---
-        from api.main import MailService
+        # --- REAL SMTP SENDING ---
+        import smtplib
+        from email.mime.text import MIMEText
         
-        template = f"""
-        <div style="font-family: 'Inter', sans-serif; max-width: 500px; margin: auto; padding: 40px; background: white; border-radius: 24px; border: 1px solid #e2e8f0;">
-            <h2 style="color: #4f46e5; margin-bottom: 8px;">Verification Required</h2>
-            <p style="color: #64748b; margin-bottom: 24px;">Please use the code below to verify your ZenithHUD identity.</p>
-            <div style="font-size: 36px; font-weight: 900; color: #1e293b; letter-spacing: 10px; text-align: center; padding: 20px; background: #f8fafc; border-radius: 12px; border: 1px dashed #cbd5e1;">
-                {otp}
-            </div>
-            <p style="color: #94a3b8; font-size: 12px; margin-top: 24px; text-align: center;">This code will expire in 10 minutes. If you did not request this, please ignore this email.</p>
-        </div>
-        """
+        smtp_user = "faheemkhan101992@gmail.com"
+        smtp_pass = "pseu niog agkb bhrn"
         
-        success = MailService.send_email(email, f"{otp} is your verification code", template)
+        msg = MIMEText(f"""
+        Hello!
         
-        if success:
-            return {"status": "success", "msg": "Code sent successfully."}
-        else:
-            raise Exception("Mail delivery failure.")
+        Your ZenithHUD PRO verification code is: {otp}
+        
+        This code will expire in 10 minutes. If you did not request this, please ignore this email.
+        
+        Operational Security Team,
+        ZenithHUD PRO
+        """)
+        
+        msg['Subject'] = f"{otp} is your ZenithHUD Verification Code"
+        msg['From'] = f"ZenithHUD PRO <{smtp_user}>"
+        msg['To'] = email
+        
+        with smtplib.SMTP("smtp.gmail.com", 587) as server:
+            server.starttls()
+            server.login(smtp_user, smtp_pass)
+            server.send_message(msg)
             
-    except Exception as e:
-        print(f"Auth Error: {e}")
-        raise HTTPException(status_code=500, detail="Failed to send verification code. Please check SMTP settings in Admin.")
+        return {"status": "success", "msg": "Verification code sent successfully."}
     except Exception as e:
         print(f"SMTP Error: {e}")
         raise HTTPException(status_code=500, detail="Failed to send verification email.")
