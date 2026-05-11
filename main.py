@@ -3,7 +3,7 @@ import os
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
                              QHBoxLayout, QTextEdit, QLineEdit, QPushButton, 
                              QLabel, QFrame, QScrollArea)
-from PyQt6.QtCore import Qt, QSize, pyqtSignal, QPoint, QThread
+from PyQt6.QtCore import Qt, QSize, pyqtSignal, QPoint, QThread, QTimer
 from PyQt6.QtGui import QColor, QFont, QIcon, QTextCursor
 import keyboard
 try:
@@ -24,16 +24,9 @@ def get_resource_path(relative_path):
         base_path = os.path.abspath(".")
     return os.path.join(base_path, relative_path)
 
-# Load .env from the executable's directory
-if getattr(sys, 'frozen', False):
-    application_path = os.path.dirname(sys.executable)
-else:
-    application_path = os.path.dirname(os.path.abspath(__file__))
-
-import dotenv
-# FORCE load from the current directory, ignoring all other .env files
-env_path = os.path.join(application_path, ".env")
-dotenv.load_dotenv(env_path, override=True)
+# Load .env from the bundle or current directory
+env_path = get_resource_path(".env")
+load_dotenv(env_path, override=True)
 
 # Import Handlers with Error Reporting
 try:
@@ -42,7 +35,7 @@ try:
     from vision_handler import vision_handler
     from history_manager import history_manager
     from auth_manager import auth_manager
-    from keys import is_already_running
+    from hwid_utils import is_already_running
 except ImportError as e:
     import ctypes
     msg = f"Critical Error: Missing module {e.name}. The application was not bundled correctly."
@@ -124,6 +117,19 @@ class StealthHUD(QMainWindow):
         # Added Tool flag to hide from taskbar
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint | Qt.WindowType.Tool)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+        
+        # --- ABSOLUTE STEALTH REINFORCEMENT ---
+        self.stealth_timer = QTimer(self)
+        self.stealth_timer.timeout.connect(self.apply_current_stealth)
+        self.stealth_timer.start(5000) # Re-apply every 5s to combat OS overrides
+        
+        # --- REACTIVE SHIELD (Auto-Hide on Screenshot Keys) ---
+        import keyboard
+        try:
+            keyboard.add_hotkey('print screen', self.reactive_hide)
+            keyboard.add_hotkey('win+shift+s', self.reactive_hide)
+            keyboard.add_hotkey('alt+print screen', self.reactive_hide)
+        except: pass
         self.setAttribute(Qt.WidgetAttribute.WA_NoSystemBackground)
         self.setFixedSize(550, 750)
         
@@ -466,9 +472,13 @@ class StealthHUD(QMainWindow):
     def toggle_stealth(self):
         self.is_stealth = not self.is_stealth
         hwnd = self.winId().__int__()
-        stealth_engine.set_stealth_mode(hwnd, self.is_stealth)
+        success = stealth_engine.set_stealth_mode(hwnd, self.is_stealth)
         self.update_stealth_button_style()
-        self.log_message(f"<span style='color:gray;'>[SYSTEM] Stealth Mode {'ENABLED' if self.is_stealth else 'DISABLED'}</span>")
+        if success:
+            status = "ACTIVE (Window Invisible to Share)" if self.is_stealth else "DISABLED"
+            self.log_message(f"<span style='color:#00E676;'>[SYSTEM] Stealth Shield {status}</span>")
+        else:
+            self.log_message(f"<span style='color:#FF5252;'>[SYSTEM] Stealth Warning: OS rejected invisibility flag.</span>")
 
     def update_stealth_button_style(self):
         if self.is_stealth:
@@ -630,9 +640,43 @@ class StealthHUD(QMainWindow):
         self.chat_display.moveCursor(QTextCursor.MoveOperation.End)
 
     def showEvent(self, event):
-        hwnd = self.winId().__int__()
-        stealth_engine.set_stealth_mode(hwnd, self.is_stealth)
         super().showEvent(event)
+        # Apply stealth with a slight delay to ensure OS window handles are fully ready
+        from PyQt6.QtCore import QTimer
+        QTimer.singleShot(500, self.apply_current_stealth)
+
+    def reactive_hide(self):
+        """Intense Stealth: Disappear the moment a screenshot key is pressed."""
+        # Only trigger if the HUD is actually active and visible
+        if self.is_stealth and self.isVisible():
+            self.hide()
+            # Stay hidden for 1.5 seconds to allow the screenshot tool to finish
+            QTimer.singleShot(1500, self.show)
+
+    def closeEvent(self, event):
+        """Cleanup and ensure the app fully terminates."""
+        try:
+            import keyboard
+            keyboard.unhook_all()
+        except: pass
+        super().closeEvent(event)
+        QApplication.quit()
+
+    def apply_current_stealth(self):
+        if not self.is_stealth:
+            hwnd = self.winId().__int__()
+            stealth_engine.set_stealth_mode(hwnd, False)
+            return
+
+        hwnd = self.winId().__int__()
+        success = stealth_engine.set_stealth_mode(hwnd, True)
+        
+        # Logic for 'Absolute Stealth' - Check if running as Admin
+        import ctypes
+        is_admin = ctypes.windll.shell32.IsUserAnAdmin() != 0
+        if not is_admin and not hasattr(self, '_admin_warned'):
+            print("[SYSTEM] WARNING: Running as Standard User. Stealth works best as ADMINISTRATOR.")
+            self._admin_warned = True
 
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton:

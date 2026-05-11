@@ -1,6 +1,5 @@
 import os
 from groq import Groq
-from keys import key_manager
 import base64
 from typing import List, Dict
 from PIL import Image
@@ -26,7 +25,7 @@ class AIEngine:
         
         self.groq_keys = []
         # --- LIVE API KEY POOL ---
-        from keys import key_manager
+        from hwid_utils import key_manager
         self.groq_client = Groq(api_key=key_manager.get_key("GROQ")) if key_manager.get_key("GROQ") else None
         if not self.groq_client:
             # Fallback to .env
@@ -42,13 +41,12 @@ class AIEngine:
                 "### SOURCE DATA ###\n"
                 "{cv_data}\n"
                 "\n"
-                "### CONVERSATIONAL RULES ###\n"
-                "1. MIRROR BREVITY: If the user is brief (e.g. 'Hi'), you MUST be brief. (Max 10 words).\n"
-                "2. NO INFO DUMP: Never mention your job, city, or history unless specifically asked.\n"
-                "3. BE HUMAN: Use short, warm sentences. Don't sound like a resume.\n"
-                "4. OUTPUT ONLY SPEECH: No headers or thinking labels.\n"
-                "\n"
-                "### START CONVERSATION ###"
+                "### START CONVERSATION ###\n"
+                "STRICT RULES:\n"
+                "1. HUMAN TONE: Use 'I' and 'we'. Sound like a relaxed candidate.\n"
+                "2. EXTREME BREVITY: Max 40 words. Never more than 2 short paragraphs.\n"
+                "3. NO LISTS: No bullet points or numbered lists. Just speech.\n"
+                "4. MIRROR: If the question is short, the answer MUST be short."
             ),
             "code_challenge": (
                 "SYSTEM (HIDDEN): Output ONLY the solution.\n"
@@ -179,7 +177,7 @@ class AIEngine:
 
     def _get_next_client(self):
         """Rotates to the next available API key from the live pool."""
-        from keys import key_manager
+        from hwid_utils import key_manager
         key = key_manager.get_key("GROQ")
         if not key: return None
         return Groq(api_key=key)
@@ -251,17 +249,23 @@ class AIEngine:
 
     def analyze_screen(self, image_path: str, query: str = "Identify any questions or code and solve them."):
         """Sends screen capture for elite vision analysis via Gemini."""
+        import time
+        time.sleep(1)
         try:
-            from keys import key_manager
+            from hwid_utils import key_manager
             api_key = key_manager.get_key("GEMINI")
             if not api_key:
-                api_key = os.getenv("GEMINI_API_KEY")
+                api_keys = os.getenv("GEMINI_API_KEYS")
+                if api_keys:
+                    api_key = api_keys.split(",")[0].strip()
+                else:
+                    api_key = os.getenv("GEMINI_API_KEY")
             
             if not api_key:
-                return "Vision Error: No Gemini Key. Please check dashboard."
+                return "Vision Error: No Gemini Key. Please check .env"
 
-            from google import genai
-            client = genai.Client(api_key=api_key)
+            import google.generativeai as genai
+            genai.configure(api_key=api_key)
             
             img = Image.open(image_path)
             
@@ -279,14 +283,18 @@ class AIEngine:
             )
             
             # Use a robust fallback loop to handle High Demand (503) or Not Found (404) errors
-            models_to_try = ['gemini-2.5-flash', 'gemini-1.5-flash-8b', 'gemini-1.5-flash', 'gemini-1.5-pro']
+            # Optimized models for faster vision analysis (Legacy format)
+            models_to_try = [
+                'models/gemini-1.5-flash', 
+                'models/gemini-2.0-flash-exp', 
+                'models/gemini-flash-latest',
+                'models/gemini-1.5-pro'
+            ]
             
             for model_name in models_to_try:
                 try:
-                    response = client.models.generate_content(
-                        model=model_name,
-                        contents=[vision_prompt, query, img]
-                    )
+                    model = genai.GenerativeModel(model_name)
+                    response = model.generate_content([vision_prompt, query, img])
                     return response.text.replace("*", "").strip()
                 except Exception as e:
                     error_msg = str(e)

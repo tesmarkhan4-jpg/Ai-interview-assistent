@@ -1,28 +1,21 @@
 import os
-import bcrypt
 import random
 import datetime
-from pymongo import MongoClient
 from dotenv import load_dotenv
-from email_service import email_service
-
-import os
-import requests
-from dotenv import load_dotenv
-from keys import get_hwid
+from hwid_utils import get_hwid
 
 class AuthManager:
     def __init__(self):
         import sys
         if getattr(sys, 'frozen', False):
-            application_path = os.path.dirname(sys.executable)
+            bundle_dir = sys._MEIPASS
         else:
-            application_path = os.path.dirname(os.path.abspath(__file__))
+            bundle_dir = os.path.dirname(os.path.abspath(__file__))
             
-        env_path = os.path.join(application_path, ".env")
+        env_path = os.path.join(bundle_dir, ".env")
         load_dotenv(env_path, override=True)
         
-        self.backend_url = os.getenv("BACKEND_URL", "http://localhost:8000")
+        self.backend_url = os.getenv("BACKEND_URL", "https://zenith-hud.vercel.app")
         self.current_user = None
         self.current_user_name = None
         self.tier = "TRIAL"
@@ -37,34 +30,41 @@ class AuthManager:
         self.load_session()
 
     def load_session(self):
-        """Loads and validates a saved session."""
+        """Loads local session data without blocking for network validation."""
         if os.path.exists(self.session_file):
             try:
                 import json
                 with open(self.session_file, 'r') as f:
                     data = json.load(f)
-                    email = data.get("email")
-                
-                if email:
-                    # VALIDATE with Backend
-                    res = requests.post(
-                        f"{self.backend_url}/api/auth/validate",
-                        json={"email": email, "hwid": get_hwid()},
-                        timeout=5
-                    )
-                    if res.ok:
-                        val_data = res.json()
-                        self.current_user = email
-                        self.current_user_name = val_data.get("full_name")
-                        self.tier = val_data.get("tier", "TRIAL")
-                        self.trial_expiry = val_data.get("trial_expiry")
-                        print(f"[Auth] Strategic Session Validated for {self.current_user}")
-                    else:
-                        print("[Auth] Identity Expired or Mismatch. Clearing.")
-                        self.clear_session()
+                    self.current_user = data.get("email")
+                    self.current_user_name = data.get("full_name")
+                    self.tier = data.get("tier", "TRIAL")
+                    self.trial_expiry = data.get("trial_expiry")
+                    print(f"[Auth] Local Session Loaded for {self.current_user}")
             except Exception as e:
-                print(f"[Auth] Validation Failure: {e}")
+                print(f"[Auth] Local Load Failure: {e}")
                 self.clear_session()
+
+    def validate_session_async(self):
+        """Checks with the server if the local session is still valid (Non-blocking)."""
+        if not self.current_user: return
+        
+        def _check():
+            try:
+                import requests
+                res = requests.post(
+                    f"{self.backend_url}/api/auth/validate",
+                    json={"email": self.current_user, "hwid": get_hwid()},
+                    timeout=3
+                )
+                if not res.ok:
+                    print("[Auth] Session invalid on server. Log out required.")
+                    # We don't force logout here to avoid disrupting the user immediately,
+                    # but we could trigger a signal if needed.
+            except: pass
+            
+        import threading
+        threading.Thread(target=_check, daemon=True).start()
 
     def save_session(self):
         """Saves current session to local file."""
@@ -92,6 +92,7 @@ class AuthManager:
     def login(self, email, password):
         """Securely logs in via the centralized backend API."""
         try:
+            import requests
             res = requests.post(
                 f"{self.backend_url}/api/auth/login",
                 json={"email": email, "password": password, "hwid": get_hwid()},
@@ -108,10 +109,6 @@ class AuthManager:
                 # Persist the session
                 self.save_session()
                 
-                # --- AUTO-SYNC KEYS FROM DASHBOARD ---
-                from keys import key_manager
-                key_manager.refresh_from_dashboard()
-                
                 return True, "Identity Verified."
             else:
                 detail = res.json().get("detail", "Strategic Identity Mismatch.")
@@ -122,6 +119,7 @@ class AuthManager:
     def register(self, email, password, full_name, otp=None):
         """Registers a new identity via the backend."""
         try:
+            import requests
             res = requests.post(
                 f"{self.backend_url}/api/auth/register",
                 json={"email": email, "password": password, "full_name": full_name, "hwid": get_hwid()},
@@ -136,8 +134,21 @@ class AuthManager:
             return False, "Communication Failure."
 
     def send_verification_otp(self, email, name="User"):
-        # The new backend handles OTP or simplified registration
-        return True, "Endpoint Ready"
+        """Requests an OTP code from the backend to be sent to the user's email."""
+        try:
+            import requests
+            res = requests.post(
+                f"{self.backend_url}/api/auth/send-otp",
+                json={"email": email, "full_name": name},
+                timeout=10
+            )
+            if res.ok:
+                return True, "Verification code sent!"
+            else:
+                detail = res.json().get("detail", "Failed to send code.")
+                return False, detail
+        except Exception as e:
+            return False, "Communication Failure. Ensure you are connected to the network."
     def logout(self):
         self.clear_session()
         self.current_user = None

@@ -10,19 +10,22 @@ def get_resource_path(relative_path):
         base_path = os.path.abspath(".")
     return os.path.join(base_path, relative_path)
 
-# Load .env early
-if getattr(sys, 'frozen', False):
-    application_path = os.path.dirname(sys.executable)
-else:
-    application_path = os.path.dirname(os.path.abspath(__file__))
+import time
+start_time = time.time()
+def log_time(label):
+    print(f"[BOOT] {label}: {time.time() - start_time:.3f}s")
 
+log_time("Core Imports")
 import dotenv
-env_path = os.path.join(application_path, ".env")
+log_time("Dotenv Imported")
+env_path = get_resource_path(".env")
 dotenv.load_dotenv(env_path, override=True)
+log_time("Env Loaded")
 
 from PyQt6.QtWidgets import QApplication, QMessageBox
 from PyQt6.QtCore import QObject
 import traceback
+log_time("Qt Core Loaded")
 
 def exception_hook(exctype, value, tb):
     error_msg = "".join(traceback.format_exception(exctype, value, tb))
@@ -47,31 +50,35 @@ def exception_hook(exctype, value, tb):
 
 sys.excepthook = exception_hook
 
-from login_window import LoginWindow
-from cv_panel import UserDashboard
-from main import StealthHUD
+# Heavy GUI imports moved inside methods for speed
 
 class StealthController(QObject):
     def __init__(self):
         super().__init__()
+        log_time("Controller Start")
         self.login_win = None
         self.dash_win = None
         self.hud_win = None
         
         # Check if already signed in
+        log_time("Importing Auth")
         from auth_manager import auth_manager
+        log_time("Auth Manager Imported")
         if auth_manager.current_user:
             print(f"[Launcher] Session detected: {auth_manager.current_user}. Skipping Login.")
+            auth_manager.validate_session_async() # Verify in background
             self.transition_to_cv()
         else:
             self.show_login()
 
     def show_login(self):
+        from login_window import LoginWindow
         self.login_win = LoginWindow()
         self.login_win.login_success.connect(self.transition_to_cv)
         self.login_win.show()
 
     def transition_to_cv(self):
+        from cv_panel import UserDashboard
         pos = self.login_win.pos() if self.login_win else None
         self.dash_win = UserDashboard()
         if pos: self.dash_win.move(pos)
@@ -82,6 +89,7 @@ class StealthController(QObject):
             self.login_win = None
 
     def transition_to_hud(self, cv_text, jd_text, link_text, linkedin_url):
+        from main import StealthHUD
         pos = self.dash_win.pos() if self.dash_win else None
         # Pass full context to HUD
         self.hud_win = StealthHUD(cv_text, jd_text, link_text, linkedin_url)

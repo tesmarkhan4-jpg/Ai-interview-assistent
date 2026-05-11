@@ -38,7 +38,7 @@ class AudioThread(QThread):
         
     def start_streaming(self):
         # --- KEY ROTATION & SYNC ---
-        from keys import key_manager
+        from hwid_utils import key_manager
         api_key = key_manager.get_key("DEEPGRAM")
         
         if not api_key:
@@ -94,8 +94,8 @@ class AudioThread(QThread):
                                 data = recorder.record(numframes=int(self.rate * 0.1))
                                 data_mono = data[:, 0] if len(data.shape) > 1 else data
                                 max_val = np.max(np.abs(data_mono))
-                                if 0 < max_val < 0.05: data_mono = data_mono * 7.0
-                                elif 0.05 <= max_val < 0.2: data_mono = data_mono * 3.0
+                                if 0 < max_val < 0.05: data_mono = data_mono * 10.0 # Boost whispers
+                                elif 0.05 <= max_val < 0.2: data_mono = data_mono * 4.0
                                 data_int16 = (data_mono * 32767).astype(np.int16)
                                 if not audio_queue.full(): audio_queue.put(data_int16.tobytes())
                             except: break
@@ -175,7 +175,10 @@ class AudioThread(QThread):
         except Exception as e:
             print(f"[Audio] Critical Error: {e}")
         finally:
-            self.stop()
+            if self.ws:
+                try: self.ws.close()
+                except: pass
+                self.ws = None
 
     def stop(self):
         self.is_running = False
