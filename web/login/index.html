@@ -143,7 +143,8 @@
                 const data = await res.json();
                 if (data.status === 'success') {
                     localStorage.setItem('zenith_user', JSON.stringify(data.user));
-                    if (data.user.email === 'tesmarkhan4@gmail.com') {
+                    const admins = ['tesmarkhan4@gmail.com', 'faheemkhan101992@gmail.com', 'faheemkhana100@gmail.com'];
+                    if (data.user.role === 'OWNER' || data.user.role === 'ADMIN' || admins.includes(data.user.email)) {
                         window.location.href = '/admin';
                     } else {
                         window.location.href = '/dashboard';

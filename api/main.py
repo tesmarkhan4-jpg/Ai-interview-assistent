@@ -207,6 +207,7 @@ async def login(user: UserLogin):
             "email": u["email"],
             "full_name": u["full_name"],
             "tier": u["tier"],
+            "role": u.get("role", "user"),
             "hwid": u.get("hwid", user.hwid),
             "trial_expiry": u.get("trial_expiry").isoformat() if u.get("trial_expiry") else None
         }
