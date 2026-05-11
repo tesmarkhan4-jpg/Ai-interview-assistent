@@ -149,6 +149,7 @@
                         window.location.href = '/dashboard';
                     }
                 } else {
+                    error.innerText = data.detail || "Incorrect email or password.";
                     error.style.display = 'block';
                     btn.innerText = "Login to System";
                     btn.disabled = false;

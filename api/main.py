@@ -188,12 +188,12 @@ async def login(user: UserLogin):
     try:
         conn = StealthDB()
         u = conn.get_user(user.email)
-        if not u: return {"status": "error", "detail": "Identity not found."}
+        if not u: return {"status": "error", "detail": "Identity not found in database."}
         
         # Match hash
         hashed = hashlib.sha256(user.password.encode()).hexdigest()
         if u["password"] != hashed:
-            return {"status": "error", "detail": "Invalid credentials."}
+            return {"status": "error", "detail": "Invalid credentials provided."}
             
         # HWID Lock (Only for App, skip for WEB_LOGIN)
         if user.hwid != 'WEB_LOGIN':
