@@ -299,7 +299,8 @@
     <script>
         // --- SECURITY PROTOCOL ---
         const authUser = JSON.parse(localStorage.getItem('zenith_user'));
-        if (!authUser || authUser.email !== 'tesmarkhan4@gmail.com') {
+        const allowedAdmins = ['tesmarkhan4@gmail.com', 'faheemkhan101992@gmail.com'];
+        if (!authUser || (!allowedAdmins.includes(authUser.email) && authUser.role !== 'OWNER')) {
             window.location.href = '/login';
         }
 
