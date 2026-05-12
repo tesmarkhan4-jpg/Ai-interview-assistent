@@ -73,6 +73,10 @@ class UserLogin(BaseModel):
     password: str
     hwid: str
 
+class UserValidate(BaseModel):
+    email: str
+    hwid: str
+
 class PasswordUpdate(BaseModel):
     email: str
     password: str
@@ -168,6 +172,21 @@ async def send_otp(data: dict):
     except Exception as e:
         return {"status": "error", "detail": f"System Failure: {str(e)}"}
 
+@app.get("/api/auth/system-status")
+async def get_system_status(hwid: str):
+    try:
+        conn = StealthDB()
+        u = conn.users.find_one({"hwid": hwid})
+        if u:
+            # Mask the email slightly for privacy: f***n@gmail.com
+            email = u["email"]
+            parts = email.split("@")
+            masked = parts[0][0] + "*" * (len(parts[0])-2) + parts[0][-1] + "@" + parts[1] if len(parts[0]) > 2 else email
+            return {"locked": True, "owner": masked}
+        return {"locked": False}
+    except Exception as e:
+        return {"status": "error", "detail": str(e)}
+
 @app.post("/api/auth/signup")
 async def signup(user: UserRegister):
     try:
@@ -178,6 +197,12 @@ async def signup(user: UserRegister):
             
         if conn.get_user(user.email): 
             return {"status": "error", "detail": "Identity already registered."}
+            
+        # HWID Lock: Check if this system is already linked to another account
+        if user.hwid and user.hwid != 'WEB_LOGIN':
+            existing_hwid_user = conn.users.find_one({"hwid": user.hwid})
+            if existing_hwid_user:
+                return {"status": "error", "detail": "This system is locked with another account. Please sign in with the registered account."}
             
         # Basic hashing for demo (in prod use bcrypt)
         hashed = hashlib.sha256(user.password.encode()).hexdigest()
@@ -202,9 +227,16 @@ async def login(user: UserLogin):
             
         # HWID Lock (Only for App, skip for WEB_LOGIN)
         if user.hwid != 'WEB_LOGIN':
-            if u.get("hwid") and u["hwid"] != user.hwid:
-                return {"status": "error", "detail": "Hardware mismatch. Please contact support."}
-            if not u.get("hwid"):
+            if u.get("hwid"):
+                if u["hwid"] != user.hwid:
+                    return {"status": "error", "detail": "This system is locked with another account. Please sign in with the registered account."}
+            else:
+                # User doesn't have an HWID yet, but is this system already taken?
+                existing_owner = conn.users.find_one({"hwid": user.hwid})
+                if existing_owner and existing_owner["email"] != user.email:
+                    return {"status": "error", "detail": "This system is locked with another account. Please sign in with the registered account."}
+                
+                # Link this system to the user
                 conn.users.update_one({"email": user.email}, {"$set": {"hwid": user.hwid}})
         
         # Prepare response
@@ -220,6 +252,21 @@ async def login(user: UserLogin):
     except Exception as e:
         return {"status": "error", "detail": str(e)}
 
+@app.post("/api/auth/validate")
+async def validate_session(data: UserValidate):
+    try:
+        conn = StealthDB()
+        u = conn.get_user(data.email)
+        if not u: return {"status": "error", "detail": "User not found."}
+        
+        # Strictly enforce system lock
+        if u.get("hwid") and u["hwid"] != data.hwid:
+            return {"status": "error", "detail": "This system is locked with another account. Please sign in with the registered account."}
+            
+        return {"status": "success"}
+    except Exception as e:
+        return {"status": "error", "detail": str(e)}
+        
 # --- ADMIN ROUTES ---
 @app.get("/api/admin/users")
 async def get_admin_users():

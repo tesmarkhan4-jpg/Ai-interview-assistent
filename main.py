@@ -507,8 +507,18 @@ class StealthHUD(QMainWindow):
         self.screen_btn.setStyleSheet("background: #6200EA; color: white; border-radius: 15px; padding: 12px; font-weight: 900;")
         self.log_message("<span style='color:#6200EA;'>[SYSTEM] Capture & Analyze in progress...</span>")
         
+        # Hide HUD to prevent it from blocking the capture
+        self.hide()
+        
+        # Delay 150ms to allow OS window animation to clear safely without blocking main loop
+        QTimer.singleShot(150, self._do_capture_and_analyze)
+
+    def _do_capture_and_analyze(self):
         # Start analysis in background
         path = vision_handler.capture_fullscreen()
+        
+        # Restore HUD
+        self.show()
         
         # Dynamic query based on mode
         if ai_engine.mode == "code":
@@ -532,7 +542,13 @@ class StealthHUD(QMainWindow):
         self.screen_btn.setStyleSheet("background: rgba(255, 255, 255, 0.5); color: #007E44; border-radius: 15px; padding: 12px; font-weight: 900;")
 
     def perform_screen_analysis(self):
+        self.hide()
+        QTimer.singleShot(150, self._do_perform_screen_analysis)
+
+    def _do_perform_screen_analysis(self):
         path = vision_handler.capture_fullscreen()
+        self.show()
+        
         self.stop_active_worker()
         self.active_worker = AIWorker("Analyze this screen and provide the answer.", mode="vision", image_path=path)
         self.active_worker.finished.connect(self.handle_ai_finished)

@@ -83,10 +83,19 @@ class StealthController(QObject):
         self.dash_win = UserDashboard()
         if pos: self.dash_win.move(pos)
         self.dash_win.cv_submitted.connect(self.transition_to_hud)
+        self.dash_win.logout_requested.connect(self.handle_dashboard_logout)
         self.dash_win.show()
         if self.login_win:
             self.login_win.close()
             self.login_win = None
+
+    def handle_dashboard_logout(self):
+        pos = self.dash_win.pos() if self.dash_win else None
+        self.show_login()
+        if pos and self.login_win: self.login_win.move(pos)
+        if self.dash_win:
+            self.dash_win.close()
+            self.dash_win = None
 
     def transition_to_hud(self, cv_text, jd_text, link_text, linkedin_url):
         from main import StealthHUD

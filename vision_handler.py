@@ -24,7 +24,13 @@ class VisionHandler:
         
         # Convert to RGB and save as JPG (smaller size for API)
         img = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
-        img.save(output, "JPEG", quality=80)
+        
+        # Optimize size for speed: Downscale large screenshots while maintaining aspect ratio
+        max_size = (1600, 900)
+        img.thumbnail(max_size, Image.Resampling.LANCZOS)
+        
+        # Compress slightly to make API upload much faster
+        img.save(output, "JPEG", quality=70, optimize=True)
         
         return output
 

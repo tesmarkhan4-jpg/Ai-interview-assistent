@@ -38,7 +38,17 @@ class LoginWindow(QWidget):
         self.anim_timer = QTimer(self)
         self.anim_timer.timeout.connect(self.update_loading_text)
         self.anim_dots = 0
+        
+        # Proactive System Check
+        QTimer.singleShot(500, self.perform_system_check)
 
+    def perform_system_check(self):
+        status = auth_manager.check_system_lock()
+        if status.get("locked"):
+            self.show_msg(f"SYSTEM LOCKED: Sign in with {status['owner']}", False)
+            # Make it more prominent
+            self.status_label.setStyleSheet("color: #FFFFFF; background-color: #D32F2F; padding: 12px; border-radius: 10px; font-weight: 800; font-size: 13px;")
+            
     def init_ui(self):
         # Main Layout (Horizontal Split)
         self.root_layout = QHBoxLayout()
@@ -325,7 +335,11 @@ class LoginWindow(QWidget):
 
     def show_msg(self, text, error=True):
         self.status_label.setText(text)
-        self.status_label.setStyleSheet(f"color: {'#D32F2F' if error else '#00E676'}; font-size: 13px; font-weight: bold;")
+        if "locked" in text.lower() or "hardware mismatch" in text.lower():
+            # Urgent Alert Style
+            self.status_label.setStyleSheet("color: #FFFFFF; background-color: #D32F2F; padding: 12px; border-radius: 10px; font-weight: 800; font-size: 13px;")
+        else:
+            self.status_label.setStyleSheet(f"color: {'#D32F2F' if error else '#00E676'}; font-size: 13px; font-weight: bold; background: transparent; padding: 0;")
 
     def handle_login(self):
         email = self.login_email.text()

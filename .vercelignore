@@ -1,8 +1,16 @@
 .venv/
 dist/
+dist2/
 build/
 __pycache__/
 *.exe
 *.spec
 .git/
 node_modules/
+.env
+*.db
+scratch/
+temp_stealth/
+mission_history/
+*.log
+*.txt

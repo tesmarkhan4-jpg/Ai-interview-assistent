@@ -8,12 +8,16 @@ __pycache__/
 *.pyc
 build/
 dist/
+dist2/
 *.spec
 .DS_Store
 Thumbs.db
 
 .vercel
 node_modules/
-.env
-__pycache__/
-.vercel
+scratch/
+temp_stealth/
+mission_history/
+*.log
+*.txt
+brain.db

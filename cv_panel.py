@@ -106,6 +106,7 @@ class InterviewCard(QFrame):
 
 class UserDashboard(QWidget):
     cv_submitted = pyqtSignal(str, str, str, str) # CV, JD, Link, LinkedIn
+    logout_requested = pyqtSignal()
 
     def __init__(self):
         super().__init__()
@@ -454,10 +455,8 @@ class UserDashboard(QWidget):
 
     def handle_logout(self):
         auth_manager.logout()
-        # Close and reopen main (which handles login)
-        QApplication.instance().quit()
-        # In a real app we might restart, but here we'll just exit
-        # and the user can relaunch.
+        # Emit signal to let the launcher return to the login window
+        self.logout_requested.emit()
 
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton:

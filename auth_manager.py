@@ -149,6 +149,21 @@ class AuthManager:
                 return False, detail
         except Exception as e:
             return False, "Communication Failure. Ensure you are connected to the network."
+    def check_system_lock(self):
+        """Checks if this HWID is already bound to another identity."""
+        try:
+            import requests
+            res = requests.get(
+                f"{self.backend_url}/api/auth/system-status",
+                params={"hwid": get_hwid()},
+                timeout=5
+            )
+            if res.ok:
+                return res.json()
+        except:
+            pass
+        return {"locked": False}
+
     def logout(self):
         self.clear_session()
         self.current_user = None

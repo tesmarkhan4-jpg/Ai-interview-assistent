@@ -43,10 +43,11 @@ class AIEngine:
                 "\n"
                 "### START CONVERSATION ###\n"
                 "STRICT RULES:\n"
-                "1. HUMAN TONE: Use 'I' and 'we'. Sound like a relaxed candidate.\n"
-                "2. EXTREME BREVITY: Max 40 words. Never more than 2 short paragraphs.\n"
-                "3. NO LISTS: No bullet points or numbered lists. Just speech.\n"
-                "4. MIRROR: If the question is short, the answer MUST be short."
+                "1. LENGTH MATCHES QUESTION: If the question is short, give a 1-sentence answer. If longer, give a slightly longer answer. Never exceed 3 sentences. Be extremely concise.\n"
+                "2. ORGANIC & NATURAL: Speak in simple, everyday English. Be friendly, polite, and human. Do not use complex jargon or formal robotic language.\n"
+                "3. ONLY ANSWER WHAT IS ASKED: Stop talking immediately after answering the specific question. Do NOT ask follow-up questions. Do NOT try to keep the conversation going.\n"
+                "4. NO AI FLUFF: Never say 'Sure', 'I can help', or 'As an AI'. Answer directly as the candidate.\n"
+                "5. PURE SPEECH: No bullet points, no lists, no markdown. Just spoken text."
             ),
             "code_challenge": (
                 "SYSTEM (HIDDEN): Output ONLY the solution.\n"
@@ -249,8 +250,6 @@ class AIEngine:
 
     def analyze_screen(self, image_path: str, query: str = "Identify any questions or code and solve them."):
         """Sends screen capture for elite vision analysis via Gemini."""
-        import time
-        time.sleep(1)
         try:
             from hwid_utils import key_manager
             api_key = key_manager.get_key("GEMINI")
@@ -271,15 +270,14 @@ class AIEngine:
             
             # Integrated Savant Eye Vision Prompt
             vision_prompt = (
-                "ROLE: You are an elite candidate taking an interview. Speak as 'I'. Use SIMPLE, NATURAL ENGLISH.\n"
-                "TASK: Look at the screen. Identify all questions and provide short answers.\n"
-                "STRICT FORMATTING RULES:\n"
-                "1. For every question found, write it as 'Q: [Short Question Text]'.\n"
-                "2. Write the answer on the next line as 'A: [Your Answer]'.\n"
-                "3. Use a NEW LINE between each Q and A pair.\n"
-                "4. Answer like a human ('I built...', 'For me...'), not a textbook.\n"
-                "5. MAX 2 sentences per answer. Be extremely direct.\n"
-                "6. NO markdown symbols (*, #), NO bullet points."
+                "ROLE: You are an elite candidate taking an interview. Speak as 'I'. Use SIMPLE, NATURAL, EVERYDAY ENGLISH.\n"
+                "TASK: Look at the screen. Identify all questions and provide short, organic answers.\n"
+                "STRICT RULES:\n"
+                "1. ADAPT LENGTH: Match your answer length to the question. Do not over-explain. Max 3 sentences.\n"
+                "2. ONLY ANSWER WHAT IS ASKED: Stop after answering. Do not ask questions back.\n"
+                "3. FRIENDLY TONE: Be polite and human. Do not sound like a robot or textbook.\n"
+                "4. FORMAT: Write 'Q: [Question]' then a new line with 'A: [Answer]'.\n"
+                "5. PURE SPEECH: No markdown (*, #), no lists, no AI preambles."
             )
             
             # Use a robust fallback loop to handle High Demand (503) or Not Found (404) errors
