@@ -254,9 +254,104 @@ async def get_stats():
         conn = StealthDB()
         return {
             "total_users": conn.users.count_documents({}),
+            "active_sessions": conn.history.count_documents({"timestamp": {"$gt": datetime.datetime.utcnow() - datetime.timedelta(hours=1)}}),
+            "key_health": 100, # Mock
+            "revenue": 0,
             "pro_users": conn.users.count_documents({"tier": "PRO"}),
-            "active_keys": conn.keys.count_documents({"status": "healthy"})
+            "active_keys": conn.keys.count_documents({"status": "healthy"}),
+            "maintenance_mode": conn.get_config().get("maintenance_mode", False)
         }
+    except Exception as e:
+        return {"status": "error", "detail": str(e)}
+
+@app.get("/api/admin/keys")
+async def get_keys():
+    try:
+        conn = StealthDB()
+        keys = list(conn.keys.find({}))
+        for k in keys:
+            k["_id"] = str(k["_id"])
+            if isinstance(k.get("last_used"), datetime.datetime):
+                k["last_used"] = k["last_used"].isoformat()
+        return {"keys": keys}
+    except Exception as e:
+        return {"status": "error", "detail": str(e)}
+
+@app.post("/api/admin/keys")
+async def add_key(provider: str, key_value: str):
+    try:
+        conn = StealthDB()
+        conn.keys.insert_one({
+            "provider": provider,
+            "key_value": key_value,
+            "status": "healthy",
+            "usage_count_total": 0,
+            "usage_count_today": 0,
+            "last_used": None
+        })
+        return {"status": "success"}
+    except Exception as e:
+        return {"status": "error", "detail": str(e)}
+
+@app.delete("/api/admin/keys/{key_id}")
+async def delete_key(key_id: str):
+    try:
+        conn = StealthDB()
+        conn.keys.delete_one({"_id": ObjectId(key_id)})
+        return {"status": "success"}
+    except Exception as e:
+        return {"status": "error", "detail": str(e)}
+
+@app.post("/api/admin/users/upgrade")
+async def upgrade_user(email: str):
+    try:
+        conn = StealthDB()
+        conn.users.update_one({"email": email}, {"$set": {"tier": "PRO"}})
+        return {"status": "success"}
+    except Exception as e:
+        return {"status": "error", "detail": str(e)}
+
+@app.post("/api/admin/users/reset-hwid")
+async def reset_hwid(email: str):
+    try:
+        conn = StealthDB()
+        conn.users.update_one({"email": email}, {"$set": {"hwid": None}})
+        return {"status": "success"}
+    except Exception as e:
+        return {"status": "error", "detail": str(e)}
+
+@app.delete("/api/admin/users/{email}")
+async def delete_user(email: str):
+    try:
+        conn = StealthDB()
+        conn.users.delete_one({"email": email})
+        return {"status": "success"}
+    except Exception as e:
+        return {"status": "error", "detail": str(e)}
+
+@app.get("/api/admin/config")
+async def get_config():
+    try:
+        conn = StealthDB()
+        return conn.get_config()
+    except Exception as e:
+        return {"status": "error", "detail": str(e)}
+
+@app.post("/api/admin/config")
+async def update_config(config: dict = Body(...)):
+    try:
+        conn = StealthDB()
+        conn.config.update_one({}, {"$set": config}, upsert=True)
+        return {"status": "success"}
+    except Exception as e:
+        return {"status": "error", "detail": str(e)}
+
+@app.post("/api/admin/maintenance")
+async def toggle_maintenance(active: bool):
+    try:
+        conn = StealthDB()
+        conn.config.update_one({}, {"$set": {"maintenance_mode": active}}, upsert=True)
+        return {"status": "success"}
     except Exception as e:
         return {"status": "error", "detail": str(e)}
 

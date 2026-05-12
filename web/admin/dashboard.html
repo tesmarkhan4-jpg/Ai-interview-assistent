@@ -464,6 +464,13 @@
             }
         }
 
+        async function resetHWID(email) {
+            if(confirm("Reset Hardware ID (HWID) for " + email + "? This will allow them to login from a new device.")) {
+                await fetch(`/api/admin/users/reset-hwid?email=${email}`, { method: 'POST' });
+                fetchUsers();
+            }
+        }
+
         async function deleteUser(email) {
             if(confirm("Terminate user " + email + " permanently?")) {
                 await fetch(`/api/admin/users/${email}`, { method: 'DELETE' });
