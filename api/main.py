@@ -26,9 +26,21 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True, 
 class StealthDB:
     def __init__(self):
         try:
-            # Simplified for high compatibility (Ai-A Cluster)
-            self.uri = "mongodb+srv://admin:admin%40013970@ai-a.fqixdrd.mongodb.net/?appName=Ai-A"
-            self.client = MongoClient(self.uri, serverSelectionTimeoutMS=5000, connectTimeoutMS=5000)
+            # Use Env Var with fallback
+            self.uri = os.getenv("MONGO_URI", "mongodb+srv://admin:admin%40013970@ai-a.fqixdrd.mongodb.net/?appName=Ai-A")
+            
+            # Add certifi for SSL compatibility on Vercel
+            import certifi
+            self.client = MongoClient(
+                self.uri, 
+                serverSelectionTimeoutMS=10000, 
+                connectTimeoutMS=10000,
+                tlsCAFile=certifi.where()
+            )
+            
+            # Force a ping to verify connection
+            self.client.admin.command('ping')
+            
             self.db = self.client['zenith_pro']
             self.users = self.db['users']
             self.keys = self.db['api_keys']
@@ -36,7 +48,7 @@ class StealthDB:
             self.config = self.db['system_config']
             self.otps = self.db['otps']
         except Exception as e:
-            print(f"DB Engine Failure: {e}")
+            print(f"CRITICAL: DB Engine Failure: {str(e)}")
             raise e
 
     def get_user(self, email): return self.users.find_one({"email": email})
@@ -69,7 +81,8 @@ def get_conn():
         try:
             _conn = StealthDB()
         except Exception as e:
-            print(f"Lazy Load DB Failure: {e}")
+            # Clear error logging to console
+            print(f"DB_RETRY_ERROR: {str(e)}")
             return None
     return _conn
 
