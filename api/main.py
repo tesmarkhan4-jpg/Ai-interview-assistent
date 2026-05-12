@@ -141,12 +141,20 @@ async def delete_user_interview(data: dict):
 @app.post("/api/auth/send-otp")
 async def send_otp(data: dict):
     email = data.get("email")
+    hwid = data.get("hwid")
     if not email: return {"status": "error", "detail": "Email required."}
     
-    otp = str(random.randint(100000, 999999))
     try:
         conn = get_conn()
         if not conn: return {"status": "error", "detail": "Database unavailable."}
+        
+        # HWID Lock Check (CRITICAL)
+        if hwid and hwid != 'WEB_LOGIN':
+            existing = conn.users.find_one({"hwid": hwid})
+            if existing and existing["email"] != email:
+                return {"status": "error", "detail": "This system is locked with another account. Please sign in with the registered account."}
+
+        otp = str(random.randint(100000, 999999))
         conn.otps.update_one(
             {"email": email},
             {"$set": {"otp": otp, "created_at": datetime.datetime.utcnow()}},

@@ -137,9 +137,10 @@ class AuthManager:
         """Requests an OTP code from the backend to be sent to the user's email."""
         try:
             import requests
+            from hwid_utils import get_hwid
             res = requests.post(
                 f"{self.backend_url}/api/auth/send-otp",
-                json={"email": email, "full_name": name},
+                json={"email": email, "full_name": name, "hwid": get_hwid()},
                 timeout=10
             )
             if res.ok:
