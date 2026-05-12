@@ -222,18 +222,21 @@ async def signup(user: UserRegister):
     try:
         conn = get_conn()
         if not conn: return {"status": "error", "detail": "Database unavailable."}
-        otp_doc = conn.otps.find_one({"email": user.email})
-        if not otp_doc or otp_doc["otp"] != user.otp:
-            return {"status": "error", "detail": "Invalid or expired verification code."}
-            
-        if conn.get_user(user.email): 
-            return {"status": "error", "detail": "Identity already registered."}
-            
-        # HWID Lock: Check if this system is already linked to another account
+        
+        # 1. HWID Lock: Check if this system is already linked to another account (CRITICAL)
         if user.hwid and user.hwid != 'WEB_LOGIN':
             existing_hwid_user = conn.users.find_one({"hwid": user.hwid})
             if existing_hwid_user:
                 return {"status": "error", "detail": "This system is locked with another account. Please sign in with the registered account."}
+
+        # 2. OTP Verification
+        otp_doc = conn.otps.find_one({"email": user.email})
+        if not otp_doc or otp_doc["otp"] != user.otp:
+            return {"status": "error", "detail": "Invalid or expired verification code."}
+            
+        # 3. Email Check
+        if conn.get_user(user.email): 
+            return {"status": "error", "detail": "Identity already registered."}
             
         # Basic hashing for demo (in prod use bcrypt)
         hashed = hashlib.sha256(user.password.encode()).hexdigest()
@@ -252,14 +255,9 @@ async def login(user: UserLogin):
         u = conn.get_user(user.email)
         if not u: return {"status": "error", "detail": "Identity not found in database."}
         
-        # Match hash
-        hashed = hashlib.sha256(user.password.encode()).hexdigest()
-        if u["password"] != hashed:
-            return {"status": "error", "detail": "Invalid credentials provided."}
-            
-        # HWID Lock (Only for App, skip for WEB_LOGIN)
+        # 1. HWID Lock (Only for App, skip for WEB_LOGIN)
         if user.hwid != 'WEB_LOGIN':
-            if u.get("hwid"):
+            if u.get("hwid") and u["hwid"] != 'WEB_LOGIN':
                 if u["hwid"] != user.hwid:
                     return {"status": "error", "detail": "This system is locked with another account. Please sign in with the registered account."}
             else:
@@ -267,9 +265,16 @@ async def login(user: UserLogin):
                 existing_owner = conn.users.find_one({"hwid": user.hwid})
                 if existing_owner and existing_owner["email"] != user.email:
                     return {"status": "error", "detail": "This system is locked with another account. Please sign in with the registered account."}
-                
-                # Link this system to the user
-                conn.users.update_one({"email": user.email}, {"$set": {"hwid": user.hwid}})
+
+        # 2. Match hash
+        hashed = hashlib.sha256(user.password.encode()).hexdigest()
+        if u["password"] != hashed:
+            return {"status": "error", "detail": "Invalid credentials provided."}
+            
+        # Success - generate response
+        # Link this system to the user if not already linked
+        if not u.get("hwid") or u["hwid"] == 'WEB_LOGIN':
+            conn.users.update_one({"email": user.email}, {"$set": {"hwid": user.hwid}})
         
         # Prepare response
         user_data = {
