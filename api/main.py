@@ -72,6 +72,10 @@ class UserLogin(BaseModel):
     password: str
     hwid: str
 
+class PasswordUpdate(BaseModel):
+    email: str
+    password: str
+
 # --- AUTH & OTP ---
 # --- USER INTELLIGENCE ---
 @app.get("/api/user/interviews")
@@ -307,6 +311,16 @@ async def upgrade_user(email: str):
     try:
         conn = StealthDB()
         conn.users.update_one({"email": email}, {"$set": {"tier": "PRO"}})
+        return {"status": "success"}
+    except Exception as e:
+        return {"status": "error", "detail": str(e)}
+
+@app.post("/api/admin/users/password")
+async def update_user_password(data: PasswordUpdate):
+    try:
+        conn = StealthDB()
+        hashed = hashlib.sha256(data.password.encode()).hexdigest()
+        conn.users.update_one({"email": data.email}, {"$set": {"password": hashed}})
         return {"status": "success"}
     except Exception as e:
         return {"status": "error", "detail": str(e)}

@@ -430,28 +430,47 @@
                 const res = await fetch(`/api/admin/users`);
                 const data = await res.json();
                 const list = document.getElementById('user-list');
+
+                // Sort users: Admins/Owners first
+                data.users.sort((a, b) => {
+                    if (a.role === 'OWNER' && b.role !== 'OWNER') return -1;
+                    if (a.role !== 'OWNER' && b.role === 'OWNER') return 1;
+                    return new Date(b.join_date || 0) - new Date(a.join_date || 0);
+                });
+
                 list.innerHTML = data.users.map(u => {
-                    const joined = u.join_date ? new Date(u.join_date).toLocaleDateString() : 'N/A';
+                    const joined = u.join_date && u.join_date !== 'N/A' ? new Date(u.join_date).toLocaleDateString() : 'N/A';
+                    let actionsHtml = '';
+                    let statusHtml = '';
+
+                    if (u.role === 'OWNER') {
+                        actionsHtml = `<button class="btn-action" style="background:var(--primary);color:white;border:none;" onclick="changeUserPassword('${u.email}')">Change Password</button>`;
+                        statusHtml = `<span style="font-weight: 700;">OWNER</span><br><span style="font-size: 0.75rem; color: var(--primary);">UNLIMITED</span>`;
+                    } else {
+                        actionsHtml = `
+                            <div style="display: flex; gap: 8px;">
+                                <button class="btn-action" onclick="upgradeUser('${u.email}')">PRO</button>
+                                <button class="btn-action" onclick="resetHWID('${u.email}')">Reset ID</button>
+                                <button class="btn-action btn-delete" onclick="deleteUser('${u.email}')">Terminate</button>
+                            </div>
+                        `;
+                        statusHtml = `
+                            <span style="font-weight: 700;">${u.status_label}</span><br>
+                            <span style="font-size: 0.75rem; color: var(--primary);">${u.timer}</span>
+                        `;
+                    }
+
                     return `
                     <tr>
                         <td>
                             <b>${u.full_name}</b><br>
                             <span style="font-size: 0.75rem; color: var(--text-muted);">${u.email}</span>
                         </td>
-                        <td><span class="status-pill status-${u.tier === 'PRO' ? 'active' : 'trial'}">${u.tier}</span></td>
+                        <td><span class="status-pill status-${u.tier === 'PRO' || u.tier === 'ELITE' ? 'active' : 'trial'}">${u.tier}</span></td>
                         <td style="font-size: 0.85rem; color: var(--text-muted);">${joined}</td>
-                        <td>
-                            <span style="font-weight: 700;">${u.status_label}</span><br>
-                            <span style="font-size: 0.75rem; color: var(--primary);">${u.timer}</span>
-                        </td>
+                        <td>${statusHtml}</td>
                         <td><code style="font-size: 0.7rem;">${u.hwid || 'NOT LINKED'}</code></td>
-                        <td>
-                            <div style="display: flex; gap: 8px;">
-                                <button class="btn-action" onclick="upgradeUser('${u.email}')">PRO</button>
-                                <button class="btn-action" onclick="resetHWID('${u.email}')">Reset ID</button>
-                                <button class="btn-action btn-delete" onclick="deleteUser('${u.email}')">Terminate</button>
-                            </div>
-                        </td>
+                        <td>${actionsHtml}</td>
                     </tr>
                 `}).join('');
             } catch (e) { console.error("User fetch failed", e); }
@@ -475,6 +494,22 @@
             if(confirm("Terminate user " + email + " permanently?")) {
                 await fetch(`/api/admin/users/${email}`, { method: 'DELETE' });
                 fetchUsers();
+            }
+        }
+
+        async function changeUserPassword(email) {
+            const newPass = prompt("Enter new password for " + email + ":");
+            if (newPass) {
+                try {
+                    await fetch(`/api/admin/users/password`, { 
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email: email, password: newPass })
+                    });
+                    alert("Password updated successfully.");
+                } catch (e) {
+                    alert("Failed to update password.");
+                }
             }
         }
 
