@@ -121,8 +121,8 @@ class AuthManager:
         try:
             import requests
             res = requests.post(
-                f"{self.backend_url}/api/auth/register",
-                json={"email": email, "password": password, "full_name": full_name, "hwid": get_hwid()},
+                f"{self.backend_url}/api/auth/signup",
+                json={"email": email, "password": password, "full_name": full_name, "hwid": get_hwid(), "otp": otp},
                 timeout=10
             )
             if res.ok:

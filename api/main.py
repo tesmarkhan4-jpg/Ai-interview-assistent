@@ -66,6 +66,7 @@ class UserRegister(BaseModel):
     password: str
     full_name: str
     otp: str
+    hwid: Optional[str] = None
 
 class UserLogin(BaseModel):
     email: EmailStr
@@ -180,7 +181,7 @@ async def signup(user: UserRegister):
             
         # Basic hashing for demo (in prod use bcrypt)
         hashed = hashlib.sha256(user.password.encode()).hexdigest()
-        conn.create_user(user.email, hashed, user.full_name)
+        conn.create_user(user.email, hashed, user.full_name, hwid=user.hwid)
         
         conn.otps.delete_one({"email": user.email})
         return {"status": "success"}
