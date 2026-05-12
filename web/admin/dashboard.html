@@ -412,6 +412,8 @@
                 const res = await fetch(`/api/admin/stats`);
                 if (!res.ok) throw new Error(`HTTP Error: ${res.status}`);
                 const data = await res.json();
+                if (data.status === 'error') throw new Error(data.detail || "API Error");
+                
                 const statValues = document.querySelectorAll('.stat-value');
                 if (statValues.length >= 1) statValues[0].innerText = (data.total_users || 0).toLocaleString();
                 if (statValues.length >= 2) statValues[1].innerText = (data.active_sessions || 0).toLocaleString();
@@ -436,6 +438,7 @@
                 const res = await fetch(`/api/admin/users`);
                 if (!res.ok) throw new Error(`HTTP Error: ${res.status}`);
                 const data = await res.json();
+                if (data.status === 'error') throw new Error(data.detail || "API Error");
 
                 // Sort users: Admins/Owners first
                 data.users.sort((a, b) => {
