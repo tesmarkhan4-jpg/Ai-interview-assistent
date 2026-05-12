@@ -60,6 +60,13 @@ class StealthDB:
         cfg = self.config.find_one({})
         return cfg if cfg else {}
 
+# Global Connection Singleton
+try:
+    conn = StealthDB()
+except Exception as e:
+    print(f"FATAL: Database connection failed: {e}")
+    conn = None
+
 # --- MODELS ---
 class UserRegister(BaseModel):
     email: str
@@ -86,7 +93,7 @@ class PasswordUpdate(BaseModel):
 @app.get("/api/user/interviews")
 async def get_user_interviews(email: str):
     try:
-        conn = StealthDB()
+        if not conn: return {"status": "error", "detail": "Database unavailable."}
         # Fetch missions for this user
         missions = list(conn.history.find({"user_email": email}).sort("timestamp", -1))
         for m in missions:
@@ -104,7 +111,7 @@ async def delete_user_interview(data: dict):
         email = data.get("email")
         if not id or not email: return {"status": "error", "detail": "Missing ID or Email."}
         
-        conn = StealthDB()
+        if not conn: return {"status": "error", "detail": "Database unavailable."}
         conn.history.delete_one({"_id": ObjectId(id), "user_email": email})
         return {"status": "success", "msg": "Mission log purged."}
     except Exception as e:
@@ -117,7 +124,7 @@ async def send_otp(data: dict):
     
     otp = str(random.randint(100000, 999999))
     try:
-        conn = StealthDB()
+        if not conn: return {"status": "error", "detail": "Database unavailable."}
         conn.otps.update_one(
             {"email": email},
             {"$set": {"otp": otp, "created_at": datetime.datetime.utcnow()}},
@@ -175,7 +182,7 @@ async def send_otp(data: dict):
 @app.get("/api/auth/system-status")
 async def get_system_status(hwid: str):
     try:
-        conn = StealthDB()
+        if not conn: return {"status": "error", "detail": "Database unavailable."}
         u = conn.users.find_one({"hwid": hwid})
         if u:
             # Mask the email slightly for privacy: f***n@gmail.com
@@ -190,7 +197,7 @@ async def get_system_status(hwid: str):
 @app.post("/api/auth/signup")
 async def signup(user: UserRegister):
     try:
-        conn = StealthDB()
+        if not conn: return {"status": "error", "detail": "Database unavailable."}
         otp_doc = conn.otps.find_one({"email": user.email})
         if not otp_doc or otp_doc["otp"] != user.otp:
             return {"status": "error", "detail": "Invalid or expired verification code."}
@@ -216,7 +223,7 @@ async def signup(user: UserRegister):
 @app.post("/api/auth/login")
 async def login(user: UserLogin):
     try:
-        conn = StealthDB()
+        if not conn: return {"status": "error", "detail": "Database unavailable."}
         u = conn.get_user(user.email)
         if not u: return {"status": "error", "detail": "Identity not found in database."}
         
@@ -255,7 +262,7 @@ async def login(user: UserLogin):
 @app.post("/api/auth/validate")
 async def validate_session(data: UserValidate):
     try:
-        conn = StealthDB()
+        if not conn: return {"status": "error", "detail": "Database unavailable."}
         u = conn.get_user(data.email)
         if not u: return {"status": "error", "detail": "User not found."}
         
@@ -271,7 +278,7 @@ async def validate_session(data: UserValidate):
 @app.get("/api/admin/users")
 async def get_admin_users():
     try:
-        conn = StealthDB()
+        if not conn: return {"status": "error", "detail": "Database unavailable."}
         users = conn.get_all_users()
         now = datetime.datetime.utcnow()
         for u in users:
@@ -303,7 +310,7 @@ async def get_admin_users():
 @app.get("/api/admin/stats")
 async def get_stats():
     try:
-        conn = StealthDB()
+        if not conn: return {"status": "error", "detail": "Database unavailable."}
         return {
             "total_users": conn.users.count_documents({}),
             "active_sessions": conn.history.count_documents({"timestamp": {"$gt": datetime.datetime.utcnow() - datetime.timedelta(hours=1)}}),
@@ -319,7 +326,7 @@ async def get_stats():
 @app.get("/api/admin/keys")
 async def get_keys():
     try:
-        conn = StealthDB()
+        if not conn: return {"status": "error", "detail": "Database unavailable."}
         keys = list(conn.keys.find({}))
         for k in keys:
             k["_id"] = str(k["_id"])
@@ -332,7 +339,7 @@ async def get_keys():
 @app.post("/api/admin/keys")
 async def add_key(provider: str, key_value: str):
     try:
-        conn = StealthDB()
+        if not conn: return {"status": "error", "detail": "Database unavailable."}
         conn.keys.insert_one({
             "provider": provider,
             "key_value": key_value,
@@ -348,7 +355,7 @@ async def add_key(provider: str, key_value: str):
 @app.delete("/api/admin/keys/{key_id}")
 async def delete_key(key_id: str):
     try:
-        conn = StealthDB()
+        if not conn: return {"status": "error", "detail": "Database unavailable."}
         conn.keys.delete_one({"_id": ObjectId(key_id)})
         return {"status": "success"}
     except Exception as e:
@@ -357,7 +364,7 @@ async def delete_key(key_id: str):
 @app.post("/api/admin/users/upgrade")
 async def upgrade_user(email: str):
     try:
-        conn = StealthDB()
+        if not conn: return {"status": "error", "detail": "Database unavailable."}
         conn.users.update_one({"email": email}, {"$set": {"tier": "PRO"}})
         return {"status": "success"}
     except Exception as e:
@@ -366,7 +373,7 @@ async def upgrade_user(email: str):
 @app.post("/api/admin/users/password")
 async def update_user_password(data: PasswordUpdate):
     try:
-        conn = StealthDB()
+        if not conn: return {"status": "error", "detail": "Database unavailable."}
         hashed = hashlib.sha256(data.password.encode()).hexdigest()
         conn.users.update_one({"email": data.email}, {"$set": {"password": hashed}})
         return {"status": "success"}
