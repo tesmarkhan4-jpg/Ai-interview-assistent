@@ -13,4 +13,4 @@ scratch/
 temp_stealth/
 mission_history/
 *.log
-*.txt
+!requirements.txt
