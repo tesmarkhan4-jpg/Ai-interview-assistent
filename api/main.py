@@ -148,11 +148,15 @@ async def send_otp(data: dict):
         conn = get_conn()
         if not conn: return {"status": "error", "detail": "Database unavailable."}
         
-        # HWID Lock Check (CRITICAL)
+        # 1. HWID Lock Check (CRITICAL)
         if hwid and hwid != 'WEB_LOGIN':
             existing = conn.users.find_one({"hwid": hwid})
             if existing and existing["email"] != email:
                 return {"status": "error", "detail": "This system is locked with another account. Please sign in with the registered account."}
+
+        # 2. Email Check (If already registered, block OTP)
+        if conn.get_user(email):
+            return {"status": "error", "detail": "This identity is already registered. Please sign in instead."}
 
         otp = str(random.randint(100000, 999999))
         conn.otps.update_one(
