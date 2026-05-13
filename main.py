@@ -337,29 +337,70 @@ class SuspendedOverlay(QFrame):
         
         self.scroll = QScrollArea()
         self.scroll.setWidgetResizable(True)
+        self.scroll.setStyleSheet("""
+            QScrollArea { border: none; background: transparent; }
+            QScrollBar:vertical {
+                border: none;
+                background: rgba(255, 255, 255, 0.02);
+                width: 8px;
+                margin: 0px;
+                border-radius: 4px;
+            }
+            QScrollBar::handle:vertical {
+                background: rgba(255, 255, 255, 0.1);
+                min-height: 30px;
+                border-radius: 4px;
+            }
+            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0px; }
+        """)
         self.chat_inner = QWidget()
         self.chat_inner.setStyleSheet("background: transparent;")
         self.chat_inner_layout = QVBoxLayout(self.chat_inner)
-        self.chat_inner_layout.setSpacing(12)
+        self.chat_inner_layout.setContentsMargins(10, 10, 10, 10)
+        self.chat_inner_layout.setSpacing(16)
         self.chat_inner_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         self.scroll.setWidget(self.chat_inner)
         chat_layout.addWidget(self.scroll)
         
         input_container = QFrame()
-        input_container.setStyleSheet("background: rgba(15, 23, 42, 0.5); border-top: 1px solid rgba(255, 255, 255, 0.05);")
+        input_container.setFixedHeight(100)
+        input_container.setStyleSheet("background: rgba(15, 23, 42, 0.3); border-top: 1px solid rgba(255, 255, 255, 0.05); border-bottom-left-radius: 12px; border-bottom-right-radius: 12px;")
         input_layout = QHBoxLayout(input_container)
-        input_layout.setContentsMargins(0, 20, 0, 0)
+        input_layout.setContentsMargins(30, 0, 30, 0)
+        input_layout.setSpacing(20)
         
         self.appeal_input = QLineEdit()
-        self.appeal_input.setPlaceholderText("Type a message...")
+        self.appeal_input.setPlaceholderText("Type your message here...")
+        self.appeal_input.setStyleSheet("""
+            QLineEdit {
+                background: rgba(255, 255, 255, 0.05);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                border-radius: 12px;
+                padding: 14px 20px;
+                color: white;
+                font-size: 14px;
+            }
+            QLineEdit:focus {
+                border: 1px solid #4f46e5;
+                background: rgba(255, 255, 255, 0.08);
+            }
+        """)
         self.appeal_input.returnPressed.connect(self.submit_message)
         input_layout.addWidget(self.appeal_input)
         
         self.send_btn = QPushButton("SEND")
-        self.send_btn.setFixedWidth(80)
+        self.send_btn.setFixedSize(100, 48)
+        self.send_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self.send_btn.setStyleSheet("""
-            QPushButton { background: #4f46e5; color: white; font-weight: 900; padding: 12px; border-radius: 10px; }
-            QPushButton:hover { background: #6366f1; }
+            QPushButton { 
+                background: #4f46e5; 
+                color: white; 
+                font-weight: 800; 
+                border-radius: 12px;
+                letter-spacing: 1px;
+            }
+            QPushButton:hover { background: #6366f1; transform: translateY(-1px); }
+            QPushButton:pressed { transform: translateY(1px); }
         """)
         self.send_btn.clicked.connect(self.submit_message)
         input_layout.addWidget(self.send_btn)
@@ -400,7 +441,7 @@ class SuspendedOverlay(QFrame):
         messages = data.get("messages", [])
         resolved_count = data.get("resolved_count", 0)
         
-        # Update History List
+        # Update History List (Locked View)
         while self.history_inner_layout.count():
             item = self.history_inner_layout.takeAt(0)
             if item.widget(): item.widget().deleteLater()
@@ -419,71 +460,88 @@ class SuspendedOverlay(QFrame):
 
         if not self.ticket_active: return
         
-        # Incremental Sync: Only add what's new to prevent flickering/disappearing
-        current_count = self.chat_inner_layout.count()
-        new_count = len(messages)
-        
-        # If no messages and no welcome yet, add welcome
-        if new_count == 0 and current_count == 0:
-             self.add_message_to_ui("Welcome to Zenith Support. Please describe your issue to begin the appeal process.", True)
-             self.last_msg_count = 0
-             return
+        # --- BULLETPROOF INCREMENTAL SYNC ---
+        if not hasattr(self, 'rendered_fingerprints'):
+            self.rendered_fingerprints = set()
 
-        # If we have messages, but the UI is showing the welcome placeholder, clear it first
-        if new_count > 0 and current_count == 1 and self.last_msg_count == 0:
-            while self.chat_inner_layout.count():
-                item = self.chat_inner_layout.takeAt(0)
-                if item.widget(): item.widget().deleteLater()
-            current_count = 0
+        # 1. Handle Empty State
+        if not messages:
+            if self.chat_inner_layout.count() == 0:
+                self.add_message_to_ui("Welcome to Zenith Support. Please describe your issue to begin the appeal process.", True)
+                self.rendered_fingerprints.add("WELCOME_MSG")
+            return
 
-        # Only add the new messages
-        if new_count > current_count:
-            for i in range(current_count, new_count):
-                m = messages[i]
-                self.add_message_to_ui(m.get('text', ''), m.get('role') == 'admin')
+        # 2. Process Messages
+        new_added = False
+        for i, m in enumerate(messages):
+            # Create a unique fingerprint for this message
+            text = m.get('text', '')
+            role = m.get('role', 'user')
+            fingerprint = f"{i}_{role}_{len(text)}"
             
-            self.last_msg_count = new_count
-            # Force layout settlement
-            QTimer.singleShot(50, self.chat_inner.adjustSize)
+            if fingerprint not in self.rendered_fingerprints:
+                # If this is the first real message, clear any existing placeholder/welcome
+                if not any(f for f in self.rendered_fingerprints if not f.startswith("WELCOME")):
+                    while self.chat_inner_layout.count():
+                        item = self.chat_inner_layout.takeAt(0)
+                        if item.widget(): item.widget().deleteLater()
+                    self.rendered_fingerprints.clear()
+
+                self.add_message_to_ui(text, role == 'admin')
+                self.rendered_fingerprints.add(fingerprint)
+                new_added = True
+
+        if new_added:
             QTimer.singleShot(100, lambda: self.scroll.verticalScrollBar().setValue(self.scroll.verticalScrollBar().maximum()))
 
     def add_message_to_ui(self, text, is_admin):
         bubble_container = QWidget()
         bubble_layout = QVBoxLayout(bubble_container)
-        bubble_layout.setContentsMargins(0, 5, 0, 5)
-        bubble_layout.setSpacing(2)
-        
-        sender = QLabel("SUPPORT" if is_admin else "YOU")
-        sender.setStyleSheet(f"font-size: 9px; font-weight: 900; color: { '#f43f5e' if is_admin else '#6366f1' };")
-        bubble_layout.addWidget(sender, alignment=Qt.AlignmentFlag.AlignLeft if is_admin else Qt.AlignmentFlag.AlignRight)
+        bubble_layout = QHBoxLayout(bubble_container)
+        bubble_layout.setContentsMargins(15, 6, 15, 6)
+        bubble_layout.setSpacing(0)
         
         msg_box = QLabel(text)
         msg_box.setWordWrap(True)
-        msg_box.setMinimumWidth(100)
-        msg_box.setMaximumWidth(500)
+        msg_box.setMinimumWidth(120)
+        msg_box.setMaximumWidth(580)
         msg_box.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         
-        bg_color = 'rgba(244, 63, 94, 0.2)' if is_admin else 'rgba(99, 102, 241, 0.2)'
-        text_color = '#fecaca' if is_admin else '#c7d2fe'
-        border_color = 'rgba(244, 63, 94, 0.4)' if is_admin else 'rgba(99, 102, 241, 0.4)'
-        
+        if is_admin:
+            bg_color = "rgba(79, 70, 229, 0.12)"
+            border_color = "rgba(99, 102, 241, 0.3)"
+            text_color = "#e2e8f0"
+            radius = "18px 18px 18px 4px"
+        else:
+            bg_color = "rgba(16, 185, 129, 0.12)"
+            border_color = "rgba(16, 185, 129, 0.3)"
+            text_color = "#f8fafc"
+            radius = "18px 18px 4px 18px"
+            
         msg_box.setStyleSheet(f"""
-            background-color: {bg_color};
-            color: {text_color};
-            padding: 15px;
-            border-radius: 15px;
-            border: 1px solid {border_color};
-            font-size: 14px;
-            line-height: 1.4;
+            QLabel {{
+                background-color: {bg_color};
+                color: {text_color};
+                padding: 14px 20px;
+                border-radius: {radius};
+                border: 1px solid {border_color};
+                font-size: 14px;
+                line-height: 1.5;
+            }}
         """)
         
         msg_box.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.MinimumExpanding)
-        bubble_layout.addWidget(msg_box, alignment=Qt.AlignmentFlag.AlignLeft if is_admin else Qt.AlignmentFlag.AlignRight)
-        self.chat_inner_layout.addWidget(bubble_container)
         
-        # Force layout update
+        if is_admin:
+            bubble_layout.addWidget(msg_box)
+            bubble_layout.addStretch(1)
+        else:
+            bubble_layout.addStretch(1)
+            bubble_layout.addWidget(msg_box)
+            
+        self.chat_inner_layout.addWidget(bubble_container)
         msg_box.adjustSize()
-        self.chat_inner.adjustSize()
+        QTimer.singleShot(10, self.chat_inner.adjustSize)
 
     def submit_message(self):
         text = self.appeal_input.text().strip()
@@ -529,6 +587,7 @@ class SuspendedOverlay(QFrame):
             self.load_worker.email = email
             self.send_worker.email = email
             self.last_msg_count = -1
+            self.rendered_fingerprints = set()
             needs_init = True
             
         if needs_init or not self.ticket_active:
