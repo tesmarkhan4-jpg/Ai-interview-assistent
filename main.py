@@ -299,10 +299,19 @@ class SuspendedOverlay(QFrame):
         text = self.appeal_input.text().strip()
         if not text: return
         
+        # Check if this is the first message to trigger auto-reply
+        messages = auth_manager.get_ticket_history(self.email)
+        is_first = len(messages) == 0
+        
         self.appeal_input.clear()
         self.appeal_input.setEnabled(False)
         
         if auth_manager.send_ticket_message(self.email, text):
+            if is_first:
+                # Add auto-reply
+                auto_reply = "Our support team will get back to you soon. Your ticket has been created. You will see all the ticket updates here. [This is a system generated message]"
+                auth_manager.send_ticket_message(self.email, auto_reply, role="admin")
+            
             self.load_history()
         
         self.appeal_input.setEnabled(True)

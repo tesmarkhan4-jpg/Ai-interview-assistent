@@ -192,13 +192,13 @@ class AuthManager:
         self.current_user = None
         self.current_user_name = None
 
-    def send_ticket_message(self, email, message):
+    def send_ticket_message(self, email, message, role="user"):
         """Sends a message to the support ticket system."""
         try:
             import requests
             res = requests.post(
                 f"{self.backend_url}/api/auth/ticket/send",
-                params={"email": email, "message": message, "hwid": get_hwid()},
+                params={"email": email, "message": message, "hwid": get_hwid(), "role": role},
                 timeout=5
             )
             return res.ok
