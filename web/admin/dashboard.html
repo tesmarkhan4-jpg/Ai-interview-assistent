@@ -520,14 +520,14 @@
                         </td>
                         <td style="font-size: 0.85rem; color: var(--text-muted);">${joined}</td>
                         <td>${statusHtml}</td>
-                        <td><code style="font-size: 0.7rem; color: var(--text-muted); background: #f1f5f9; padding: 2px 6px; border-radius: 4px;">${u.hwid || 'NOT LINKED'}</code></td>
+                        <td><code style="font-size: 0.7rem; color: var(--text-muted); background: #f1f5f9; padding: 2px 6px; border-radius: 4px;" title="${u.hwid || ''}">${u.hwid ? u.hwid.substring(0,8)+'...' : 'NOT LINKED'}</code></td>
                         <td>
-                            <div style="display: flex; gap: 8px; align-items: center;">
+                            <div style="display: flex; gap: 6px; align-items: center;">
                                 ${actionsHtml}
                                 ${u.role !== 'OWNER' ? `
                                     <button class="btn-action ${u.suspended ? 'btn-unsuspend' : 'btn-suspend'}" 
                                             onclick="toggleUserSuspension('${u.email}', ${!u.suspended})"
-                                            style="background: ${u.suspended ? 'var(--emerald)' : 'var(--rose)'}; color: white; border: none;">
+                                            style="background: ${u.suspended ? 'var(--emerald)' : 'var(--rose)'}; color: white; border: none; padding: 6px 10px;">
                                         ${u.suspended ? 'Unsuspend' : 'Suspend'}
                                     </button>
                                 ` : ''}
