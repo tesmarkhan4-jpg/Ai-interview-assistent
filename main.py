@@ -2,7 +2,7 @@ import sys
 import os
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
                              QHBoxLayout, QTextEdit, QLineEdit, QPushButton, 
-                             QLabel, QFrame, QScrollArea)
+                             QLabel, QFrame, QScrollArea, QSizePolicy)
 from PyQt6.QtCore import Qt, QSize, pyqtSignal, QPoint, QThread, QTimer
 from PyQt6.QtGui import QColor, QFont, QIcon, QTextCursor
 import keyboard
@@ -113,15 +113,23 @@ class MaintenanceThread(QThread):
             try:
                 from hwid_utils import get_hwid
                 import requests
+                
+                params = {"hwid": get_hwid()}
+                if auth_manager.current_user:
+                    params["email"] = auth_manager.current_user
+                    
                 res = requests.get(
                     f"{auth_manager.backend_url}/api/auth/system-status",
-                    params={"hwid": get_hwid()},
+                    params=params,
                     timeout=5
                 )
                 if res.ok:
                     self.status_changed.emit(res.json())
-            except: pass
-            self.sleep(10) # Poll every 10 seconds
+                else:
+                    print(f"[Maintenance] API Error: {res.status_code}")
+            except Exception as e:
+                print(f"[Maintenance] Connection Failure: {e}")
+            self.sleep(5) 
 
 class MaintenanceOverlay(QFrame):
     def __init__(self, parent=None, message=""):
@@ -188,12 +196,12 @@ class MaintenanceOverlay(QFrame):
 
 class TicketWorker(QThread):
     history_loaded = pyqtSignal(dict)
-    message_sent = pyqtSignal(bool, bool) # success, is_first
+    message_sent = pyqtSignal(bool, bool)
 
-    def __init__(self, email):
+    def __init__(self, email, action='load'):
         super().__init__()
         self.email = email
-        self.action = None # 'load' or 'send'
+        self.action = action
         self.msg_text = ""
         self.msg_role = "user"
         self.is_first_msg = False
@@ -202,12 +210,12 @@ class TicketWorker(QThread):
         try:
             if self.action == 'load':
                 data = auth_manager.get_ticket_history(self.email)
-                self.history_loaded.emit(data)
+                if data: self.history_loaded.emit(data)
             elif self.action == 'send':
                 success = auth_manager.send_ticket_message(self.email, self.msg_text, self.msg_role)
                 self.message_sent.emit(success, self.is_first_msg)
-        except:
-            pass
+        except Exception as e:
+            print(f"Worker Error: {e}")
 
 class SuspendedOverlay(QFrame):
     def __init__(self, parent=None, email=""):
@@ -360,11 +368,12 @@ class SuspendedOverlay(QFrame):
         self.main_layout.addWidget(self.chat_widget_container)
         self.chat_widget_container.hide()
 
-        self.hide()
+        # Separate Workers
+        self.load_worker = TicketWorker(self.email, 'load')
+        self.load_worker.history_loaded.connect(self.on_history_loaded)
         
-        self.worker = TicketWorker(self.email)
-        self.worker.history_loaded.connect(self.on_history_loaded)
-        self.worker.message_sent.connect(self.on_message_sent)
+        self.send_worker = TicketWorker(self.email, 'send')
+        self.send_worker.message_sent.connect(self.on_message_sent)
         
         self.refresh_timer = QTimer()
         self.refresh_timer.timeout.connect(self.load_history)
@@ -383,10 +392,9 @@ class SuspendedOverlay(QFrame):
         self.load_history()
 
     def load_history(self):
-        if not self.isVisible() and not self.email: return
-        if self.worker.isRunning(): return
-        self.worker.action = 'load'
-        self.worker.start()
+        if not self.isVisible() or not self.email: return
+        if self.load_worker.isRunning(): return
+        self.load_worker.start()
 
     def on_history_loaded(self, data):
         messages = data.get("messages", [])
@@ -410,94 +418,128 @@ class SuspendedOverlay(QFrame):
             self.history_scroll.hide()
 
         if not self.ticket_active: return
+        
+        # Incremental Sync: Only add what's new to prevent flickering/disappearing
+        current_count = self.chat_inner_layout.count()
+        new_count = len(messages)
+        
+        # If no messages and no welcome yet, add welcome
+        if new_count == 0 and current_count == 0:
+             self.add_message_to_ui("Welcome to Zenith Support. Please describe your issue to begin the appeal process.", True)
+             self.last_msg_count = 0
+             return
 
-        if len(messages) == self.last_msg_count: return
-        self.last_msg_count = len(messages)
+        # If we have messages, but the UI is showing the welcome placeholder, clear it first
+        if new_count > 0 and current_count == 1 and self.last_msg_count == 0:
+            while self.chat_inner_layout.count():
+                item = self.chat_inner_layout.takeAt(0)
+                if item.widget(): item.widget().deleteLater()
+            current_count = 0
+
+        # Only add the new messages
+        if new_count > current_count:
+            for i in range(current_count, new_count):
+                m = messages[i]
+                self.add_message_to_ui(m.get('text', ''), m.get('role') == 'admin')
+            
+            self.last_msg_count = new_count
+            # Force layout settlement
+            QTimer.singleShot(50, self.chat_inner.adjustSize)
+            QTimer.singleShot(100, lambda: self.scroll.verticalScrollBar().setValue(self.scroll.verticalScrollBar().maximum()))
+
+    def add_message_to_ui(self, text, is_admin):
+        bubble_container = QWidget()
+        bubble_layout = QVBoxLayout(bubble_container)
+        bubble_layout.setContentsMargins(0, 5, 0, 5)
+        bubble_layout.setSpacing(2)
         
-        while self.chat_inner_layout.count():
-            item = self.chat_inner_layout.takeAt(0)
-            if item.widget(): item.widget().deleteLater()
-            
-        for m in messages:
-            is_admin = m.get('role') == 'admin'
-            bubble_container = QWidget()
-            bubble_layout = QVBoxLayout(bubble_container)
-            bubble_layout.setContentsMargins(0, 0, 0, 5)
-            
-            sender = QLabel("SUPPORT" if is_admin else "YOU")
-            sender.setStyleSheet(f"font-size: 9px; font-weight: 900; color: { '#f43f5e' if is_admin else '#6366f1' }; margin-bottom: 2px;")
-            bubble_layout.addWidget(sender, alignment=Qt.AlignmentFlag.AlignLeft if is_admin else Qt.AlignmentFlag.AlignRight)
-            
-            msg_box = QLabel(m.get('text', ''))
-            msg_box.setWordWrap(True)
-            msg_box.setMinimumWidth(100)
-            msg_box.setMaximumWidth(400)
-            msg_box.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
-            
-            # Use a more robust style that ensures height expands
-            msg_box.setStyleSheet(f"""
-                QLabel {{
-                    background: { 'rgba(244, 63, 94, 0.15)' if is_admin else 'rgba(99, 102, 241, 0.15)' };
-                    color: { '#fecaca' if is_admin else '#c7d2fe' };
-                    padding: 15px;
-                    border-radius: 12px;
-                    border: 1px solid { 'rgba(244, 63, 94, 0.3)' if is_admin else 'rgba(99, 102, 241, 0.3)' };
-                    font-size: 13px;
-                    line-height: 1.4;
-                }}
-            """)
-            bubble_layout.addWidget(msg_box, alignment=Qt.AlignmentFlag.AlignLeft if is_admin else Qt.AlignmentFlag.AlignRight)
-            self.chat_inner_layout.addWidget(bubble_container)
+        sender = QLabel("SUPPORT" if is_admin else "YOU")
+        sender.setStyleSheet(f"font-size: 9px; font-weight: 900; color: { '#f43f5e' if is_admin else '#6366f1' };")
+        bubble_layout.addWidget(sender, alignment=Qt.AlignmentFlag.AlignLeft if is_admin else Qt.AlignmentFlag.AlignRight)
         
-        QTimer.singleShot(100, lambda: self.scroll.verticalScrollBar().setValue(self.scroll.verticalScrollBar().maximum()))
+        msg_box = QLabel(text)
+        msg_box.setWordWrap(True)
+        msg_box.setMinimumWidth(100)
+        msg_box.setMaximumWidth(500)
+        msg_box.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+        
+        bg_color = 'rgba(244, 63, 94, 0.2)' if is_admin else 'rgba(99, 102, 241, 0.2)'
+        text_color = '#fecaca' if is_admin else '#c7d2fe'
+        border_color = 'rgba(244, 63, 94, 0.4)' if is_admin else 'rgba(99, 102, 241, 0.4)'
+        
+        msg_box.setStyleSheet(f"""
+            background-color: {bg_color};
+            color: {text_color};
+            padding: 15px;
+            border-radius: 15px;
+            border: 1px solid {border_color};
+            font-size: 14px;
+            line-height: 1.4;
+        """)
+        
+        msg_box.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.MinimumExpanding)
+        bubble_layout.addWidget(msg_box, alignment=Qt.AlignmentFlag.AlignLeft if is_admin else Qt.AlignmentFlag.AlignRight)
+        self.chat_inner_layout.addWidget(bubble_container)
+        
+        # Force layout update
+        msg_box.adjustSize()
+        self.chat_inner.adjustSize()
 
     def submit_message(self):
         text = self.appeal_input.text().strip()
-        if not text or self.worker.isRunning(): return
-        self.is_first_msg = (self.last_msg_count == 0)
+        if not text or self.send_worker.isRunning(): return
         
-        # Immediate Feedback
+        # 1. Instant UI Feedback
+        self.add_message_to_ui(text, False)
+        self.appeal_input.clear()
         self.appeal_input.setEnabled(False)
         self.send_btn.setEnabled(False)
         self.send_btn.setText("...")
         
-        self.worker.action = 'send'
-        self.worker.msg_text = text
-        self.worker.msg_role = "user"
-        self.worker.is_first_msg = self.is_first_msg
-        self.worker.start()
+        QTimer.singleShot(50, lambda: self.scroll.verticalScrollBar().setValue(self.scroll.verticalScrollBar().maximum()))
+        
+        # 2. Start Send Worker
+        self.send_worker.msg_text = text
+        self.send_worker.is_first_msg = (self.last_msg_count <= 0)
+        self.send_worker.start()
 
     def on_message_sent(self, success, was_first):
         self.send_btn.setText("SEND")
         self.send_btn.setEnabled(True)
-        self.appeal_input.setEnabled(True)
-        self.appeal_input.clear()
+        self.appeal_input.setEnabled(True) # RE-ENABLE INPUT
         
         if success and was_first:
-            self.worker.action = 'send'
-            self.worker.msg_text = "Our support team will get back to you soon. Your ticket has been created. You will see all the ticket updates here. [This is a system generated message]"
-            self.worker.msg_role = "admin"
-            self.worker.is_first_msg = False
-            self.worker.start()
+            auto_reply = "Our support team will get back to you soon. Your ticket has been created. You will see all the ticket updates here. [This is a system generated message]"
+            self.add_message_to_ui(auto_reply, True)
+            
+            self.load_history()
         
         self.appeal_input.setFocus()
-        self.load_history()
+        self.last_msg_count += 1 
+        self.chat_inner.adjustSize()
 
     def show_suspended(self, email):
-        if self.email != email:
+        # Use existing email if provided email is unknown
+        if (not email or email == "Unknown") and auth_manager.current_user:
+            email = auth_manager.current_user
+            
+        needs_init = False
+        if self.email != email and email and email != "Unknown":
             self.email = email
-            self.worker.email = email
+            self.load_worker.email = email
+            self.send_worker.email = email
             self.last_msg_count = -1
+            needs_init = True
+            
+        if needs_init or not self.ticket_active:
+            self.load_history()
             
         self.setGeometry(self.parent().rect())
         self.raise_()
         self.show()
-        
-        if not self.ticket_active:
-            self.load_history()
             
         if not self.refresh_timer.isActive():
-            self.refresh_timer.start(5000) # Increased frequency for better responsiveness
+            self.refresh_timer.start(5000)
 
 class StealthHUD(QMainWindow):
     def __init__(self, cv_text="", jd_text="", link_text="", linkedin_url=""):

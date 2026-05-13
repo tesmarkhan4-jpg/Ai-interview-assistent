@@ -128,6 +128,7 @@ class UserDashboard(QWidget):
         self.maint_thread.start()
 
     def handle_system_status_update(self, status):
+        print(f"[Status] Suspended: {status.get('suspended')} | Email: {status.get('email')}")
         # 1. Check Suspension
         if status.get("suspended"):
             self.launch_btn.setEnabled(False)

@@ -99,8 +99,13 @@ class AuthManager:
                 timeout=10
             )
             if res.ok:
-                data = res.json()["user"]
-                self.current_user = data["email"]
+                resp_json = res.json()
+                data = resp_json.get("user", resp_json) # Fallback to top-level if "user" key is missing
+                
+                self.current_user = data.get("email")
+                if not self.current_user:
+                    return False, "Infrastructure Error: Response missing identity data."
+                    
                 self.current_user_name = data.get("full_name", "Authorized Agent")
                 self.tier = data.get("tier", "TRIAL")
                 self.trial_expiry = data.get("trial_expiry")
