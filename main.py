@@ -190,6 +190,7 @@ class SuspendedOverlay(QFrame):
     def __init__(self, parent=None, email=""):
         super().__init__(parent)
         self.email = email
+        self.ticket_active = False
         self.setStyleSheet("""
             QFrame {
                 background-color: rgba(15, 23, 42, 0.99);
@@ -197,7 +198,6 @@ class SuspendedOverlay(QFrame):
             }
             QLabel { color: #FFFFFF; background: transparent; }
             QScrollArea { border: none; background: transparent; }
-            #chat_container { background: transparent; }
             QLineEdit {
                 background: rgba(255, 255, 255, 0.05);
                 border: 1px solid rgba(255, 255, 255, 0.1);
@@ -208,46 +208,84 @@ class SuspendedOverlay(QFrame):
             }
         """)
         
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(30, 30, 30, 30)
+        self.main_layout = QVBoxLayout(self)
+        self.main_layout.setContentsMargins(30, 30, 30, 30)
         
-        # Header
+        # --- LOCKED VIEW WIDGETS ---
+        self.locked_widget = QWidget()
+        locked_layout = QVBoxLayout(self.locked_widget)
+        locked_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        
+        l_icon = QLabel("⚠️")
+        l_icon.setStyleSheet("font-size: 80px; margin-bottom: 20px;")
+        l_icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        locked_layout.addWidget(l_icon)
+        
+        l_title = QLabel("ACCOUNT SUSPENDED")
+        l_title.setStyleSheet("font-size: 32px; font-weight: 900; color: #F43F5E; letter-spacing: 2px;")
+        l_title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        locked_layout.addWidget(l_title)
+        
+        l_desc = QLabel("Access to ZenithHUD has been restricted due to a protocol violation.")
+        l_desc.setStyleSheet("font-size: 14px; color: #94A3B8; margin-top: 10px; margin-bottom: 30px;")
+        l_desc.setWordWrap(True)
+        l_desc.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        locked_layout.addWidget(l_desc)
+        
+        self.create_btn = QPushButton("CREATE SUPPORT TICKET")
+        self.create_btn.setFixedWidth(280)
+        self.create_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.create_btn.setStyleSheet("""
+            QPushButton {
+                background: #4F46E5;
+                color: white;
+                border-radius: 10px;
+                padding: 16px;
+                font-weight: 800;
+                font-size: 13px;
+            }
+            QPushButton:hover { background: #4338CA; }
+        """)
+        self.create_btn.clicked.connect(self.activate_ticket)
+        locked_layout.addWidget(self.create_btn, alignment=Qt.AlignmentFlag.AlignCenter)
+        
+        l_exit = QPushButton("EXIT APPLICATION")
+        l_exit.setStyleSheet("background: transparent; color: #64748B; font-weight: 700; margin-top: 20px; border: none;")
+        l_exit.clicked.connect(QApplication.quit)
+        locked_layout.addWidget(l_exit, alignment=Qt.AlignmentFlag.AlignCenter)
+        
+        self.main_layout.addWidget(self.locked_widget)
+
+        # --- CHAT VIEW WIDGETS ---
+        self.chat_widget_container = QWidget()
+        chat_layout = QVBoxLayout(self.chat_widget_container)
+        chat_layout.setContentsMargins(0, 0, 0, 0)
+        
         header = QHBoxLayout()
-        icon = QLabel("⚠️")
-        icon.setStyleSheet("font-size: 32px;")
-        header.addWidget(icon)
-        
-        title_v = QVBoxLayout()
-        title = QLabel("RESTRICTED ACCESS")
-        title.setStyleSheet("font-size: 18px; font-weight: 900; color: #F43F5E; letter-spacing: 1px;")
-        title_v.addWidget(title)
-        
-        self.sub_title = QLabel("Strategic Link Suspended")
-        self.sub_title.setStyleSheet("font-size: 11px; color: #94A3B8; font-weight: 600;")
-        title_v.addWidget(self.sub_title)
-        header.addLayout(title_v)
+        h_title_v = QVBoxLayout()
+        h_title = QLabel("ZENITH SUPPORT")
+        h_title.setStyleSheet("font-size: 16px; font-weight: 900; color: #F43F5E;")
+        h_title_v.addWidget(h_title)
+        h_sub = QLabel("Secure Communication Channel")
+        h_sub.setStyleSheet("font-size: 10px; color: #94A3B8;")
+        h_title_v.addWidget(h_sub)
+        header.addLayout(h_title_v)
         header.addStretch()
         
-        exit_btn = QPushButton("EXIT")
-        exit_btn.setFixedWidth(80)
-        exit_btn.setStyleSheet("background: rgba(244, 63, 94, 0.1); color: #F43F5E; font-weight: 800; padding: 8px; border-radius: 8px;")
-        exit_btn.clicked.connect(QApplication.quit)
-        header.addWidget(exit_btn)
+        c_exit = QPushButton("EXIT")
+        c_exit.setStyleSheet("background: rgba(244, 63, 94, 0.1); color: #F43F5E; font-weight: 800; padding: 8px 16px; border-radius: 8px;")
+        c_exit.clicked.connect(QApplication.quit)
+        header.addWidget(c_exit)
+        chat_layout.addLayout(header)
         
-        layout.addLayout(header)
-        layout.addSpacing(20)
-        
-        # Chat History
-        from PyQt6.QtWidgets import QScrollArea, QWidget
         self.scroll = QScrollArea()
         self.scroll.setWidgetResizable(True)
-        self.chat_widget = QWidget()
-        self.chat_layout = QVBoxLayout(self.chat_widget)
-        self.chat_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
-        self.scroll.setWidget(self.chat_widget)
-        layout.addWidget(self.scroll)
+        self.chat_inner = QWidget()
+        self.chat_inner_layout = QVBoxLayout(self.chat_inner)
+        self.chat_inner_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+        self.scroll.setWidget(self.chat_inner)
+        chat_layout.addWidget(self.scroll)
         
-        # Input Area
         input_row = QHBoxLayout()
         self.appeal_input = QLineEdit()
         self.appeal_input.setPlaceholderText("Message Zenith Command...")
@@ -259,20 +297,29 @@ class SuspendedOverlay(QFrame):
         self.send_btn.setStyleSheet("background: #4F46E5; color: white; font-weight: 800; padding: 12px; border-radius: 8px;")
         self.send_btn.clicked.connect(self.submit_message)
         input_row.addWidget(self.send_btn)
+        chat_layout.addLayout(input_row)
         
-        layout.addLayout(input_row)
-        
+        self.main_layout.addWidget(self.chat_widget_container)
+        self.chat_widget_container.hide()
+
         self.hide()
         self.refresh_timer = QTimer()
         self.refresh_timer.timeout.connect(self.load_history)
 
+    def activate_ticket(self):
+        self.ticket_active = True
+        self.locked_widget.hide()
+        self.chat_widget_container.show()
+        self.appeal_input.setFocus()
+        self.load_history()
+
     def load_history(self):
-        if not self.isVisible(): return
+        if not self.isVisible() or not self.ticket_active: return
         messages = auth_manager.get_ticket_history(self.email)
         
         # Clear current
-        while self.chat_layout.count():
-            item = self.chat_layout.takeAt(0)
+        while self.chat_inner_layout.count():
+            item = self.chat_inner_layout.takeAt(0)
             if item.widget(): item.widget().deleteLater()
             
         for m in messages:
@@ -292,14 +339,13 @@ class SuspendedOverlay(QFrame):
             sender = QLabel("ZENITH COMMAND" if is_admin else "YOU")
             sender.setStyleSheet(f"font-size: 9px; font-weight: 900; color: { '#F43F5E' if is_admin else '#4F46E5' }; margin-bottom: 4px;")
             
-            self.chat_layout.addWidget(sender)
-            self.chat_layout.addWidget(msg_box)
+            self.chat_inner_layout.addWidget(sender)
+            self.chat_inner_layout.addWidget(msg_box)
 
     def submit_message(self):
         text = self.appeal_input.text().strip()
         if not text: return
         
-        # Check if this is the first message to trigger auto-reply
         messages = auth_manager.get_ticket_history(self.email)
         is_first = len(messages) == 0
         
@@ -308,10 +354,8 @@ class SuspendedOverlay(QFrame):
         
         if auth_manager.send_ticket_message(self.email, text):
             if is_first:
-                # Add auto-reply
                 auto_reply = "Our support team will get back to you soon. Your ticket has been created. You will see all the ticket updates here. [This is a system generated message]"
                 auth_manager.send_ticket_message(self.email, auto_reply, role="admin")
-            
             self.load_history()
         
         self.appeal_input.setEnabled(True)
@@ -322,8 +366,21 @@ class SuspendedOverlay(QFrame):
         self.setGeometry(self.parent().rect())
         self.raise_()
         self.show()
-        self.load_history()
-        self.refresh_timer.start(10000) # Refresh every 10s
+        
+        # If we are already in ticket mode, don't reset the view
+        if self.ticket_active:
+            return
+
+        # Check if already has messages, if so, skip to chat
+        history = auth_manager.get_ticket_history(self.email)
+        if history:
+            self.activate_ticket()
+        else:
+            self.locked_widget.show()
+            self.chat_widget_container.hide()
+            
+        if not self.refresh_timer.isActive():
+            self.refresh_timer.start(10000)
 
 class StealthHUD(QMainWindow):
     def __init__(self, cv_text="", jd_text="", link_text="", linkedin_url=""):
