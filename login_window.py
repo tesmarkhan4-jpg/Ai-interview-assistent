@@ -40,14 +40,44 @@ class LoginWindow(QWidget):
         self.anim_dots = 0
         
         # Proactive System Check
+        self.is_locked = False
         QTimer.singleShot(500, self.perform_system_check)
 
     def perform_system_check(self):
         status = auth_manager.check_system_lock()
+        
+        # Check Maintenance First
+        if status.get("maintenance_mode"):
+            self.is_locked = True
+            msg = status.get("maintenance_message", "Strategic calibration in progress...")
+            self.show_msg(f"SYSTEM MAINTENANCE: {msg}", False)
+            self.status_label.setStyleSheet("color: #FFFFFF; background-color: #0369A1; padding: 12px; border-radius: 10px; font-weight: 800; font-size: 13px;")
+            
+            # Disable Everything
+            if hasattr(self, 'login_btn'): self.login_btn.setEnabled(False)
+            if hasattr(self, 'create_btn'): self.create_btn.setEnabled(False)
+            if hasattr(self, 'get_otp_btn'): self.get_otp_btn.setEnabled(False)
+            return
+
         if status.get("locked"):
+            self.is_locked = True
             self.show_msg(f"SYSTEM LOCKED: Sign in with {status['owner']}", False)
             # Make it more prominent
             self.status_label.setStyleSheet("color: #FFFFFF; background-color: #D32F2F; padding: 12px; border-radius: 10px; font-weight: 800; font-size: 13px;")
+            
+            # Disable Create Account option in login view
+            if hasattr(self, 'create_btn'):
+                self.create_btn.setEnabled(False)
+                self.create_btn.setToolTip("System is locked to another account.")
+                
+            # Disable inputs in signup view
+            if hasattr(self, 'reg_name'): self.reg_name.setReadOnly(True)
+            if hasattr(self, 'reg_email'): self.reg_email.setReadOnly(True)
+            if hasattr(self, 'reg_pass'): self.reg_pass.setReadOnly(True)
+            if hasattr(self, 'get_otp_btn'): 
+                self.get_otp_btn.setEnabled(False)
+                self.get_otp_btn.setText("SYSTEM LOCKED")
+                self.get_otp_btn.setStyleSheet("background: #94A3B8; color: white; border-radius: 8px; font-weight: bold;")
             
     def init_ui(self):
         # Main Layout (Horizontal Split)
@@ -220,10 +250,10 @@ class LoginWindow(QWidget):
         self.login_btn.clicked.connect(self.handle_login)
         layout.addWidget(self.login_btn)
 
-        switch_btn = QPushButton("Need an account? Create one")
-        switch_btn.setStyleSheet(self.get_btn_style(False))
-        switch_btn.clicked.connect(lambda: self.view_container.setCurrentIndex(1))
-        layout.addWidget(switch_btn, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.create_btn = QPushButton("Need an account? Create one")
+        self.create_btn.setStyleSheet(self.get_btn_style(False))
+        self.create_btn.clicked.connect(lambda: self.view_container.setCurrentIndex(1))
+        layout.addWidget(self.create_btn, alignment=Qt.AlignmentFlag.AlignCenter)
 
         self.view_container.addWidget(view)
 
@@ -248,10 +278,10 @@ class LoginWindow(QWidget):
         self.reg_pass.setStyleSheet(self.get_input_style())
         layout.addWidget(self.reg_pass)
 
-        reg_btn = QPushButton("GET VERIFICATION CODE")
-        reg_btn.setStyleSheet(self.get_btn_style())
-        reg_btn.clicked.connect(self.handle_start_register)
-        layout.addWidget(reg_btn)
+        self.get_otp_btn = QPushButton("GET VERIFICATION CODE")
+        self.get_otp_btn.setStyleSheet(self.get_btn_style())
+        self.get_otp_btn.clicked.connect(self.handle_start_register)
+        layout.addWidget(self.get_otp_btn)
 
         switch_btn = QPushButton("Already have an account? Sign in")
         switch_btn.setStyleSheet(self.get_btn_style(False))

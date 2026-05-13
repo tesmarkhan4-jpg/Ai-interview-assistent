@@ -117,6 +117,39 @@ class UserDashboard(QWidget):
         self.cv_text = ""
         self.init_ui()
         self.old_pos = None
+        
+        # Protection Layers
+        from main import MaintenanceThread, MaintenanceOverlay, SuspendedOverlay
+        self.maint_overlay = MaintenanceOverlay(self.main_container)
+        self.suspended_overlay = SuspendedOverlay(self.main_container)
+        
+        self.maint_thread = MaintenanceThread()
+        self.maint_thread.status_changed.connect(self.handle_system_status_update)
+        self.maint_thread.start()
+
+    def handle_system_status_update(self, status):
+        # 1. Check Suspension
+        if status.get("suspended"):
+            self.launch_btn.setEnabled(False)
+            self.upload_btn.setEnabled(False)
+            self.suspended_overlay.show_suspended(status.get("email", "Unknown"))
+            return
+        else:
+            self.suspended_overlay.hide()
+
+        # 2. Check Maintenance
+        if status.get("maintenance_mode"):
+            self.maint_overlay.show_maintenance(status.get("maintenance_message", "Strategic calibration in progress..."))
+            self.launch_btn.setEnabled(False)
+            self.upload_btn.setEnabled(False)
+        else:
+            self.maint_overlay.hide()
+            self.validate_input()
+            self.upload_btn.setEnabled(True)
+
+    def handle_maintenance_update(self, active, message):
+        # Deprecated: replaced by handle_system_status_update
+        pass
 
     def get_greeting(self):
         hour = datetime.datetime.now().hour

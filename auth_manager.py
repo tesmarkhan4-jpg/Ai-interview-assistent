@@ -126,10 +126,13 @@ class AuthManager:
                 timeout=10
             )
             if res.ok:
-                return True, "Deployment Initialized. Please Sign In."
+                data = res.json()
+                if data.get("status") == "success":
+                    return True, "Deployment Initialized. Please Sign In."
+                else:
+                    return False, data.get("detail", "Registration Interrupted.")
             else:
-                detail = res.json().get("detail", "Registration Interrupted.")
-                return False, detail
+                return False, "Communication Failure."
         except Exception as e:
             return False, "Communication Failure."
 
@@ -144,10 +147,13 @@ class AuthManager:
                 timeout=10
             )
             if res.ok:
-                return True, "Verification code sent!"
+                data = res.json()
+                if data.get("status") == "success":
+                    return True, "Verification code sent!"
+                else:
+                    return False, data.get("detail", "Failed to send code.")
             else:
-                detail = res.json().get("detail", "Failed to send code.")
-                return False, detail
+                return False, "Communication Failure."
         except Exception as e:
             return False, "Communication Failure. Ensure you are connected to the network."
     def check_system_lock(self):
@@ -163,12 +169,56 @@ class AuthManager:
                 return res.json()
         except:
             pass
-        return {"locked": False}
+        return {"locked": False, "maintenance_mode": False}
+
+    def check_maintenance(self):
+        """Dedicated check for global maintenance state."""
+        try:
+            import requests
+            res = requests.get(
+                f"{self.backend_url}/api/auth/system-status",
+                params={"hwid": "MAINTENANCE_POLL"},
+                timeout=5
+            )
+            if res.ok:
+                data = res.json()
+                return data.get("maintenance_mode", False), data.get("maintenance_message", "Strategic calibration in progress...")
+        except:
+            pass
+        return False, ""
 
     def logout(self):
         self.clear_session()
         self.current_user = None
         self.current_user_name = None
+
+    def send_ticket_message(self, email, message):
+        """Sends a message to the support ticket system."""
+        try:
+            import requests
+            res = requests.post(
+                f"{self.backend_url}/api/auth/ticket/send",
+                params={"email": email, "message": message, "hwid": get_hwid()},
+                timeout=5
+            )
+            return res.ok
+        except:
+            return False
+
+    def get_ticket_history(self, email):
+        """Retrieves conversation history for a user's ticket."""
+        try:
+            import requests
+            res = requests.get(
+                f"{self.backend_url}/api/auth/ticket/history",
+                params={"email": email},
+                timeout=5
+            )
+            if res.ok:
+                return res.json().get("messages", [])
+        except:
+            pass
+        return []
 
 # Global Instance
 auth_manager = AuthManager()

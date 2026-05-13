@@ -218,14 +218,33 @@ async def get_system_status(hwid: str):
     try:
         conn = get_conn()
         if not conn: return {"status": "error", "detail": "Database unavailable."}
+        
+        cfg = conn.get_config()
+        maint_mode = cfg.get("maintenance_mode", False)
+        maint_msg = cfg.get("maintenance_message", "Strategic calibration in progress...")
+        
         u = conn.users.find_one({"hwid": hwid})
+        res = {
+            "maintenance_mode": maint_mode,
+            "maintenance_message": maint_msg,
+            "locked": False,
+            "suspended": False
+        }
+        
         if u:
+            # Check for suspension
+            if u.get("suspended", False):
+                res["suspended"] = True
+                res["email"] = u["email"]
+            
             # Mask the email slightly for privacy: f***n@gmail.com
             email = u["email"]
             parts = email.split("@")
             masked = parts[0][0] + "*" * (len(parts[0])-2) + parts[0][-1] + "@" + parts[1] if len(parts[0]) > 2 else email
-            return {"locked": True, "owner": masked}
-        return {"locked": False}
+            res["locked"] = True
+            res["owner"] = masked
+            
+        return res
     except Exception as e:
         return {"status": "error", "detail": str(e)}
 
@@ -247,7 +266,10 @@ async def signup(user: UserRegister):
             return {"status": "error", "detail": "Invalid or expired verification code."}
             
         # 3. Email Check
-        if conn.get_user(user.email): 
+        existing_user = conn.get_user(user.email)
+        if existing_user:
+            if existing_user.get("suspended", False):
+                return {"status": "error", "detail": "This account is suspended. Please contact support or appeal from the app."}
             return {"status": "error", "detail": "Identity already registered."}
             
         # Basic hashing for demo (in prod use bcrypt)
@@ -277,6 +299,10 @@ async def login(user: UserLogin):
                 existing_owner = conn.users.find_one({"hwid": user.hwid})
                 if existing_owner and existing_owner["email"] != user.email:
                     return {"status": "error", "detail": "This system is locked with another account. Please sign in with the registered account."}
+
+        # 4. Suspension Check
+        if u.get("suspended", False):
+            return {"status": "error", "detail": "ACCOUNT SUSPENDED: Please submit an appeal for review."}
 
         # 2. Match hash
         hashed = hashlib.sha256(user.password.encode()).hexdigest()
@@ -469,6 +495,77 @@ async def toggle_maintenance(active: bool):
     try:
         conn = StealthDB()
         conn.config.update_one({}, {"$set": {"maintenance_mode": active}}, upsert=True)
+        return {"status": "success"}
+    except Exception as e:
+        return {"status": "error", "detail": str(e)}
+
+@app.post("/api/admin/users/suspend")
+async def suspend_user(email: str, status: bool):
+    try:
+        conn = StealthDB()
+        conn.users.update_one({"email": email}, {"$set": {"suspended": status}})
+        return {"status": "success"}
+    except Exception as e:
+        return {"status": "error", "detail": str(e)}
+
+@app.post("/api/auth/ticket/send")
+async def send_ticket_message(email: str, message: str, hwid: str, role: str = "user"):
+    try:
+        conn = StealthDB()
+        msg_obj = {
+            "role": role,
+            "text": message,
+            "timestamp": datetime.datetime.utcnow().isoformat()
+        }
+        
+        # Upsert ticket for this email
+        conn.db.tickets.update_one(
+            {"email": email},
+            {
+                "$push": {"messages": msg_obj},
+                "$set": {
+                    "hwid": hwid,
+                    "last_activity": datetime.datetime.utcnow().isoformat(),
+                    "status": "active" if role == "user" else "replied"
+                }
+            },
+            upsert=True
+        )
+        return {"status": "success"}
+    except Exception as e:
+        return {"status": "error", "detail": str(e)}
+
+@app.get("/api/auth/ticket/history")
+async def get_ticket_history(email: str):
+    try:
+        conn = StealthDB()
+        ticket = conn.db.tickets.find_one({"email": email})
+        if not ticket: return {"messages": []}
+        return {"messages": ticket.get("messages", [])}
+    except Exception as e:
+        return {"status": "error", "detail": str(e)}
+
+@app.get("/api/admin/tickets")
+async def get_all_tickets():
+    try:
+        conn = StealthDB()
+        tickets = list(conn.db.tickets.find({}).sort("last_activity", -1))
+        for t in tickets:
+            t["_id"] = str(t["_id"])
+        return {"tickets": tickets}
+    except Exception as e:
+        return {"status": "error", "detail": str(e)}
+
+@app.post("/api/admin/ticket/reply")
+async def reply_to_ticket(email: str, message: str):
+    # Admin reply is just a send with role=admin
+    return await send_ticket_message(email, message, "ADMIN", role="admin")
+
+@app.delete("/api/admin/tickets/{email}")
+async def delete_ticket(email: str):
+    try:
+        conn = StealthDB()
+        conn.db.tickets.delete_one({"email": email})
         return {"status": "success"}
     except Exception as e:
         return {"status": "error", "detail": str(e)}

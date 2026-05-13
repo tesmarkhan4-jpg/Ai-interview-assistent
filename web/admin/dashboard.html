@@ -43,6 +43,9 @@
             <a href="#" class="nav-link" data-tab="settings">
                 <i data-lucide="settings"></i> Settings
             </a>
+            <a href="#" class="nav-link" data-tab="appeals">
+                <i data-lucide="message-square"></i> Appeals
+            </a>
         </nav>
         <div class="user-footer">
             <a href="/logout" id="admin-logout" class="nav-link" style="color: var(--rose);">
@@ -294,6 +297,40 @@
                 <button class="btn-action" onclick="updateConfig()" style="margin-top: 24px; background: var(--primary); color: white; border: none; padding: 12px 24px; font-weight: 800;">SAVE GLOBAL CONFIG</button>
             </div>
         </div>
+
+        <!-- Appeals Tab (Hidden by default) -->
+        <div id="content-appeals" style="display: none;">
+            <div class="grid-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+                <div class="data-card" style="height: 600px; overflow-y: auto; padding: 0;">
+                    <div class="card-header" style="padding: 24px;">
+                        <span class="card-title">Strategic Support Stream</span>
+                        <button class="btn-action" onclick="fetchTickets()">Refresh</button>
+                    </div>
+                    <div id="ticket-list-container">
+                        <!-- Tickets list -->
+                    </div>
+                </div>
+
+                <div class="data-card" id="chat-window" style="height: 600px; display: flex; flex-direction: column; padding: 0; background: #f8fafc;">
+                    <div id="chat-header" style="padding: 20px; background: white; border-bottom: 1px solid var(--border); display: none;">
+                        <b id="chat-user-email">Select an Identity</b><br>
+                        <span id="chat-user-hwid" style="font-size: 0.7rem; color: var(--text-muted);">Strategic System Fingerprint</span>
+                    </div>
+                    <div id="chat-messages" style="flex: 1; overflow-y: auto; padding: 24px; display: flex; flex-direction: column; gap: 16px;">
+                        <div style="margin: auto; text-align: center; color: var(--text-muted);">
+                            <i data-lucide="message-square" style="width: 48px; height: 48px; opacity: 0.2; margin-bottom: 16px;"></i><br>
+                            Select a ticket to begin communication
+                        </div>
+                    </div>
+                    <div id="chat-input-container" style="padding: 20px; background: white; border-top: 1px solid var(--border); display: none;">
+                        <div style="display: flex; gap: 12px;">
+                            <input type="text" id="ticket-reply-input" placeholder="Compose mission response..." style="flex: 1; padding: 12px; border-radius: 10px; border: 1px solid var(--border); outline: none;">
+                            <button class="btn-action" onclick="sendReply()" style="background: var(--primary); color: white; border: none; padding: 0 24px;">SEND</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </main>
 
     <script>
@@ -323,7 +360,8 @@
             users: document.getElementById('content-users'),
             keys: document.getElementById('content-keys'),
             payments: document.getElementById('content-payments'),
-            settings: document.getElementById('content-settings')
+            settings: document.getElementById('content-settings'),
+            appeals: document.getElementById('content-appeals')
         };
 
         navLinks.forEach(link => {
@@ -340,6 +378,7 @@
                 if(tab === 'keys') { fetchKeys(); fetchStats(); }
                 if(tab === 'payments' || tab === 'settings') fetchConfig();
                 if(tab === 'overview') fetchStats();
+                if(tab === 'appeals') fetchTickets();
                 
                 if(tab === 'payments') {
                     document.getElementById('webhook-url-display').value = window.location.origin + "/api/webhook/stripe";
@@ -472,14 +511,28 @@
                     return `
                     <tr>
                         <td>
-                            <b>${u.full_name}</b><br>
+                            <b style="color: var(--text);">${u.full_name}</b><br>
                             <span style="font-size: 0.75rem; color: var(--text-muted);">${u.email}</span>
                         </td>
-                        <td><span class="status-pill status-${u.tier === 'PRO' || u.tier === 'ELITE' ? 'active' : 'trial'}">${u.tier}</span></td>
+                        <td>
+                            <span class="status-pill status-${u.tier === 'PRO' || u.tier === 'ELITE' ? 'active' : 'trial'}">${u.tier}</span>
+                            ${u.suspended ? '<span class="status-pill status-suspended" style="margin-left:5px;">SUSPENDED</span>' : ''}
+                        </td>
                         <td style="font-size: 0.85rem; color: var(--text-muted);">${joined}</td>
                         <td>${statusHtml}</td>
-                        <td><code style="font-size: 0.7rem;">${u.hwid || 'NOT LINKED'}</code></td>
-                        <td>${actionsHtml}</td>
+                        <td><code style="font-size: 0.7rem; color: var(--text-muted); background: #f1f5f9; padding: 2px 6px; border-radius: 4px;">${u.hwid || 'NOT LINKED'}</code></td>
+                        <td>
+                            <div style="display: flex; gap: 8px; align-items: center;">
+                                ${actionsHtml}
+                                ${u.role !== 'OWNER' ? `
+                                    <button class="btn-action ${u.suspended ? 'btn-unsuspend' : 'btn-suspend'}" 
+                                            onclick="toggleUserSuspension('${u.email}', ${!u.suspended})"
+                                            style="background: ${u.suspended ? 'var(--emerald)' : 'var(--rose)'}; color: white; border: none;">
+                                        ${u.suspended ? 'Unsuspend' : 'Suspend'}
+                                    </button>
+                                ` : ''}
+                            </div>
+                        </td>
                     </tr>
                 `}).join('');
             } catch (e) { 
@@ -579,6 +632,95 @@
             if(confirm("Are you sure you want to revoke this key?")) {
                 await fetch(`${API_BASE}/admin/keys/${id}`, { method: 'DELETE' });
                 fetchKeys();
+            }
+        }
+
+        let currentTicketEmail = null;
+
+        async function fetchTickets() {
+            const container = document.getElementById('ticket-list-container');
+            try {
+                const res = await fetch(`/api/admin/tickets`);
+                const data = await res.json();
+                container.innerHTML = data.tickets.map(t => {
+                    const lastMsg = t.messages[t.messages.length - 1]?.text || "No messages";
+                    const isNew = t.status === 'active';
+                    return `
+                    <div class="ticket-item ${currentTicketEmail === t.email ? 'active' : ''}" onclick="selectTicket('${t.email}', '${t.hwid}')" 
+                         style="padding: 20px; border-bottom: 1px solid var(--border); cursor: pointer; transition: 0.2s; position: relative;">
+                        ${isNew ? '<div style="position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--primary);"></div>' : ''}
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                            <b style="font-size: 0.9rem;">${t.email}</b>
+                            <span style="font-size: 0.7rem; color: var(--text-muted);">${new Date(t.last_activity).toLocaleTimeString()}</span>
+                        </div>
+                        <div style="font-size: 0.8rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                            ${lastMsg}
+                        </div>
+                    </div>
+                `}).join('');
+                if(window.lucide) lucide.createIcons();
+            } catch (e) { console.error("Tickets fetch failed", e); }
+        }
+
+        async function selectTicket(email, hwid) {
+            currentTicketEmail = email;
+            document.getElementById('chat-header').style.display = 'block';
+            document.getElementById('chat-input-container').style.display = 'block';
+            document.getElementById('chat-user-email').innerText = email;
+            document.getElementById('chat-user-hwid').innerText = "HWID: " + hwid;
+            
+            // Refresh list to show active state
+            const items = document.querySelectorAll('.ticket-item');
+            items.forEach(i => i.classList.remove('active'));
+            // Re-fetch to update UI properly
+            fetchTickets();
+            loadMessages(email);
+        }
+
+        async function loadMessages(email) {
+            if(currentTicketEmail !== email) return;
+            const container = document.getElementById('chat-messages');
+            try {
+                const res = await fetch(`/api/auth/ticket/history?email=${email}`);
+                const data = await res.json();
+                container.innerHTML = data.messages.map(m => {
+                    const isAdmin = m.role === 'admin';
+                    return `
+                    <div style="align-self: ${isAdmin ? 'flex-end' : 'flex-start'}; max-width: 80%;">
+                        <div style="font-size: 0.65rem; font-weight: 800; color: var(--text-muted); margin-bottom: 4px; text-align: ${isAdmin ? 'right' : 'left'};">
+                            ${isAdmin ? 'ZENITH COMMAND' : 'USER'}
+                        </div>
+                        <div style="background: ${isAdmin ? 'var(--primary)' : 'white'}; color: ${isAdmin ? 'white' : 'var(--text)'}; 
+                                    padding: 12px 16px; border-radius: 16px; font-size: 0.9rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+                                    border: ${isAdmin ? 'none' : '1px solid var(--border)'}">
+                            ${m.text}
+                        </div>
+                        <div style="font-size: 0.65rem; color: var(--text-muted); margin-top: 4px; text-align: ${isAdmin ? 'right' : 'left'};">
+                            ${new Date(m.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                        </div>
+                    </div>
+                `}).join('');
+                container.scrollTop = container.scrollHeight;
+            } catch (e) { console.error("Messages fetch failed", e); }
+        }
+
+        async function sendReply() {
+            const input = document.getElementById('ticket-reply-input');
+            const text = input.value.trim();
+            if(!text || !currentTicketEmail) return;
+            
+            input.value = '';
+            try {
+                await fetch(`/api/admin/ticket/reply?email=${currentTicketEmail}&message=${encodeURIComponent(text)}`, { method: 'POST' });
+                loadMessages(currentTicketEmail);
+                fetchTickets();
+            } catch (e) { console.error("Reply failed", e); }
+        }
+
+        async function toggleUserSuspension(email, status) {
+            if(confirm(`${status ? 'Suspend' : 'Unsuspend'} user ${email}?`)) {
+                await fetch(`/api/admin/users/suspend?email=${email}&status=${status}`, { method: 'POST' });
+                fetchUsers();
             }
         }
 

@@ -63,6 +63,9 @@ td { padding: 18px 16px; font-size: 0.9rem; border-bottom: 1px solid var(--borde
 .status-pill { padding: 6px 12px; border-radius: 100px; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; }
 .status-active { background: rgba(16, 185, 129, 0.1); color: var(--emerald); }
 .status-trial { background: rgba(245, 158, 11, 0.1); color: var(--amber); }
+.status-suspended { background: rgba(244, 63, 94, 0.1); color: var(--rose); }
+
+.ticket-item.active { background: rgba(79, 70, 229, 0.05); color: var(--primary); }
 
 .btn-action {
     background: #f1f5f9; color: var(--text); border: 1px solid var(--border);
