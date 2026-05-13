@@ -199,12 +199,15 @@ class TicketWorker(QThread):
         self.is_first_msg = False
 
     def run(self):
-        if self.action == 'load':
-            data = auth_manager.get_ticket_history(self.email)
-            self.history_loaded.emit(data)
-        elif self.action == 'send':
-            success = auth_manager.send_ticket_message(self.email, self.msg_text, self.msg_role)
-            self.message_sent.emit(success, self.is_first_msg)
+        try:
+            if self.action == 'load':
+                data = auth_manager.get_ticket_history(self.email)
+                self.history_loaded.emit(data)
+            elif self.action == 'send':
+                success = auth_manager.send_ticket_message(self.email, self.msg_text, self.msg_role)
+                self.message_sent.emit(success, self.is_first_msg)
+        except:
+            pass
 
 class SuspendedOverlay(QFrame):
     def __init__(self, parent=None, email=""):
@@ -215,14 +218,14 @@ class SuspendedOverlay(QFrame):
         
         self.setStyleSheet("""
             QFrame {
-                background-color: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #0f172a, stop:1 #1e293b);
-                border-radius: 16px;
+                background-color: #0f172a;
+                border-radius: 20px;
             }
             QLabel { color: #f8fafc; background: transparent; }
             QScrollArea { border: none; background: transparent; }
             QLineEdit {
-                background: rgba(255, 255, 255, 0.03);
-                border: 1px solid rgba(255, 255, 255, 0.08);
+                background: rgba(255, 255, 255, 0.05);
+                border: 1px solid rgba(255, 255, 255, 0.1);
                 border-radius: 12px;
                 padding: 14px 18px;
                 color: #f1f5f9;
@@ -230,33 +233,33 @@ class SuspendedOverlay(QFrame):
             }
             QLineEdit:focus {
                 border-color: #6366f1;
-                background: rgba(255, 255, 255, 0.05);
+                background: rgba(255, 255, 255, 0.08);
             }
         """)
         
         self.main_layout = QVBoxLayout(self)
-        self.main_layout.setContentsMargins(40, 40, 40, 40)
-        self.main_layout.setSpacing(20)
+        self.main_layout.setContentsMargins(50, 50, 50, 50)
+        self.main_layout.setSpacing(25)
         
         # --- LOCKED VIEW ---
         self.locked_widget = QWidget()
         locked_layout = QVBoxLayout(self.locked_widget)
-        locked_layout.setSpacing(15)
+        locked_layout.setSpacing(20)
         locked_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         
         l_icon = QLabel("🛡️")
-        l_icon.setStyleSheet("font-size: 80px; margin-bottom: 10px;")
+        l_icon.setStyleSheet("font-size: 60px;")
         l_icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
         locked_layout.addWidget(l_icon)
         
         l_title = QLabel("ACCOUNT SUSPENDED")
-        l_title.setStyleSheet("font-size: 36px; font-weight: 900; color: #ef4444; letter-spacing: 1px;")
+        l_title.setStyleSheet("font-size: 28px; font-weight: 900; color: #ef4444; letter-spacing: 1px;")
         l_title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         locked_layout.addWidget(l_title)
         
-        l_desc = QLabel("Access to ZenithHUD has been restricted. Please create a support ticket to appeal.")
-        l_desc.setStyleSheet("font-size: 15px; color: #94a3b8; line-height: 1.5;")
-        l_desc.setFixedWidth(500)
+        l_desc = QLabel("Access to ZenithHUD has been restricted. Create a support ticket to appeal.")
+        l_desc.setStyleSheet("font-size: 14px; color: #94a3b8; line-height: 1.5;")
+        l_desc.setFixedWidth(400)
         l_desc.setWordWrap(True)
         l_desc.setAlignment(Qt.AlignmentFlag.AlignCenter)
         locked_layout.addWidget(l_desc)
@@ -264,36 +267,38 @@ class SuspendedOverlay(QFrame):
         # History Container
         self.history_scroll = QScrollArea()
         self.history_scroll.setFixedHeight(120)
+        self.history_scroll.setFixedWidth(400) # Constrain width
         self.history_scroll.setWidgetResizable(True)
+        self.history_scroll.setStyleSheet("QScrollArea { background: transparent; }")
         self.history_inner = QWidget()
+        self.history_inner.setStyleSheet("background: transparent;")
         self.history_inner_layout = QVBoxLayout(self.history_inner)
-        self.history_inner_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+        self.history_inner_layout.setContentsMargins(0, 0, 0, 0)
+        self.history_inner_layout.setSpacing(5)
+        self.history_inner_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.history_scroll.setWidget(self.history_inner)
-        locked_layout.addWidget(self.history_scroll)
+        self.history_scroll.hide()
+        locked_layout.addWidget(self.history_scroll, alignment=Qt.AlignmentFlag.AlignCenter)
         
         self.create_btn = QPushButton("CREATE SUPPORT TICKET")
-        self.create_btn.setFixedWidth(320)
+        self.create_btn.setFixedWidth(280)
         self.create_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self.create_btn.setStyleSheet("""
             QPushButton {
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #6366f1, stop:1 #4f46e5);
+                background: #4f46e5;
                 color: white;
                 border-radius: 12px;
-                padding: 18px;
-                font-weight: 900;
-                font-size: 14px;
-                letter-spacing: 1px;
-                border: 1px solid rgba(255,255,255,0.1);
+                padding: 16px;
+                font-weight: 800;
+                font-size: 13px;
             }
-            QPushButton:hover { 
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #818cf8, stop:1 #6366f1);
-            }
+            QPushButton:hover { background: #6366f1; }
         """)
         self.create_btn.clicked.connect(self.activate_ticket)
         locked_layout.addWidget(self.create_btn, alignment=Qt.AlignmentFlag.AlignCenter)
         
         l_exit = QPushButton("EXIT APPLICATION")
-        l_exit.setStyleSheet("background: transparent; color: #64748b; font-weight: 700; margin-top: 10px; border: none;")
+        l_exit.setStyleSheet("background: transparent; color: #64748b; font-weight: 700; border: none; font-size: 11px;")
         l_exit.clicked.connect(QApplication.quit)
         locked_layout.addWidget(l_exit, alignment=Qt.AlignmentFlag.AlignCenter)
         
@@ -308,16 +313,16 @@ class SuspendedOverlay(QFrame):
         header = QHBoxLayout()
         h_title_v = QVBoxLayout()
         h_title = QLabel("ZENITH SUPPORT")
-        h_title.setStyleSheet("font-size: 20px; font-weight: 900; color: #f1f5f9; letter-spacing: 1px;")
+        h_title.setStyleSheet("font-size: 18px; font-weight: 900; color: #f1f5f9;")
         h_title_v.addWidget(h_title)
-        h_sub = QLabel("Direct Support Link • Official Channel")
-        h_sub.setStyleSheet("font-size: 11px; color: #6366f1; font-weight: 700;")
+        h_sub = QLabel("Official Channel")
+        h_sub.setStyleSheet("font-size: 10px; color: #6366f1; font-weight: 600;")
         h_title_v.addWidget(h_sub)
         header.addLayout(h_title_v)
         header.addStretch()
         
         c_exit = QPushButton("BACK")
-        c_exit.setStyleSheet("background: rgba(255, 255, 255, 0.05); color: #94a3b8; font-weight: 800; padding: 10px 20px; border-radius: 10px;")
+        c_exit.setStyleSheet("background: rgba(255, 255, 255, 0.05); color: #94a3b8; font-weight: 800; padding: 8px 16px; border-radius: 8px;")
         c_exit.clicked.connect(self.show_locked_view)
         header.addWidget(c_exit)
         chat_layout.addLayout(header)
@@ -325,10 +330,9 @@ class SuspendedOverlay(QFrame):
         self.scroll = QScrollArea()
         self.scroll.setWidgetResizable(True)
         self.chat_inner = QWidget()
-        self.chat_inner.setObjectName("chat_inner")
-        self.chat_inner.setStyleSheet("#chat_inner { background: transparent; }")
+        self.chat_inner.setStyleSheet("background: transparent;")
         self.chat_inner_layout = QVBoxLayout(self.chat_inner)
-        self.chat_inner_layout.setSpacing(15)
+        self.chat_inner_layout.setSpacing(12)
         self.chat_inner_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         self.scroll.setWidget(self.chat_inner)
         chat_layout.addWidget(self.scroll)
@@ -339,15 +343,15 @@ class SuspendedOverlay(QFrame):
         input_layout.setContentsMargins(0, 20, 0, 0)
         
         self.appeal_input = QLineEdit()
-        self.appeal_input.setPlaceholderText("Type your message here...")
+        self.appeal_input.setPlaceholderText("Type a message...")
         self.appeal_input.returnPressed.connect(self.submit_message)
         input_layout.addWidget(self.appeal_input)
         
         self.send_btn = QPushButton("SEND")
-        self.send_btn.setFixedWidth(100)
+        self.send_btn.setFixedWidth(80)
         self.send_btn.setStyleSheet("""
-            QPushButton { background: #6366f1; color: white; font-weight: 900; padding: 14px; border-radius: 12px; }
-            QPushButton:hover { background: #4f46e5; }
+            QPushButton { background: #4f46e5; color: white; font-weight: 900; padding: 12px; border-radius: 10px; }
+            QPushButton:hover { background: #6366f1; }
         """)
         self.send_btn.clicked.connect(self.submit_message)
         input_layout.addWidget(self.send_btn)
@@ -379,7 +383,7 @@ class SuspendedOverlay(QFrame):
         self.load_history()
 
     def load_history(self):
-        if not self.isVisible(): return
+        if not self.isVisible() and not self.email: return
         if self.worker.isRunning(): return
         self.worker.action = 'load'
         self.worker.start()
@@ -387,22 +391,23 @@ class SuspendedOverlay(QFrame):
     def on_history_loaded(self, data):
         messages = data.get("messages", [])
         resolved_count = data.get("resolved_count", 0)
-        has_active = data.get("has_active", False)
         
-        # Update History List in Locked View
+        # Update History List
         while self.history_inner_layout.count():
             item = self.history_inner_layout.takeAt(0)
             if item.widget(): item.widget().deleteLater()
             
         if resolved_count > 0:
+            self.history_scroll.show()
             for i in range(resolved_count):
-                h_item = QLabel(f"Ticket #{i+1} • Status: Resolved")
-                h_item.setStyleSheet("color: #10b981; font-weight: 700; font-size: 13px; background: rgba(16, 185, 129, 0.1); padding: 10px; border-radius: 8px; margin-bottom: 5px;")
-                self.history_inner_layout.addWidget(h_item)
+                h_item = QLabel(f"Ticket #{i+1} • Resolved")
+                h_item.setFixedWidth(350)
+                h_item.setMinimumHeight(40)
+                h_item.setAlignment(Qt.AlignmentFlag.AlignCenter)
+                h_item.setStyleSheet("color: #10b981; font-weight: 700; font-size: 12px; background: rgba(16, 185, 129, 0.08); padding: 10px; border-radius: 8px; margin-bottom: 2px;")
+                self.history_inner_layout.addWidget(h_item, alignment=Qt.AlignmentFlag.AlignCenter)
         else:
-            no_h = QLabel("No previous support history found.")
-            no_h.setStyleSheet("color: #64748b; font-size: 12px; font-style: italic;")
-            self.history_inner_layout.addWidget(no_h)
+            self.history_scroll.hide()
 
         if not self.ticket_active: return
 
@@ -417,22 +422,29 @@ class SuspendedOverlay(QFrame):
             is_admin = m.get('role') == 'admin'
             bubble_container = QWidget()
             bubble_layout = QVBoxLayout(bubble_container)
-            bubble_layout.setContentsMargins(0, 0, 0, 0)
+            bubble_layout.setContentsMargins(0, 0, 0, 5)
             
-            sender = QLabel("ZENITH SUPPORT" if is_admin else "USER")
-            sender.setStyleSheet(f"font-size: 9px; font-weight: 900; color: { '#f43f5e' if is_admin else '#6366f1' };")
+            sender = QLabel("SUPPORT" if is_admin else "YOU")
+            sender.setStyleSheet(f"font-size: 9px; font-weight: 900; color: { '#f43f5e' if is_admin else '#6366f1' }; margin-bottom: 2px;")
             bubble_layout.addWidget(sender, alignment=Qt.AlignmentFlag.AlignLeft if is_admin else Qt.AlignmentFlag.AlignRight)
             
             msg_box = QLabel(m.get('text', ''))
             msg_box.setWordWrap(True)
-            msg_box.setMaximumWidth(600)
+            msg_box.setMinimumWidth(100)
+            msg_box.setMaximumWidth(400)
+            msg_box.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+            
+            # Use a more robust style that ensures height expands
             msg_box.setStyleSheet(f"""
-                background: { 'rgba(244, 63, 94, 0.08)' if is_admin else 'rgba(99, 102, 241, 0.08)' };
-                color: { '#fecaca' if is_admin else '#c7d2fe' };
-                padding: 15px 20px;
-                border-radius: 18px;
-                border: 1px solid { 'rgba(244, 63, 94, 0.2)' if is_admin else 'rgba(99, 102, 241, 0.2)' };
-                border-{ 'bottom-left' if is_admin else 'bottom-right' }-radius: 4px;
+                QLabel {{
+                    background: { 'rgba(244, 63, 94, 0.15)' if is_admin else 'rgba(99, 102, 241, 0.15)' };
+                    color: { '#fecaca' if is_admin else '#c7d2fe' };
+                    padding: 15px;
+                    border-radius: 12px;
+                    border: 1px solid { 'rgba(244, 63, 94, 0.3)' if is_admin else 'rgba(99, 102, 241, 0.3)' };
+                    font-size: 13px;
+                    line-height: 1.4;
+                }}
             """)
             bubble_layout.addWidget(msg_box, alignment=Qt.AlignmentFlag.AlignLeft if is_admin else Qt.AlignmentFlag.AlignRight)
             self.chat_inner_layout.addWidget(bubble_container)
@@ -443,9 +455,12 @@ class SuspendedOverlay(QFrame):
         text = self.appeal_input.text().strip()
         if not text or self.worker.isRunning(): return
         self.is_first_msg = (self.last_msg_count == 0)
-        self.appeal_input.clear()
+        
+        # Immediate Feedback
         self.appeal_input.setEnabled(False)
         self.send_btn.setEnabled(False)
+        self.send_btn.setText("...")
+        
         self.worker.action = 'send'
         self.worker.msg_text = text
         self.worker.msg_role = "user"
@@ -453,27 +468,36 @@ class SuspendedOverlay(QFrame):
         self.worker.start()
 
     def on_message_sent(self, success, was_first):
+        self.send_btn.setText("SEND")
+        self.send_btn.setEnabled(True)
+        self.appeal_input.setEnabled(True)
+        self.appeal_input.clear()
+        
         if success and was_first:
             self.worker.action = 'send'
             self.worker.msg_text = "Our support team will get back to you soon. Your ticket has been created. You will see all the ticket updates here. [This is a system generated message]"
             self.worker.msg_role = "admin"
             self.worker.is_first_msg = False
             self.worker.start()
-        self.appeal_input.setEnabled(True)
-        self.send_btn.setEnabled(True)
+        
         self.appeal_input.setFocus()
         self.load_history()
 
     def show_suspended(self, email):
-        self.email = email
-        self.worker.email = email
+        if self.email != email:
+            self.email = email
+            self.worker.email = email
+            self.last_msg_count = -1
+            
         self.setGeometry(self.parent().rect())
         self.raise_()
         self.show()
+        
         if not self.ticket_active:
             self.load_history()
+            
         if not self.refresh_timer.isActive():
-            self.refresh_timer.start(10000)
+            self.refresh_timer.start(5000) # Increased frequency for better responsiveness
 
 class StealthHUD(QMainWindow):
     def __init__(self, cv_text="", jd_text="", link_text="", linkedin_url=""):
