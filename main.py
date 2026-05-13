@@ -186,125 +186,190 @@ class MaintenanceOverlay(QFrame):
         self.raise_()
         self.show()
 
+class TicketWorker(QThread):
+    history_loaded = pyqtSignal(dict)
+    message_sent = pyqtSignal(bool, bool) # success, is_first
+
+    def __init__(self, email):
+        super().__init__()
+        self.email = email
+        self.action = None # 'load' or 'send'
+        self.msg_text = ""
+        self.msg_role = "user"
+        self.is_first_msg = False
+
+    def run(self):
+        if self.action == 'load':
+            data = auth_manager.get_ticket_history(self.email)
+            self.history_loaded.emit(data)
+        elif self.action == 'send':
+            success = auth_manager.send_ticket_message(self.email, self.msg_text, self.msg_role)
+            self.message_sent.emit(success, self.is_first_msg)
+
 class SuspendedOverlay(QFrame):
     def __init__(self, parent=None, email=""):
         super().__init__(parent)
         self.email = email
         self.ticket_active = False
+        self.last_msg_count = -1
+        
         self.setStyleSheet("""
             QFrame {
-                background-color: rgba(15, 23, 42, 0.99);
-                border-radius: 12px;
+                background-color: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #0f172a, stop:1 #1e293b);
+                border-radius: 16px;
             }
-            QLabel { color: #FFFFFF; background: transparent; }
+            QLabel { color: #f8fafc; background: transparent; }
             QScrollArea { border: none; background: transparent; }
             QLineEdit {
+                background: rgba(255, 255, 255, 0.03);
+                border: 1px solid rgba(255, 255, 255, 0.08);
+                border-radius: 12px;
+                padding: 14px 18px;
+                color: #f1f5f9;
+                font-size: 14px;
+            }
+            QLineEdit:focus {
+                border-color: #6366f1;
                 background: rgba(255, 255, 255, 0.05);
-                border: 1px solid rgba(255, 255, 255, 0.1);
-                border-radius: 8px;
-                padding: 12px;
-                color: white;
-                font-size: 13px;
             }
         """)
         
         self.main_layout = QVBoxLayout(self)
-        self.main_layout.setContentsMargins(30, 30, 30, 30)
+        self.main_layout.setContentsMargins(40, 40, 40, 40)
+        self.main_layout.setSpacing(20)
         
-        # --- LOCKED VIEW WIDGETS ---
+        # --- LOCKED VIEW ---
         self.locked_widget = QWidget()
         locked_layout = QVBoxLayout(self.locked_widget)
+        locked_layout.setSpacing(15)
         locked_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         
-        l_icon = QLabel("⚠️")
-        l_icon.setStyleSheet("font-size: 80px; margin-bottom: 20px;")
+        l_icon = QLabel("🛡️")
+        l_icon.setStyleSheet("font-size: 80px; margin-bottom: 10px;")
         l_icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
         locked_layout.addWidget(l_icon)
         
         l_title = QLabel("ACCOUNT SUSPENDED")
-        l_title.setStyleSheet("font-size: 32px; font-weight: 900; color: #F43F5E; letter-spacing: 2px;")
+        l_title.setStyleSheet("font-size: 36px; font-weight: 900; color: #ef4444; letter-spacing: 1px;")
         l_title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         locked_layout.addWidget(l_title)
         
-        l_desc = QLabel("Access to ZenithHUD has been restricted due to a protocol violation.")
-        l_desc.setStyleSheet("font-size: 14px; color: #94A3B8; margin-top: 10px; margin-bottom: 30px;")
+        l_desc = QLabel("Access to ZenithHUD has been restricted. Please create a support ticket to appeal.")
+        l_desc.setStyleSheet("font-size: 15px; color: #94a3b8; line-height: 1.5;")
+        l_desc.setFixedWidth(500)
         l_desc.setWordWrap(True)
         l_desc.setAlignment(Qt.AlignmentFlag.AlignCenter)
         locked_layout.addWidget(l_desc)
         
+        # History Container
+        self.history_scroll = QScrollArea()
+        self.history_scroll.setFixedHeight(120)
+        self.history_scroll.setWidgetResizable(True)
+        self.history_inner = QWidget()
+        self.history_inner_layout = QVBoxLayout(self.history_inner)
+        self.history_inner_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+        self.history_scroll.setWidget(self.history_inner)
+        locked_layout.addWidget(self.history_scroll)
+        
         self.create_btn = QPushButton("CREATE SUPPORT TICKET")
-        self.create_btn.setFixedWidth(280)
+        self.create_btn.setFixedWidth(320)
         self.create_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self.create_btn.setStyleSheet("""
             QPushButton {
-                background: #4F46E5;
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #6366f1, stop:1 #4f46e5);
                 color: white;
-                border-radius: 10px;
-                padding: 16px;
-                font-weight: 800;
-                font-size: 13px;
+                border-radius: 12px;
+                padding: 18px;
+                font-weight: 900;
+                font-size: 14px;
+                letter-spacing: 1px;
+                border: 1px solid rgba(255,255,255,0.1);
             }
-            QPushButton:hover { background: #4338CA; }
+            QPushButton:hover { 
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #818cf8, stop:1 #6366f1);
+            }
         """)
         self.create_btn.clicked.connect(self.activate_ticket)
         locked_layout.addWidget(self.create_btn, alignment=Qt.AlignmentFlag.AlignCenter)
         
         l_exit = QPushButton("EXIT APPLICATION")
-        l_exit.setStyleSheet("background: transparent; color: #64748B; font-weight: 700; margin-top: 20px; border: none;")
+        l_exit.setStyleSheet("background: transparent; color: #64748b; font-weight: 700; margin-top: 10px; border: none;")
         l_exit.clicked.connect(QApplication.quit)
         locked_layout.addWidget(l_exit, alignment=Qt.AlignmentFlag.AlignCenter)
         
         self.main_layout.addWidget(self.locked_widget)
 
-        # --- CHAT VIEW WIDGETS ---
+        # --- CHAT VIEW ---
         self.chat_widget_container = QWidget()
         chat_layout = QVBoxLayout(self.chat_widget_container)
         chat_layout.setContentsMargins(0, 0, 0, 0)
+        chat_layout.setSpacing(25)
         
         header = QHBoxLayout()
         h_title_v = QVBoxLayout()
         h_title = QLabel("ZENITH SUPPORT")
-        h_title.setStyleSheet("font-size: 16px; font-weight: 900; color: #F43F5E;")
+        h_title.setStyleSheet("font-size: 20px; font-weight: 900; color: #f1f5f9; letter-spacing: 1px;")
         h_title_v.addWidget(h_title)
-        h_sub = QLabel("Secure Communication Channel")
-        h_sub.setStyleSheet("font-size: 10px; color: #94A3B8;")
+        h_sub = QLabel("Direct Support Link • Official Channel")
+        h_sub.setStyleSheet("font-size: 11px; color: #6366f1; font-weight: 700;")
         h_title_v.addWidget(h_sub)
         header.addLayout(h_title_v)
         header.addStretch()
         
-        c_exit = QPushButton("EXIT")
-        c_exit.setStyleSheet("background: rgba(244, 63, 94, 0.1); color: #F43F5E; font-weight: 800; padding: 8px 16px; border-radius: 8px;")
-        c_exit.clicked.connect(QApplication.quit)
+        c_exit = QPushButton("BACK")
+        c_exit.setStyleSheet("background: rgba(255, 255, 255, 0.05); color: #94a3b8; font-weight: 800; padding: 10px 20px; border-radius: 10px;")
+        c_exit.clicked.connect(self.show_locked_view)
         header.addWidget(c_exit)
         chat_layout.addLayout(header)
         
         self.scroll = QScrollArea()
         self.scroll.setWidgetResizable(True)
         self.chat_inner = QWidget()
+        self.chat_inner.setObjectName("chat_inner")
+        self.chat_inner.setStyleSheet("#chat_inner { background: transparent; }")
         self.chat_inner_layout = QVBoxLayout(self.chat_inner)
+        self.chat_inner_layout.setSpacing(15)
         self.chat_inner_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         self.scroll.setWidget(self.chat_inner)
         chat_layout.addWidget(self.scroll)
         
-        input_row = QHBoxLayout()
+        input_container = QFrame()
+        input_container.setStyleSheet("background: rgba(15, 23, 42, 0.5); border-top: 1px solid rgba(255, 255, 255, 0.05);")
+        input_layout = QHBoxLayout(input_container)
+        input_layout.setContentsMargins(0, 20, 0, 0)
+        
         self.appeal_input = QLineEdit()
-        self.appeal_input.setPlaceholderText("Message Zenith Command...")
+        self.appeal_input.setPlaceholderText("Type your message here...")
         self.appeal_input.returnPressed.connect(self.submit_message)
-        input_row.addWidget(self.appeal_input)
+        input_layout.addWidget(self.appeal_input)
         
         self.send_btn = QPushButton("SEND")
-        self.send_btn.setFixedWidth(80)
-        self.send_btn.setStyleSheet("background: #4F46E5; color: white; font-weight: 800; padding: 12px; border-radius: 8px;")
+        self.send_btn.setFixedWidth(100)
+        self.send_btn.setStyleSheet("""
+            QPushButton { background: #6366f1; color: white; font-weight: 900; padding: 14px; border-radius: 12px; }
+            QPushButton:hover { background: #4f46e5; }
+        """)
         self.send_btn.clicked.connect(self.submit_message)
-        input_row.addWidget(self.send_btn)
-        chat_layout.addLayout(input_row)
+        input_layout.addWidget(self.send_btn)
+        chat_layout.addWidget(input_container)
         
         self.main_layout.addWidget(self.chat_widget_container)
         self.chat_widget_container.hide()
 
         self.hide()
+        
+        self.worker = TicketWorker(self.email)
+        self.worker.history_loaded.connect(self.on_history_loaded)
+        self.worker.message_sent.connect(self.on_message_sent)
+        
         self.refresh_timer = QTimer()
         self.refresh_timer.timeout.connect(self.load_history)
+
+    def show_locked_view(self):
+        self.ticket_active = False
+        self.chat_widget_container.hide()
+        self.locked_widget.show()
+        self.load_history()
 
     def activate_ticket(self):
         self.ticket_active = True
@@ -314,71 +379,99 @@ class SuspendedOverlay(QFrame):
         self.load_history()
 
     def load_history(self):
-        if not self.isVisible() or not self.ticket_active: return
-        messages = auth_manager.get_ticket_history(self.email)
+        if not self.isVisible(): return
+        if self.worker.isRunning(): return
+        self.worker.action = 'load'
+        self.worker.start()
+
+    def on_history_loaded(self, data):
+        messages = data.get("messages", [])
+        resolved_count = data.get("resolved_count", 0)
+        has_active = data.get("has_active", False)
         
-        # Clear current
+        # Update History List in Locked View
+        while self.history_inner_layout.count():
+            item = self.history_inner_layout.takeAt(0)
+            if item.widget(): item.widget().deleteLater()
+            
+        if resolved_count > 0:
+            for i in range(resolved_count):
+                h_item = QLabel(f"Ticket #{i+1} • Status: Resolved")
+                h_item.setStyleSheet("color: #10b981; font-weight: 700; font-size: 13px; background: rgba(16, 185, 129, 0.1); padding: 10px; border-radius: 8px; margin-bottom: 5px;")
+                self.history_inner_layout.addWidget(h_item)
+        else:
+            no_h = QLabel("No previous support history found.")
+            no_h.setStyleSheet("color: #64748b; font-size: 12px; font-style: italic;")
+            self.history_inner_layout.addWidget(no_h)
+
+        if not self.ticket_active: return
+
+        if len(messages) == self.last_msg_count: return
+        self.last_msg_count = len(messages)
+        
         while self.chat_inner_layout.count():
             item = self.chat_inner_layout.takeAt(0)
             if item.widget(): item.widget().deleteLater()
             
         for m in messages:
-            is_admin = m['role'] == 'admin'
-            msg_box = QLabel(m['text'])
+            is_admin = m.get('role') == 'admin'
+            bubble_container = QWidget()
+            bubble_layout = QVBoxLayout(bubble_container)
+            bubble_layout.setContentsMargins(0, 0, 0, 0)
+            
+            sender = QLabel("ZENITH SUPPORT" if is_admin else "USER")
+            sender.setStyleSheet(f"font-size: 9px; font-weight: 900; color: { '#f43f5e' if is_admin else '#6366f1' };")
+            bubble_layout.addWidget(sender, alignment=Qt.AlignmentFlag.AlignLeft if is_admin else Qt.AlignmentFlag.AlignRight)
+            
+            msg_box = QLabel(m.get('text', ''))
             msg_box.setWordWrap(True)
+            msg_box.setMaximumWidth(600)
             msg_box.setStyleSheet(f"""
-                background: { '#1E293B' if is_admin else 'rgba(79, 70, 229, 0.1)' };
-                color: { '#F8FAFC' if is_admin else '#C7D2FE' };
-                padding: 12px 16px;
-                border-radius: 12px;
-                margin-bottom: 8px;
-                font-size: 13px;
-                border-left: 4px solid { '#F43F5E' if is_admin else '#4F46E5' };
+                background: { 'rgba(244, 63, 94, 0.08)' if is_admin else 'rgba(99, 102, 241, 0.08)' };
+                color: { '#fecaca' if is_admin else '#c7d2fe' };
+                padding: 15px 20px;
+                border-radius: 18px;
+                border: 1px solid { 'rgba(244, 63, 94, 0.2)' if is_admin else 'rgba(99, 102, 241, 0.2)' };
+                border-{ 'bottom-left' if is_admin else 'bottom-right' }-radius: 4px;
             """)
-            
-            sender = QLabel("ZENITH COMMAND" if is_admin else "YOU")
-            sender.setStyleSheet(f"font-size: 9px; font-weight: 900; color: { '#F43F5E' if is_admin else '#4F46E5' }; margin-bottom: 4px;")
-            
-            self.chat_inner_layout.addWidget(sender)
-            self.chat_inner_layout.addWidget(msg_box)
+            bubble_layout.addWidget(msg_box, alignment=Qt.AlignmentFlag.AlignLeft if is_admin else Qt.AlignmentFlag.AlignRight)
+            self.chat_inner_layout.addWidget(bubble_container)
+        
+        QTimer.singleShot(100, lambda: self.scroll.verticalScrollBar().setValue(self.scroll.verticalScrollBar().maximum()))
 
     def submit_message(self):
         text = self.appeal_input.text().strip()
-        if not text: return
-        
-        messages = auth_manager.get_ticket_history(self.email)
-        is_first = len(messages) == 0
-        
+        if not text or self.worker.isRunning(): return
+        self.is_first_msg = (self.last_msg_count == 0)
         self.appeal_input.clear()
         self.appeal_input.setEnabled(False)
-        
-        if auth_manager.send_ticket_message(self.email, text):
-            if is_first:
-                auto_reply = "Our support team will get back to you soon. Your ticket has been created. You will see all the ticket updates here. [This is a system generated message]"
-                auth_manager.send_ticket_message(self.email, auto_reply, role="admin")
-            self.load_history()
-        
+        self.send_btn.setEnabled(False)
+        self.worker.action = 'send'
+        self.worker.msg_text = text
+        self.worker.msg_role = "user"
+        self.worker.is_first_msg = self.is_first_msg
+        self.worker.start()
+
+    def on_message_sent(self, success, was_first):
+        if success and was_first:
+            self.worker.action = 'send'
+            self.worker.msg_text = "Our support team will get back to you soon. Your ticket has been created. You will see all the ticket updates here. [This is a system generated message]"
+            self.worker.msg_role = "admin"
+            self.worker.is_first_msg = False
+            self.worker.start()
         self.appeal_input.setEnabled(True)
+        self.send_btn.setEnabled(True)
         self.appeal_input.setFocus()
+        self.load_history()
 
     def show_suspended(self, email):
         self.email = email
+        self.worker.email = email
         self.setGeometry(self.parent().rect())
         self.raise_()
         self.show()
-        
-        # If we are already in ticket mode, don't reset the view
-        if self.ticket_active:
-            return
-
-        # Check if already has messages, if so, skip to chat
-        history = auth_manager.get_ticket_history(self.email)
-        if history:
-            self.activate_ticket()
-        else:
-            self.locked_widget.show()
-            self.chat_widget_container.hide()
-            
+        if not self.ticket_active:
+            self.load_history()
         if not self.refresh_timer.isActive():
             self.refresh_timer.start(10000)
 

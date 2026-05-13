@@ -504,6 +504,14 @@ async def suspend_user(email: str, status: bool):
     try:
         conn = StealthDB()
         conn.users.update_one({"email": email}, {"$set": {"suspended": status}})
+        
+        # If unsuspending, mark active ticket as resolved
+        if not status:
+            conn.db.tickets.update_many(
+                {"email": email, "status": {"$ne": "resolved"}},
+                {"$set": {"status": "resolved", "resolved_at": datetime.datetime.utcnow().isoformat()}}
+            )
+            
         return {"status": "success"}
     except Exception as e:
         return {"status": "error", "detail": str(e)}
@@ -518,19 +526,30 @@ async def send_ticket_message(email: str, message: str, hwid: str, role: str = "
             "timestamp": datetime.datetime.utcnow().isoformat()
         }
         
-        # Upsert ticket for this email
-        conn.db.tickets.update_one(
-            {"email": email},
-            {
-                "$push": {"messages": msg_obj},
-                "$set": {
-                    "hwid": hwid,
-                    "last_activity": datetime.datetime.utcnow().isoformat(),
-                    "status": "active" if role == "user" else "replied"
+        # Find active ticket or create new one
+        ticket = conn.db.tickets.find_one({"email": email, "status": {"$ne": "resolved"}})
+        
+        if ticket:
+            conn.db.tickets.update_one(
+                {"_id": ticket["_id"]},
+                {
+                    "$push": {"messages": msg_obj},
+                    "$set": {
+                        "last_activity": datetime.datetime.utcnow().isoformat(),
+                        "status": "active" if role == "user" else "replied"
+                    }
                 }
-            },
-            upsert=True
-        )
+            )
+        else:
+            conn.db.tickets.insert_one({
+                "email": email,
+                "hwid": hwid,
+                "messages": [msg_obj],
+                "status": "active",
+                "created_at": datetime.datetime.utcnow().isoformat(),
+                "last_activity": datetime.datetime.utcnow().isoformat()
+            })
+            
         return {"status": "success"}
     except Exception as e:
         return {"status": "error", "detail": str(e)}
@@ -539,9 +558,14 @@ async def send_ticket_message(email: str, message: str, hwid: str, role: str = "
 async def get_ticket_history(email: str):
     try:
         conn = StealthDB()
-        ticket = conn.db.tickets.find_one({"email": email})
-        if not ticket: return {"messages": []}
-        return {"messages": ticket.get("messages", [])}
+        active_ticket = conn.db.tickets.find_one({"email": email, "status": {"$ne": "resolved"}})
+        resolved_tickets = list(conn.db.tickets.find({"email": email, "status": "resolved"}))
+        
+        return {
+            "messages": active_ticket.get("messages", []) if active_ticket else [],
+            "resolved_count": len(resolved_tickets),
+            "has_active": bool(active_ticket)
+        }
     except Exception as e:
         return {"status": "error", "detail": str(e)}
 

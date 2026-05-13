@@ -206,7 +206,7 @@ class AuthManager:
             return False
 
     def get_ticket_history(self, email):
-        """Retrieves conversation history for a user's ticket."""
+        """Retrieves conversation history and metadata for a user's ticket."""
         try:
             import requests
             res = requests.get(
@@ -215,10 +215,10 @@ class AuthManager:
                 timeout=5
             )
             if res.ok:
-                return res.json().get("messages", [])
+                return res.json()
         except:
             pass
-        return []
+        return {"messages": [], "resolved_count": 0, "has_active": False}
 
 # Global Instance
 auth_manager = AuthManager()
