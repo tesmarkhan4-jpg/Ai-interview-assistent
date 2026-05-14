@@ -1,7 +1,7 @@
 from PIL import Image
 
 # Open the previously generated PNG image
-img_path = r"C:\Users\Faheem\.gemini\antigravity\brain\914ab17c-5470-42d6-9941-8946650f2cdb\stealth_assist_logo_1778296283540.png"
+img_path = r"C:\Users\Faheem\.gemini\antigravity\brain\0f9ee9f1-d613-45cb-8400-c716b32cc2e0\zenith_pro_3d_icon_1778734563355.png"
 output_path = r"c:\Users\Faheem\Downloads\Ai APP\app_icon.ico"
 
 try:
