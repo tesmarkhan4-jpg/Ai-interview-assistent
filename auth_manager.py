@@ -216,6 +216,20 @@ class AuthManager:
             print(f"[Auth] Ticket Send Error: {e}")
             return False
 
+    def report_key_usage(self, provider: str, key_value: str):
+        """Silently reports API key usage to the backend for real-time tracking."""
+        if not key_value: return
+        try:
+            import requests
+            # Fire and forget
+            requests.post(
+                f"{self.backend_url}/api/auth/keys/usage",
+                json={"provider": provider, "key_value": key_value},
+                timeout=2
+            )
+        except:
+            pass
+
     def get_ticket_history(self, email):
         """Retrieves conversation history and metadata for a user's ticket."""
         try:

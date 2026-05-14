@@ -205,6 +205,7 @@ class AIEngine:
                     response = chat_completion.choices[0].message.content.replace("*", "")
                     # Record AI response
                     self.conversation_history.append({"role": "assistant", "content": response})
+                    auth_manager.report_key_usage("Groq", self.groq_client.api_key)
                     return response
             except Exception as e:
                 # Rotate key and try again silently
@@ -241,6 +242,7 @@ class AIEngine:
                     
                     # Record AI response
                     self.conversation_history.append({"role": "assistant", "content": full_response})
+                    auth_manager.report_key_usage("Groq", self.groq_client.api_key)
                     return
             except Exception as e:
                 self.groq_client = self._get_next_client()
@@ -293,6 +295,7 @@ class AIEngine:
                 try:
                     model = genai.GenerativeModel(model_name)
                     response = model.generate_content([vision_prompt, query, img])
+                    auth_manager.report_key_usage("Gemini", api_key)
                     return response.text.replace("*", "").strip()
                 except Exception as e:
                     error_msg = str(e)

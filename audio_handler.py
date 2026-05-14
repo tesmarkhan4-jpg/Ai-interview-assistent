@@ -63,6 +63,9 @@ class AudioThread(QThread):
             )
             print(f"[Audio] Intelligence Bridge Established. (Key: {api_key[:8]}...)")
             
+            from auth_manager import auth_manager
+            auth_manager.report_key_usage("Deepgram", api_key)
+            
             audio_queue = queue.Queue(maxsize=100)
             self.transcript_buffer = []
             self.last_transcript_time = time.time()

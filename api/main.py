@@ -435,6 +435,29 @@ async def delete_key(key_id: str):
     except Exception as e:
         return {"status": "error", "detail": str(e)}
 
+@app.post("/api/auth/keys/usage")
+async def report_key_usage(data: dict):
+    try:
+        conn = get_conn()
+        if not conn: return {"status": "error", "detail": "Database unavailable."}
+        
+        provider = data.get("provider")
+        key_value = data.get("key_value")
+        
+        if not provider or not key_value:
+            return {"status": "error", "detail": "Missing provider or key_value"}
+            
+        conn.keys.update_one(
+            {"key_value": key_value},
+            {
+                "$inc": {"usage_count_total": 1, "usage_count_today": 1},
+                "$set": {"last_used": datetime.datetime.utcnow().isoformat()}
+            }
+        )
+        return {"status": "success"}
+    except Exception as e:
+        return {"status": "error", "detail": str(e)}
+
 @app.post("/api/admin/users/upgrade")
 async def upgrade_user(email: str):
     try:
