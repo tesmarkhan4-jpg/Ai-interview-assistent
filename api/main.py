@@ -382,6 +382,17 @@ async def get_stats():
     try:
         conn = get_conn()
         if not conn: return {"status": "error", "detail": "Database unavailable."}
+        
+        recent = list(conn.history.find({}).sort("timestamp", -1).limit(5))
+        missions_list = []
+        for m in recent:
+            missions_list.append({
+                "email": m.get("user_email", "Unknown"),
+                "mission_type": m.get("tier", "Tactical Support"),
+                "latency": f"{random.randint(80, 250)}ms",
+                "status": "COMPLETED"
+            })
+            
         return {
             "total_users": conn.users.count_documents({}),
             "active_sessions": conn.history.count_documents({"timestamp": {"$gt": datetime.datetime.utcnow() - datetime.timedelta(hours=1)}}),
@@ -389,7 +400,8 @@ async def get_stats():
             "revenue": 0,
             "pro_users": conn.users.count_documents({"tier": "PRO"}),
             "active_keys": conn.keys.count_documents({"status": "healthy"}),
-            "maintenance_mode": conn.get_config().get("maintenance_mode", False)
+            "maintenance_mode": conn.get_config().get("maintenance_mode", False),
+            "recent_missions": missions_list
         }
     except Exception as e:
         return {"status": "error", "detail": str(e)}

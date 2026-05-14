@@ -107,19 +107,8 @@
                             <th>Status</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <tr>
-                            <td><b>tesmarkhan4@gmail.com</b></td>
-                            <td>Tactical Support</td>
-                            <td>142ms</td>
-                            <td><span class="status-pill status-active">Connected</span></td>
-                        </tr>
-                        <tr>
-                            <td><b>john.doe@example.com</b></td>
-                            <td>Savant Vision</td>
-                            <td>210ms</td>
-                            <td><span class="status-pill status-trial">Trial Session</span></td>
-                        </tr>
+                    <tbody id="overview-stream-list">
+                        <!-- Dynamically filled -->
                     </tbody>
                 </table>
             </div>
@@ -459,6 +448,23 @@
                 if (statValues.length >= 3) statValues[2].innerText = (data.key_health || 100) + "%";
                 if (statValues.length >= 4) statValues[3].innerText = "$" + (data.revenue || 0).toLocaleString();
                 document.getElementById('maintenance-toggle').checked = data.maintenance_mode;
+
+                // Populate Real-time Intelligence Stream
+                const streamList = document.getElementById('overview-stream-list');
+                if (streamList && data.recent_missions) {
+                    if (data.recent_missions.length === 0) {
+                        streamList.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:20px; color:var(--text-muted);">No active missions in the database.</td></tr>`;
+                    } else {
+                        streamList.innerHTML = data.recent_missions.map(m => `
+                            <tr>
+                                <td><b>${m.email}</b></td>
+                                <td>${m.mission_type}</td>
+                                <td>${m.latency}</td>
+                                <td><span class="status-pill status-active">${m.status}</span></td>
+                            </tr>
+                        `).join('');
+                    }
+                }
             } catch (e) { 
                 console.error("Stats fetch failed", e);
                 const statValues = document.querySelectorAll('.stat-value');
