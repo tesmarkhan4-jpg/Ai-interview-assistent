@@ -283,6 +283,28 @@
                         <input type="text" id="cfg-smtp-host" value="smtp.gmail.com" style="width: 100%; border: 1px solid var(--border); padding: 12px; border-radius: 12px;">
                     </div>
                 </div>
+
+                <div class="grid-2" style="display: grid; grid-template-columns: 1fr 2fr; gap: 24px; margin-top: 24px; border-top: 1px solid var(--border); padding-top: 24px;">
+                    <div class="form-group">
+                        <label style="font-size: 0.7rem; font-weight: 800; color: var(--text-muted); display: block; margin-bottom: 8px;">APP VERSION (e.g., 1.1.0)</label>
+                        <input type="text" id="cfg-app-version" placeholder="1.0.0" style="width: 100%; border: 1px solid var(--border); padding: 12px; border-radius: 12px;">
+                    </div>
+                    <div class="form-group">
+                        <label style="font-size: 0.7rem; font-weight: 800; color: var(--text-muted); display: block; margin-bottom: 8px;">UPDATE DOWNLOAD URL (.EXE)</label>
+                        <input type="text" id="cfg-download-url" placeholder="https://github.com/..." style="width: 100%; border: 1px solid var(--border); padding: 12px; border-radius: 12px;">
+                    </div>
+                </div>
+                <div class="form-group" style="margin-top: 24px;">
+                    <label style="font-size: 0.7rem; font-weight: 800; color: var(--text-muted); display: block; margin-bottom: 8px;">RELEASE NOTES</label>
+                    <textarea id="cfg-release-notes" placeholder="Minor bug fixes and performance improvements." style="width: 100%; border: 1px solid var(--border); padding: 12px; border-radius: 12px; resize: vertical; min-height: 80px;"></textarea>
+                </div>
+                <div class="form-group" style="margin-top: 24px;">
+                    <label style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); display: flex; align-items: center; gap: 12px;">
+                        <input type="checkbox" id="cfg-force-update" style="width: 16px; height: 16px;">
+                        FORCE MANDATORY UPDATE
+                    </label>
+                </div>
+
                 <button class="btn-action" onclick="updateConfig()" style="margin-top: 24px; background: var(--primary); color: white; border: none; padding: 12px 24px; font-weight: 800;">SAVE GLOBAL CONFIG</button>
             </div>
         </div>
@@ -389,6 +411,10 @@
                 document.getElementById('cfg-smtp-user').value = data.SMTP_USER || '';
                 document.getElementById('cfg-smtp-pass').value = data.SMTP_PASS || '';
                 document.getElementById('cfg-smtp-host').value = data.SMTP_HOST || 'smtp.gmail.com';
+                document.getElementById('cfg-app-version').value = data.app_version || '1.0.0';
+                document.getElementById('cfg-download-url').value = data.download_url || '';
+                document.getElementById('cfg-release-notes').value = data.release_notes || 'Minor bug fixes and performance improvements.';
+                document.getElementById('cfg-force-update').checked = data.force_update || false;
             } catch (e) { console.error("Config fetch failed", e); }
         }
 
@@ -402,7 +428,11 @@
                 maintenance_message: document.getElementById('cfg-maint-msg').value,
                 SMTP_USER: document.getElementById('cfg-smtp-user').value,
                 SMTP_PASS: document.getElementById('cfg-smtp-pass').value,
-                SMTP_HOST: document.getElementById('cfg-smtp-host').value
+                SMTP_HOST: document.getElementById('cfg-smtp-host').value,
+                app_version: document.getElementById('cfg-app-version').value,
+                download_url: document.getElementById('cfg-download-url').value,
+                release_notes: document.getElementById('cfg-release-notes').value,
+                force_update: document.getElementById('cfg-force-update').checked
             };
             try {
                 await fetch(`/api/admin/config`, {

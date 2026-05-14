@@ -28,6 +28,8 @@ def get_resource_path(relative_path):
 env_path = get_resource_path(".env")
 load_dotenv(env_path, override=True)
 
+APP_VERSION = "1.0.0"
+
 # Import Handlers with Error Reporting
 try:
     from audio_handler import AudioThread
@@ -116,6 +118,208 @@ class KeyboardThread(QThread):
         keyboard.add_hotkey('alt+right', lambda: self.hotkey_pressed.emit("move_right"))
         
         keyboard.wait()
+
+class OTAUpdateWorker(QThread):
+    update_available = pyqtSignal(dict)
+    
+    def run(self):
+        try:
+            import requests
+            res = requests.get(f"{auth_manager.backend_url}/api/app/version", timeout=5)
+            if res.ok:
+                data = res.json()
+                if data.get("status") == "success":
+                    remote_version = data.get("version", "1.0.0")
+                    if not remote_version: return
+                    v1 = APP_VERSION.split(".")
+                    v2 = remote_version.split(".")
+                    is_newer = False
+                    for i in range(min(len(v1), len(v2))):
+                        if int(v2[i]) > int(v1[i]):
+                            is_newer = True
+                            break
+                        elif int(v2[i]) < int(v1[i]):
+                            break
+                    if is_newer:
+                        self.update_available.emit(data)
+        except Exception as e:
+            print(f"[OTA] Update Check Failed: {e}")
+
+class DownloadWorker(QThread):
+    progress = pyqtSignal(int)
+    status = pyqtSignal(str)
+    finished = pyqtSignal(str)
+    
+    def __init__(self, url):
+        super().__init__()
+        self.url = url
+        
+    def run(self):
+        try:
+            import requests
+            import tempfile
+            
+            res = requests.get(self.url, stream=True, timeout=10)
+            res.raise_for_status()
+            
+            total_size = int(res.headers.get('content-length', 0))
+            block_size = 8192
+            downloaded = 0
+            
+            temp_dir = tempfile.gettempdir()
+            filepath = os.path.join(temp_dir, "ZenithHUD_PRO_Update.exe")
+            
+            self.status.emit("Downloading payload...")
+            
+            with open(filepath, 'wb') as f:
+                for data in res.iter_content(block_size):
+                    f.write(data)
+                    downloaded += len(data)
+                    if total_size > 0:
+                        percent = int((downloaded / total_size) * 100)
+                        self.progress.emit(percent)
+                        
+            self.finished.emit(filepath)
+        except Exception as e:
+            print(f"DL Error: {e}")
+            self.finished.emit("")
+
+from PyQt6.QtWidgets import QDialog, QProgressBar
+
+class OTAUpdateDialog(QDialog):
+    def __init__(self, parent, update_data):
+        super().__init__(parent)
+        self.update_data = update_data
+        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+        self.setFixedSize(500, 380)
+        
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        
+        self.bg = QFrame(self)
+        self.bg.setStyleSheet("""
+            QFrame {
+                background-color: rgba(15, 23, 42, 0.98);
+                border: 1px solid rgba(56, 189, 248, 0.3);
+                border-radius: 12px;
+            }
+        """)
+        bg_layout = QVBoxLayout(self.bg)
+        bg_layout.setContentsMargins(30, 30, 30, 30)
+        
+        title = QLabel("STRATEGIC UPDATE AVAILABLE")
+        title.setStyleSheet("color: #38BDF8; font-size: 20px; font-weight: 900; letter-spacing: 1px;")
+        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        bg_layout.addWidget(title)
+        
+        v_label = QLabel(f"Version {APP_VERSION} → {update_data.get('version')}")
+        v_label.setStyleSheet("color: #94A3B8; font-size: 14px; margin-bottom: 15px;")
+        v_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        bg_layout.addWidget(v_label)
+        
+        notes = QTextEdit()
+        notes.setReadOnly(True)
+        notes.setText(update_data.get("release_notes", "Performance improvements."))
+        notes.setStyleSheet("""
+            QTextEdit {
+                background: rgba(30, 41, 59, 0.5);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                border-radius: 8px;
+                color: #F8FAFC;
+                padding: 10px;
+                font-size: 13px;
+            }
+        """)
+        bg_layout.addWidget(notes)
+        
+        self.progress = QProgressBar()
+        self.progress.setStyleSheet("""
+            QProgressBar {
+                border: none;
+                border-radius: 4px;
+                background-color: #1E293B;
+                text-align: center;
+                color: transparent;
+                height: 8px;
+            }
+            QProgressBar::chunk {
+                background-color: #38BDF8;
+                border-radius: 4px;
+            }
+        """)
+        self.progress.hide()
+        bg_layout.addWidget(self.progress)
+        
+        self.status_lbl = QLabel("")
+        self.status_lbl.setStyleSheet("color: #94A3B8; font-size: 12px;")
+        self.status_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.status_lbl.hide()
+        bg_layout.addWidget(self.status_lbl)
+        
+        btn_layout = QHBoxLayout()
+        self.btn_cancel = QPushButton("IGNORE")
+        self.btn_cancel.setStyleSheet("""
+            QPushButton {
+                background: transparent;
+                color: #94A3B8;
+                border: 1px solid #475569;
+                border-radius: 8px;
+                padding: 10px;
+                font-weight: 800;
+            }
+            QPushButton:hover { background: rgba(255, 255, 255, 0.05); }
+        """)
+        if update_data.get("force_update"):
+            self.btn_cancel.hide()
+        else:
+            self.btn_cancel.clicked.connect(self.reject)
+            
+        self.btn_update = QPushButton("INSTALL SECURE UPDATE")
+        self.btn_update.setStyleSheet("""
+            QPushButton {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #0284C7, stop:1 #38BDF8);
+                color: white;
+                border: none;
+                border-radius: 8px;
+                padding: 10px;
+                font-weight: 800;
+            }
+            QPushButton:hover { background: #38BDF8; }
+        """)
+        self.btn_update.clicked.connect(self.start_download)
+        
+        btn_layout.addWidget(self.btn_cancel)
+        btn_layout.addWidget(self.btn_update)
+        bg_layout.addLayout(btn_layout)
+        
+        layout.addWidget(self.bg)
+        
+    def start_download(self):
+        self.btn_update.hide()
+        self.btn_cancel.hide()
+        self.progress.show()
+        self.status_lbl.show()
+        self.status_lbl.setText("Establishing secure connection...")
+        
+        self.dl_thread = DownloadWorker(self.update_data.get("download_url"))
+        self.dl_thread.progress.connect(self.progress.setValue)
+        self.dl_thread.status.connect(self.status_lbl.setText)
+        self.dl_thread.finished.connect(self.on_download_complete)
+        self.dl_thread.start()
+        
+    def on_download_complete(self, filepath):
+        if filepath:
+            self.status_lbl.setText("Launching installer...")
+            try:
+                os.startfile(filepath)
+                sys.exit(0)
+            except Exception as e:
+                self.status_lbl.setText(f"Execute Error: {e}")
+                self.btn_cancel.show()
+        else:
+            self.status_lbl.setText("Download failed. Please try again.")
+            self.btn_cancel.show()
         
 class MaintenanceThread(QThread):
     status_changed = pyqtSignal(dict) # Returns the full status dict
@@ -542,7 +746,16 @@ class StealthHUD(QMainWindow):
         self.maint_thread.status_changed.connect(self.handle_system_status_update)
         self.maint_thread.start()
         
-        # Window dragging
+        # --- OTA AUTO-UPDATES ---
+        self.ota_worker = OTAUpdateWorker()
+        self.ota_worker.update_available.connect(self.show_ota_dialog)
+        self.ota_worker.start()
+        
+    def show_ota_dialog(self, data):
+        self.ota_dialog = OTAUpdateDialog(self, data)
+        self.ota_dialog.exec()
+        
+    # Window dragging
         self.old_pos = None
 
     def init_ui(self):

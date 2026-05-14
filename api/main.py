@@ -629,6 +629,22 @@ async def delete_ticket(email: str):
     except Exception as e:
         return {"status": "error", "detail": str(e)}
 
+@app.get("/api/app/version")
+async def get_app_version():
+    try:
+        conn = get_conn()
+        if not conn: return {"status": "error", "detail": "Database unavailable."}
+        cfg = conn.get_config()
+        return {
+            "status": "success",
+            "version": cfg.get("app_version", "1.0.0"),
+            "download_url": cfg.get("download_url", ""),
+            "release_notes": cfg.get("release_notes", "Minor bug fixes and performance improvements."),
+            "force_update": cfg.get("force_update", False)
+        }
+    except Exception as e:
+        return {"status": "error", "detail": str(e)}
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
