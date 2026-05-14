@@ -208,10 +208,35 @@ class OTAUpdateDialog(QDialog):
         bg_layout = QVBoxLayout(self.bg)
         bg_layout.setContentsMargins(30, 30, 30, 30)
         
+        # Header Layout with Close Button
+        header_layout = QHBoxLayout()
+        
         title = QLabel("STRATEGIC UPDATE AVAILABLE")
-        title.setStyleSheet("color: #38BDF8; font-size: 20px; font-weight: 900; letter-spacing: 1px;")
-        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        bg_layout.addWidget(title)
+        title.setStyleSheet("color: #38BDF8; font-size: 18px; font-weight: 900; letter-spacing: 1px;")
+        title.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+        
+        close_btn = QPushButton("×")
+        close_btn.setFixedSize(30, 30)
+        close_btn.setStyleSheet("""
+            QPushButton {
+                background: transparent;
+                color: #94A3B8;
+                font-size: 24px;
+                font-weight: 200;
+                border: none;
+            }
+            QPushButton:hover {
+                color: #F8FAFC;
+                background: rgba(255, 255, 255, 0.1);
+                border-radius: 15px;
+            }
+        """)
+        close_btn.clicked.connect(self.reject)
+        
+        header_layout.addWidget(title)
+        header_layout.addStretch()
+        header_layout.addWidget(close_btn)
+        bg_layout.addLayout(header_layout)
         
         v_label = QLabel(f"Version {APP_VERSION} → {update_data.get('version')}")
         v_label.setStyleSheet("color: #94A3B8; font-size: 14px; margin-bottom: 15px;")
@@ -753,7 +778,11 @@ class StealthHUD(QMainWindow):
         
     def show_ota_dialog(self, data):
         self.ota_dialog = OTAUpdateDialog(self, data)
-        self.ota_dialog.exec()
+        result = self.ota_dialog.exec()
+        # If mandatory and user closes/rejects, exit the app
+        if data.get("force_update") and result == QDialog.DialogCode.Rejected:
+            QApplication.quit()
+            sys.exit(0)
         
     # Window dragging
         self.old_pos = None
