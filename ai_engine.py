@@ -184,10 +184,14 @@ class AIEngine:
         return Groq(api_key=key)
 
     def get_ai_response(self, user_input: str, provider: str = "groq") -> str:
-        """Gets AI response with silent retry and key rotation logic."""
+        """Gets AI response with silent retry and proactive key rotation."""
         if not user_input or len(user_input.strip()) < 2: return "..."
         if not auth_manager.current_user: return "Auth Error: Please sign in."
         
+        # Proactively rotate key before starting the request
+        if provider == "groq":
+            self.groq_client = self._get_next_client() or self.groq_client
+            
         # Record user input
         self.conversation_history.append({"role": "user", "content": user_input})
         
@@ -215,9 +219,13 @@ class AIEngine:
         return "System is stabilizing. Please wait..."
 
     def get_ai_response_stream(self, user_input: str, provider: str = "groq"):
-        """Yields chunks of the AI response with real-time rotation failsafes."""
+        """Yields chunks of the AI response with proactive rotation failsafes."""
         if not user_input or len(user_input.strip()) < 2: return
         
+        # Proactively rotate key before starting the request
+        if provider == "groq":
+            self.groq_client = self._get_next_client() or self.groq_client
+            
         # Record user input
         self.conversation_history.append({"role": "user", "content": user_input})
         
