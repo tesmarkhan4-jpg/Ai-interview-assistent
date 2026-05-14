@@ -70,7 +70,10 @@ class StealthDB:
     
     def get_config(self):
         cfg = self.config.find_one({})
-        return cfg if cfg else {}
+        if cfg:
+            cfg["_id"] = str(cfg["_id"])
+            return cfg
+        return {}
 
 # Global Connection Instance (Lazy Loaded)
 _conn = None
