@@ -50,8 +50,8 @@ class AudioThread(QThread):
                 self.is_running = False
                 return
 
-        # Using NOVA-2 for Production Stability
-        uri = f"wss://api.deepgram.com/v1/listen?model=nova-2&language=en-US&smart_format=true&encoding=linear16&sample_rate={self.rate}&channels={self.channels}&endpointing=300&interim_results=true&diarize=false&punctuate=true"
+        # Using NOVA-3 for Ultra-Low Latency & High Accuracy
+        uri = f"wss://api.deepgram.com/v1/listen?model=nova-3&language=en-US&smart_format=true&encoding=linear16&sample_rate={self.rate}&channels={self.channels}&endpointing=250&interim_results=true&diarize=false&punctuate=true"
         
         try:
             import ssl
@@ -132,18 +132,18 @@ class AudioThread(QThread):
                         full_text = " ".join(self.transcript_buffer).strip()
                         low_text = full_text.lower()
                         
-                        # 1. Question Trigger: (0.9s) - Respond fast to clear queries
+                        # 1. Question Trigger: (0.7s) - Respond fast to clear queries
                         if any(full_text.endswith(s) for s in ["?", "right", "correct"]):
-                            threshold = 0.9
-                        # 2. Cliffhangers: (5.0s) - Wait during thinking pauses
-                        elif any(low_text.endswith(w) for w in ["the", "and", "your", "my", "about", "your", "how", "can", "could", "would", "is", "are", "for", "with", "of", "to", "but", "or", "really", "very", "mostly", "if", "when", "be", "was", "were"]):
-                            threshold = 5.0
-                        # 3. Sentence Finish: (3.0s)
-                        elif any(full_text.endswith(s) for s in [".", "!"]):
+                            threshold = 0.7
+                        # 2. Cliffhangers: (3.0s) - Wait during thinking pauses
+                        elif any(low_text.endswith(w) for w in ["the", "and", "your", "my", "how", "can", "could", "would", "is", "are", "but", "really", "mostly"]):
                             threshold = 3.0
-                        # 4. Standard Pause: (2.5s)
+                        # 3. Sentence Finish: (2.0s)
+                        elif any(full_text.endswith(s) for s in [".", "!"]):
+                            threshold = 2.0
+                        # 4. Standard Pause: (1.5s)
                         else:
-                            threshold = 2.5
+                            threshold = 1.5
                             
                         if (time.time() - self.last_transcript_time > threshold):
                             self.flush_now()

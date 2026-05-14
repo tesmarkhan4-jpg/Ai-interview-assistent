@@ -38,16 +38,15 @@ class AIEngine:
         self.intelligence_tier = "turbo" # turbo (8b), savant (70b)
         self.prompts = {
             "interview": (
-                "### SOURCE DATA ###\n"
+                "### CANDIDATE IDENTITY ###\n"
                 "{cv_data}\n"
                 "\n"
-                "### START CONVERSATION ###\n"
-                "STRICT RULES:\n"
-                "1. ORGANIC EXPERT: You are the candidate. Use a professional but friendly, conversational tone. Use contractions (I'm, we've, don't). Use natural openings (Well, honestly, that's a great point, typically I'd...). Avoid academic or formal dictionary-style definitions.\n"
-                "2. PROPORTIONAL DEPTH: Match the answer length to the question. Simple questions = 1 sentence. Technical deep-dives = 3-4 punchy sentences max. Never ramble. Stay fast and tactical.\n"
-                "3. FIRST-PERSON EXPERIENCE: Speak from your own perspective using 'I'. Instead of defining a concept, explain how YOU use it (e.g., 'In my last role, I used [X] to solve [Y]').\n"
-                "4. ZERO ROBOTICS: No bolding, no lists, no 'AI-isms'. Avoid formal transitions like 'In conclusion' or 'For instance'. Use 'So...' or 'Actually...' instead.\n"
-                "5. NATURAL PACING: If the question is multi-part, answer them as a single cohesive thought, not a numbered list."
+                "### OPERATIONAL RULES ###\n"
+                "1. ORGANIC EXPERT: You are the candidate. Speak with a natural, human-like professional friendly tone. Use contractions (I'm, don't, I've). Use natural fillers (Honestly, actually, I'd say...). Avoid formal academic structures.\n"
+                "2. NO REPETITION: Never repeat your name, location, or background if you have already mentioned it in the conversation history. Treat this like a continuous natural chat.\n"
+                "3. DYNAMIC LENGTH: Match your response to the question's weight. Simple questions = 1 punchy sentence. Complex technical deep-dives = 2-3 concise paragraphs (max 60 words total).\n"
+                "4. FIRST-PERSON FLOW: Explain HOW you do things using 'I'. Instead of 'A custom post type is...', say 'In my experience, I usually set up custom post types by...'.\n"
+                "5. ZERO ROBOTICS: No bolding, no lists, no AI-isms. Avoid academic transitions like 'For instance' or 'In conclusion'. Use 'So...' or 'Actually...' instead."
             ),
             "code_challenge": (
                 "SYSTEM (HIDDEN): Output ONLY the solution.\n"
@@ -194,16 +193,22 @@ class AIEngine:
             
         # Record user input
         self.conversation_history.append({"role": "user", "content": user_input})
+
+        # --- PROPER MESSAGE STRUCTURE ---
+        system_content = self.get_current_system_prompt(user_input)
         
-        full_prompt = f"{self.get_current_system_prompt(user_input)}\n\nUSER: {user_input}"
-        
+        messages = [{"role": "system", "content": system_content}]
+        # Include last 10 messages for deep context
+        for msg in self.conversation_history[-10:]:
+            messages.append(msg)
+            
         # Self-Healing Retry Loop
         for attempt in range(len(self.groq_keys) if self.groq_keys else 2):
             try:
                 if provider == "groq" and self.groq_client:
                     model = "llama-3.3-70b-versatile" if self.intelligence_tier == "savant" else "llama-3.1-8b-instant"
                     chat_completion = self.groq_client.chat.completions.create(
-                        messages=[{"role": "user", "content": full_prompt}],
+                        messages=messages,
                         model=model,
                     )
                     response = chat_completion.choices[0].message.content.replace("*", "")
@@ -228,15 +233,20 @@ class AIEngine:
             
         # Record user input
         self.conversation_history.append({"role": "user", "content": user_input})
+
+        # --- PROPER MESSAGE STRUCTURE ---
+        system_content = self.get_current_system_prompt(user_input)
         
-        full_prompt = f"{self.get_current_system_prompt(user_input)}\n\nUSER: {user_input}"
-        
+        messages = [{"role": "system", "content": system_content}]
+        for msg in self.conversation_history[-10:]:
+            messages.append(msg)
+            
         for attempt in range(2):
             try:
                 if provider == "groq" and self.groq_client:
                     model = "llama-3.3-70b-versatile" if self.intelligence_tier == "savant" else "llama-3.1-8b-instant"
                     stream = self.groq_client.chat.completions.create(
-                        messages=[{"role": "user", "content": full_prompt}],
+                        messages=messages,
                         model=model,
                         stream=True,
                     )
