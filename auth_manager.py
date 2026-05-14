@@ -198,16 +198,22 @@ class AuthManager:
         self.current_user_name = None
 
     def send_ticket_message(self, email, message, role="user"):
-        """Sends a message to the support ticket system."""
+        """Sends a message to the support ticket system using standard JSON payload."""
         try:
             import requests
             res = requests.post(
                 f"{self.backend_url}/api/auth/ticket/send",
-                params={"email": email, "message": message, "hwid": get_hwid(), "role": role},
-                timeout=5
+                json={
+                    "email": email,
+                    "message": message,
+                    "hwid": get_hwid(),
+                    "role": role
+                },
+                timeout=10
             )
             return res.ok
-        except:
+        except Exception as e:
+            print(f"[Auth] Ticket Send Error: {e}")
             return False
 
     def get_ticket_history(self, email):

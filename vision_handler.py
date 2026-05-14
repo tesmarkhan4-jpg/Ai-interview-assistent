@@ -15,24 +15,35 @@ class VisionHandler:
             os.makedirs(self.temp_dir, exist_ok=True)
 
     def capture_fullscreen(self):
-        """Captures the entire screen and saves it as a temp file."""
+        """Captures the entire screen and saves it as a temp file with auto-healing retry logic."""
         output = os.path.join(self.temp_dir, f"screen_{int(time.time())}.jpg")
         
-        # Capture the first monitor
-        monitor = self.sct.monitors[1]
-        sct_img = self.sct.grab(monitor)
+        for attempt in range(3):
+            try:
+                # Capture the first monitor
+                if len(self.sct.monitors) < 2:
+                    print("[Vision] Error: No monitors detected.")
+                    return None
+                    
+                monitor = self.sct.monitors[1]
+                sct_img = self.sct.grab(monitor)
+                
+                # Convert to RGB and save as JPG (smaller size for API)
+                img = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
+                
+                # Optimize size for speed: Downscale large screenshots while maintaining aspect ratio
+                max_size = (1600, 900)
+                img.thumbnail(max_size, Image.Resampling.LANCZOS)
+                
+                # Compress slightly to make API upload much faster
+                img.save(output, "JPEG", quality=70, optimize=True)
+                
+                return output
+            except Exception as e:
+                print(f"[Vision] Capture attempt {attempt+1} failed: {e}")
+                time.sleep(0.1) # Brief pause before retry
         
-        # Convert to RGB and save as JPG (smaller size for API)
-        img = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
-        
-        # Optimize size for speed: Downscale large screenshots while maintaining aspect ratio
-        max_size = (1600, 900)
-        img.thumbnail(max_size, Image.Resampling.LANCZOS)
-        
-        # Compress slightly to make API upload much faster
-        img.save(output, "JPEG", quality=70, optimize=True)
-        
-        return output
+        return None
 
     def cleanup(self):
         """Removes temporary screenshots."""

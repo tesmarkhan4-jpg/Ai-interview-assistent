@@ -2,7 +2,7 @@ import sys
 import os
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
                              QHBoxLayout, QTextEdit, QLineEdit, QPushButton, 
-                             QLabel, QFrame, QScrollArea, QSizePolicy)
+                             QLabel, QFrame, QScrollArea, QSizePolicy, QStackedWidget)
 from PyQt6.QtCore import Qt, QSize, pyqtSignal, QPoint, QThread, QTimer
 from PyQt6.QtGui import QColor, QFont, QIcon, QTextCursor
 import keyboard
@@ -51,12 +51,18 @@ class AIWorker(QThread):
         self.query = query
         self.mode = mode
         self.image_path = image_path
+        self._is_stopped = False
+
+    def stop(self):
+        self._is_stopped = True
 
     def run(self):
         full_response = ""
         if self.mode == "text":
             try:
                 for chunk in ai_engine.get_ai_response_stream(self.query, provider="groq"):
+                    if self._is_stopped:
+                        break
                     if chunk:
                         full_response += chunk
                         self.chunk_received.emit("AI", chunk)
@@ -64,10 +70,16 @@ class AIWorker(QThread):
                 full_response = f"Intelligence Stream Error: {str(e)}"
                 self.chunk_received.emit("AI", full_response)
         elif self.mode == "vision":
-            full_response = ai_engine.analyze_screen(self.image_path, self.query)
-            self.chunk_received.emit("AI", full_response)
+            try:
+                full_response = ai_engine.analyze_screen(self.image_path, self.query)
+                if not self._is_stopped:
+                    self.chunk_received.emit("AI", full_response)
+            except Exception as e:
+                full_response = f"Vision Intelligence Error: {str(e)}"
+                self.chunk_received.emit("AI", full_response)
         
-        self.finished.emit("AI", full_response)
+        if not self._is_stopped:
+            self.finished.emit("AI", full_response)
 
 class ReportWorker(QThread):
     finished = pyqtSignal()
@@ -222,376 +234,244 @@ class SuspendedOverlay(QFrame):
         super().__init__(parent)
         self.email = email
         self.ticket_active = False
-        self.last_msg_count = -1
+        self.rendered_ids = set()
         
         self.setStyleSheet("""
-            QFrame {
-                background-color: #0f172a;
-                border-radius: 20px;
-            }
+            QFrame { background-color: #0f172a; border-radius: 20px; }
             QLabel { color: #f8fafc; background: transparent; }
-            QScrollArea { border: none; background: transparent; }
-            QLineEdit {
-                background: rgba(255, 255, 255, 0.05);
-                border: 1px solid rgba(255, 255, 255, 0.1);
-                border-radius: 12px;
-                padding: 14px 18px;
-                color: #f1f5f9;
-                font-size: 14px;
-            }
-            QLineEdit:focus {
-                border-color: #6366f1;
-                background: rgba(255, 255, 255, 0.08);
-            }
         """)
         
         self.main_layout = QVBoxLayout(self)
-        self.main_layout.setContentsMargins(50, 50, 50, 50)
-        self.main_layout.setSpacing(25)
+        self.main_layout.setContentsMargins(40, 40, 40, 40)
+        self.main_layout.setSpacing(20)
         
-        # --- LOCKED VIEW ---
-        self.locked_widget = QWidget()
-        locked_layout = QVBoxLayout(self.locked_widget)
-        locked_layout.setSpacing(20)
-        locked_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        # 1. HEADER
+        header_layout = QHBoxLayout()
+        title_v = QVBoxLayout()
+        title = QLabel("ZENITH SUPPORT")
+        title.setStyleSheet("font-size: 22px; font-weight: 900; color: #f1f5f9; letter-spacing: 1px;")
+        title_v.addWidget(title)
+        subtitle = QLabel("Official Appeal Channel")
+        subtitle.setStyleSheet("font-size: 11px; color: #6366f1; font-weight: 700; text-transform: uppercase;")
+        title_v.addWidget(subtitle)
+        header_layout.addLayout(title_v)
+        header_layout.addStretch()
         
-        l_icon = QLabel("🛡️")
-        l_icon.setStyleSheet("font-size: 60px;")
-        l_icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        locked_layout.addWidget(l_icon)
+        self.back_btn = QPushButton("EXIT")
+        self.back_btn.setFixedSize(80, 36)
+        self.back_btn.setStyleSheet("background: rgba(255, 255, 255, 0.05); color: #94a3b8; font-weight: 800; border-radius: 8px;")
+        self.back_btn.clicked.connect(QApplication.quit)
+        header_layout.addWidget(self.back_btn)
+        self.main_layout.addLayout(header_layout)
+
+        # 2. STACKED CONTENT
+        self.content_stack = QStackedWidget()
         
-        l_title = QLabel("ACCOUNT SUSPENDED")
-        l_title.setStyleSheet("font-size: 28px; font-weight: 900; color: #ef4444; letter-spacing: 1px;")
-        l_title.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        locked_layout.addWidget(l_title)
+        # --- PAGE 0: APPEAL FORM ---
+        self.form_page = QWidget()
+        form_layout = QVBoxLayout(self.form_page)
+        form_layout.setSpacing(15)
+        form_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         
-        l_desc = QLabel("Access to ZenithHUD has been restricted. Create a support ticket to appeal.")
-        l_desc.setStyleSheet("font-size: 14px; color: #94a3b8; line-height: 1.5;")
-        l_desc.setFixedWidth(400)
-        l_desc.setWordWrap(True)
-        l_desc.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        locked_layout.addWidget(l_desc)
+        f_icon = QLabel("🛡️")
+        f_icon.setStyleSheet("font-size: 50px;")
+        f_icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        form_layout.addWidget(f_icon)
         
-        # History Container
-        self.history_scroll = QScrollArea()
-        self.history_scroll.setFixedHeight(120)
-        self.history_scroll.setFixedWidth(400) # Constrain width
-        self.history_scroll.setWidgetResizable(True)
-        self.history_scroll.setStyleSheet("QScrollArea { background: transparent; }")
-        self.history_inner = QWidget()
-        self.history_inner.setStyleSheet("background: transparent;")
-        self.history_inner_layout = QVBoxLayout(self.history_inner)
-        self.history_inner_layout.setContentsMargins(0, 0, 0, 0)
-        self.history_inner_layout.setSpacing(5)
-        self.history_inner_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.history_scroll.setWidget(self.history_inner)
-        self.history_scroll.hide()
-        locked_layout.addWidget(self.history_scroll, alignment=Qt.AlignmentFlag.AlignCenter)
+        f_title = QLabel("Account Restricted")
+        f_title.setStyleSheet("font-size: 24px; font-weight: 800; color: #ef4444;")
+        f_title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        form_layout.addWidget(f_title)
         
-        self.create_btn = QPushButton("CREATE SUPPORT TICKET")
-        self.create_btn.setFixedWidth(280)
-        self.create_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.create_btn.setStyleSheet("""
-            QPushButton {
-                background: #4f46e5;
-                color: white;
+        f_desc = QLabel("Please provide details about your activity to help our security team review your restriction.")
+        f_desc.setStyleSheet("font-size: 13px; color: #94a3b8; line-height: 1.6;")
+        f_desc.setFixedWidth(450)
+        f_desc.setWordWrap(True)
+        f_desc.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        form_layout.addWidget(f_desc)
+        
+        self.appeal_field = QTextEdit()
+        self.appeal_field.setPlaceholderText("Describe your issue or appeal here...")
+        self.appeal_field.setFixedSize(500, 150)
+        self.appeal_field.setStyleSheet("""
+            QTextEdit {
+                background: rgba(255, 255, 255, 0.03);
+                border: 1px solid rgba(255, 255, 255, 0.1);
                 border-radius: 12px;
-                padding: 16px;
-                font-weight: 800;
-                font-size: 13px;
+                padding: 15px;
+                color: #f1f5f9;
+                font-size: 14px;
             }
+            QTextEdit:focus { border-color: #4f46e5; background: rgba(255, 255, 255, 0.05); }
+        """)
+        form_layout.addWidget(self.appeal_field, alignment=Qt.AlignmentFlag.AlignCenter)
+        
+        self.submit_btn = QPushButton("SUBMIT APPEAL")
+        self.submit_btn.setFixedSize(300, 50)
+        self.submit_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.submit_btn.setStyleSheet("""
+            QPushButton { background: #4f46e5; color: white; font-weight: 800; border-radius: 12px; font-size: 14px; }
             QPushButton:hover { background: #6366f1; }
         """)
-        self.create_btn.clicked.connect(self.activate_ticket)
-        locked_layout.addWidget(self.create_btn, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.submit_btn.clicked.connect(self.submit_appeal)
+        form_layout.addWidget(self.submit_btn, alignment=Qt.AlignmentFlag.AlignCenter)
         
-        l_exit = QPushButton("EXIT APPLICATION")
-        l_exit.setStyleSheet("background: transparent; color: #64748b; font-weight: 700; border: none; font-size: 11px;")
-        l_exit.clicked.connect(QApplication.quit)
-        locked_layout.addWidget(l_exit, alignment=Qt.AlignmentFlag.AlignCenter)
-        
-        self.main_layout.addWidget(self.locked_widget)
-
-        # --- CHAT VIEW ---
-        self.chat_widget_container = QWidget()
-        chat_layout = QVBoxLayout(self.chat_widget_container)
+        # --- PAGE 1: CONVERSATION ---
+        self.chat_page = QWidget()
+        chat_layout = QVBoxLayout(self.chat_page)
         chat_layout.setContentsMargins(0, 0, 0, 0)
-        chat_layout.setSpacing(25)
-        
-        header = QHBoxLayout()
-        h_title_v = QVBoxLayout()
-        h_title = QLabel("ZENITH SUPPORT")
-        h_title.setStyleSheet("font-size: 18px; font-weight: 900; color: #f1f5f9;")
-        h_title_v.addWidget(h_title)
-        h_sub = QLabel("Official Channel")
-        h_sub.setStyleSheet("font-size: 10px; color: #6366f1; font-weight: 600;")
-        h_title_v.addWidget(h_sub)
-        header.addLayout(h_title_v)
-        header.addStretch()
-        
-        c_exit = QPushButton("BACK")
-        c_exit.setStyleSheet("background: rgba(255, 255, 255, 0.05); color: #94a3b8; font-weight: 800; padding: 8px 16px; border-radius: 8px;")
-        c_exit.clicked.connect(self.show_locked_view)
-        header.addWidget(c_exit)
-        chat_layout.addLayout(header)
         
         self.scroll = QScrollArea()
         self.scroll.setWidgetResizable(True)
-        self.scroll.setStyleSheet("""
-            QScrollArea { border: none; background: transparent; }
-            QScrollBar:vertical {
-                border: none;
-                background: rgba(255, 255, 255, 0.02);
-                width: 8px;
-                margin: 0px;
-                border-radius: 4px;
-            }
-            QScrollBar::handle:vertical {
-                background: rgba(255, 255, 255, 0.1);
-                min-height: 30px;
-                border-radius: 4px;
-            }
-            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0px; }
-        """)
+        self.scroll.setStyleSheet("QScrollArea { border: none; background: transparent; }")
         self.chat_inner = QWidget()
-        self.chat_inner.setStyleSheet("background: transparent;")
         self.chat_inner_layout = QVBoxLayout(self.chat_inner)
-        self.chat_inner_layout.setContentsMargins(10, 10, 10, 10)
-        self.chat_inner_layout.setSpacing(16)
+        self.chat_inner_layout.setSpacing(15)
         self.chat_inner_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         self.scroll.setWidget(self.chat_inner)
         chat_layout.addWidget(self.scroll)
         
-        input_container = QFrame()
-        input_container.setFixedHeight(100)
-        input_container.setStyleSheet("background: rgba(15, 23, 42, 0.3); border-top: 1px solid rgba(255, 255, 255, 0.05); border-bottom-left-radius: 12px; border-bottom-right-radius: 12px;")
-        input_layout = QHBoxLayout(input_container)
-        input_layout.setContentsMargins(30, 0, 30, 0)
-        input_layout.setSpacing(20)
-        
-        self.appeal_input = QLineEdit()
-        self.appeal_input.setPlaceholderText("Type your message here...")
-        self.appeal_input.setStyleSheet("""
-            QLineEdit {
-                background: rgba(255, 255, 255, 0.05);
-                border: 1px solid rgba(255, 255, 255, 0.1);
-                border-radius: 12px;
-                padding: 14px 20px;
-                color: white;
-                font-size: 14px;
-            }
-            QLineEdit:focus {
-                border: 1px solid #4f46e5;
-                background: rgba(255, 255, 255, 0.08);
-            }
+        input_row = QHBoxLayout()
+        input_row.setContentsMargins(0, 10, 0, 0)
+        self.chat_input = QLineEdit()
+        self.chat_input.setPlaceholderText("Follow-up message...")
+        self.chat_input.setFixedHeight(50)
+        self.chat_input.setStyleSheet("""
+            QLineEdit { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; padding: 0 15px; color: white; }
+            QLineEdit:focus { border-color: #4f46e5; }
         """)
-        self.appeal_input.returnPressed.connect(self.submit_message)
-        input_layout.addWidget(self.appeal_input)
+        self.chat_input.returnPressed.connect(self.send_reply)
+        input_row.addWidget(self.chat_input)
         
-        self.send_btn = QPushButton("SEND")
-        self.send_btn.setFixedSize(100, 48)
-        self.send_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.send_btn.setStyleSheet("""
-            QPushButton { 
-                background: #4f46e5; 
-                color: white; 
-                font-weight: 800; 
-                border-radius: 12px;
-                letter-spacing: 1px;
-            }
-            QPushButton:hover { background: #6366f1; transform: translateY(-1px); }
-            QPushButton:pressed { transform: translateY(1px); }
-        """)
-        self.send_btn.clicked.connect(self.submit_message)
-        input_layout.addWidget(self.send_btn)
-        chat_layout.addWidget(input_container)
+        self.chat_send_btn = QPushButton("SEND")
+        self.chat_send_btn.setFixedSize(80, 50)
+        self.chat_send_btn.setStyleSheet("background: #4f46e5; color: white; font-weight: 800; border-radius: 10px;")
+        self.chat_send_btn.clicked.connect(self.send_reply)
+        input_row.addWidget(self.chat_send_btn)
+        chat_layout.addLayout(input_row)
         
-        self.main_layout.addWidget(self.chat_widget_container)
-        self.chat_widget_container.hide()
+        self.content_stack.addWidget(self.form_page)
+        self.content_stack.addWidget(self.chat_page)
+        self.main_layout.addWidget(self.content_stack)
 
-        # Separate Workers
+        # Workers & Timers
         self.load_worker = TicketWorker(self.email, 'load')
-        self.load_worker.history_loaded.connect(self.on_history_loaded)
+        self.load_worker.history_loaded.connect(self.sync_ui)
         
         self.send_worker = TicketWorker(self.email, 'send')
-        self.send_worker.message_sent.connect(self.on_message_sent)
+        self.send_worker.message_sent.connect(self.on_sent)
         
         self.refresh_timer = QTimer()
-        self.refresh_timer.timeout.connect(self.load_history)
+        self.refresh_timer.timeout.connect(self.poll)
+        self.refresh_timer.start(5000)
 
-    def show_locked_view(self):
-        self.ticket_active = False
-        self.chat_widget_container.hide()
-        self.locked_widget.show()
-        self.load_history()
+    def poll(self):
+        if self.isVisible() and self.email and not self.load_worker.isRunning():
+            self.load_worker.email = self.email
+            self.load_worker.start()
 
-    def activate_ticket(self):
-        self.ticket_active = True
-        self.locked_widget.hide()
-        self.chat_widget_container.show()
-        self.appeal_input.setFocus()
-        self.load_history()
-
-    def load_history(self):
-        if not self.isVisible() or not self.email: return
-        if self.load_worker.isRunning(): return
-        self.load_worker.start()
-
-    def on_history_loaded(self, data):
+    def sync_ui(self, data):
         messages = data.get("messages", [])
-        resolved_count = data.get("resolved_count", 0)
-        
-        # Update History List (Locked View)
-        while self.history_inner_layout.count():
-            item = self.history_inner_layout.takeAt(0)
-            if item.widget(): item.widget().deleteLater()
-            
-        if resolved_count > 0:
-            self.history_scroll.show()
-            for i in range(resolved_count):
-                h_item = QLabel(f"Ticket #{i+1} • Resolved")
-                h_item.setFixedWidth(350)
-                h_item.setMinimumHeight(40)
-                h_item.setAlignment(Qt.AlignmentFlag.AlignCenter)
-                h_item.setStyleSheet("color: #10b981; font-weight: 700; font-size: 12px; background: rgba(16, 185, 129, 0.08); padding: 10px; border-radius: 8px; margin-bottom: 2px;")
-                self.history_inner_layout.addWidget(h_item, alignment=Qt.AlignmentFlag.AlignCenter)
-        else:
-            self.history_scroll.hide()
-
-        if not self.ticket_active: return
-        
-        # --- BULLETPROOF INCREMENTAL SYNC ---
-        if not hasattr(self, 'rendered_fingerprints'):
-            self.rendered_fingerprints = set()
-
-        # 1. Handle Empty State
         if not messages:
-            if self.chat_inner_layout.count() == 0:
-                self.add_message_to_ui("Welcome to Zenith Support. Please describe your issue to begin the appeal process.", True)
-                self.rendered_fingerprints.add("WELCOME_MSG")
+            self.content_stack.setCurrentIndex(0)
             return
 
-        # 2. Process Messages
+        self.content_stack.setCurrentIndex(1)
+        
+        # Incremental rendering
         new_added = False
         for i, m in enumerate(messages):
-            # Create a unique fingerprint for this message
-            text = m.get('text', '')
-            role = m.get('role', 'user')
-            fingerprint = f"{i}_{role}_{len(text)}"
-            
-            if fingerprint not in self.rendered_fingerprints:
-                # If this is the first real message, clear any existing placeholder/welcome
-                if not any(f for f in self.rendered_fingerprints if not f.startswith("WELCOME")):
-                    while self.chat_inner_layout.count():
-                        item = self.chat_inner_layout.takeAt(0)
-                        if item.widget(): item.widget().deleteLater()
-                    self.rendered_fingerprints.clear()
-
-                self.add_message_to_ui(text, role == 'admin')
-                self.rendered_fingerprints.add(fingerprint)
+            msg_id = f"{i}_{len(m.get('text',''))}"
+            if msg_id not in self.rendered_ids:
+                self.add_bubble(m.get('text',''), m.get('role') == 'admin')
+                self.rendered_ids.add(msg_id)
                 new_added = True
-
+        
         if new_added:
             QTimer.singleShot(100, lambda: self.scroll.verticalScrollBar().setValue(self.scroll.verticalScrollBar().maximum()))
 
-    def add_message_to_ui(self, text, is_admin):
-        bubble_container = QWidget()
-        bubble_layout = QVBoxLayout(bubble_container)
-        bubble_layout = QHBoxLayout(bubble_container)
-        bubble_layout.setContentsMargins(15, 6, 15, 6)
-        bubble_layout.setSpacing(0)
+    def add_bubble(self, text, is_admin):
+        container = QWidget()
+        layout = QHBoxLayout(container)
+        layout.setContentsMargins(10, 5, 10, 5)
         
-        msg_box = QLabel(text)
-        msg_box.setWordWrap(True)
-        msg_box.setMinimumWidth(120)
-        msg_box.setMaximumWidth(580)
-        msg_box.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+        lbl = QLabel(text)
+        lbl.setWordWrap(True)
+        lbl.setMaximumWidth(480)
+        lbl.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         
+        # Premium Aesthetics
         if is_admin:
-            bg_color = "rgba(79, 70, 229, 0.12)"
-            border_color = "rgba(99, 102, 241, 0.3)"
-            text_color = "#e2e8f0"
-            radius = "18px 18px 18px 4px"
+            bg = "rgba(16, 185, 129, 0.15)" # Emerald Glow
+            border = "rgba(16, 185, 129, 0.4)"
+            radius = "15px 15px 15px 2px"
+            text_style = "color: #f8fafc; font-weight: 500;"
         else:
-            bg_color = "rgba(16, 185, 129, 0.12)"
-            border_color = "rgba(16, 185, 129, 0.3)"
-            text_color = "#f8fafc"
-            radius = "18px 18px 4px 18px"
-            
-        msg_box.setStyleSheet(f"""
+            bg = "rgba(79, 70, 229, 0.2)" # Deep Indigo
+            border = "rgba(99, 102, 241, 0.4)"
+            radius = "15px 15px 2px 15px"
+            text_style = "color: #ffffff; font-weight: 500;"
+        
+        lbl.setStyleSheet(f"""
             QLabel {{
-                background-color: {bg_color};
-                color: {text_color};
-                padding: 14px 20px;
-                border-radius: {radius};
-                border: 1px solid {border_color};
-                font-size: 14px;
-                line-height: 1.5;
+                background: {bg}; 
+                {text_style}
+                padding: 14px 18px; 
+                border-radius: {radius}; 
+                border: 1px solid {border}; 
+                font-size: 13px;
+                line-height: 1.6;
             }}
         """)
         
-        msg_box.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.MinimumExpanding)
-        
         if is_admin:
-            bubble_layout.addWidget(msg_box)
-            bubble_layout.addStretch(1)
+            layout.addWidget(lbl)
+            layout.addStretch()
         else:
-            bubble_layout.addStretch(1)
-            bubble_layout.addWidget(msg_box)
+            layout.addStretch()
+            layout.addWidget(lbl)
             
-        self.chat_inner_layout.addWidget(bubble_container)
-        msg_box.adjustSize()
+        self.chat_inner_layout.addWidget(container)
         QTimer.singleShot(10, self.chat_inner.adjustSize)
 
-    def submit_message(self):
-        text = self.appeal_input.text().strip()
-        if not text or self.send_worker.isRunning(): return
-        
-        # 1. Instant UI Feedback
-        self.add_message_to_ui(text, False)
-        self.appeal_input.clear()
-        self.appeal_input.setEnabled(False)
-        self.send_btn.setEnabled(False)
-        self.send_btn.setText("...")
-        
-        QTimer.singleShot(50, lambda: self.scroll.verticalScrollBar().setValue(self.scroll.verticalScrollBar().maximum()))
-        
-        # 2. Start Send Worker
-        self.send_worker.msg_text = text
-        self.send_worker.is_first_msg = (self.last_msg_count <= 0)
+    def submit_appeal(self):
+        txt = self.appeal_field.toPlainText().strip()
+        if not txt: return
+        self.submit_btn.setEnabled(False)
+        self.submit_btn.setText("SUBMITTING...")
+        self.send_worker.msg_text = txt
+        self.send_worker.email = self.email
         self.send_worker.start()
 
-    def on_message_sent(self, success, was_first):
-        self.send_btn.setText("SEND")
-        self.send_btn.setEnabled(True)
-        self.appeal_input.setEnabled(True) # RE-ENABLE INPUT
-        
-        if success and was_first:
-            auto_reply = "Our support team will get back to you soon. Your ticket has been created. You will see all the ticket updates here. [This is a system generated message]"
-            self.add_message_to_ui(auto_reply, True)
-            
-            self.load_history()
-        
-        self.appeal_input.setFocus()
-        self.last_msg_count += 1 
-        self.chat_inner.adjustSize()
+    def send_reply(self):
+        txt = self.chat_input.text().strip()
+        if not txt: return
+        self.chat_input.clear()
+        self.send_worker.msg_text = txt
+        self.send_worker.email = self.email
+        self.send_worker.start()
+
+    def on_sent(self, success, _):
+        self.submit_btn.setEnabled(True)
+        self.submit_btn.setText("SUBMIT APPEAL")
+        self.poll()
 
     def show_suspended(self, email):
-        # Use existing email if provided email is unknown
+        # Enforce dark viewport background
+        if hasattr(self, 'scroll'):
+            self.scroll.viewport().setStyleSheet("background: #0f172a;")
+            self.chat_inner.setStyleSheet("background: #0f172a;")
+
         if (not email or email == "Unknown") and auth_manager.current_user:
             email = auth_manager.current_user
             
-        needs_init = False
         if self.email != email and email and email != "Unknown":
             self.email = email
-            self.load_worker.email = email
-            self.send_worker.email = email
-            self.last_msg_count = -1
-            self.rendered_fingerprints = set()
-            needs_init = True
-            
-        if needs_init or not self.ticket_active:
-            self.load_history()
+            self.rendered_ids.clear()
+            while self.chat_inner_layout.count():
+                item = self.chat_inner_layout.takeAt(0)
+                if item.widget(): item.widget().deleteLater()
+            self.poll()
             
         self.setGeometry(self.parent().rect())
         self.raise_()
@@ -1063,6 +943,12 @@ class StealthHUD(QMainWindow):
         # Restore HUD
         self.show()
         
+        if not path:
+            self.log_message("<span style='color:red;'>[SYSTEM ERROR] Tactical Capture Failed. Please ensure ZenithHUD is running as Administrator.</span>")
+            self.screen_btn.setText("READ SCREEN: OFF")
+            self.screen_btn.setStyleSheet("background: rgba(255, 255, 255, 0.5); color: #007E44; border-radius: 15px; padding: 12px; font-weight: 900;")
+            return
+
         # Dynamic query based on mode
         if ai_engine.mode == "code":
             query = "Extract the code problem from the screen and solve it with optimized, clean code."
@@ -1080,6 +966,7 @@ class StealthHUD(QMainWindow):
     def handle_vision_finished(self, sender, message):
         """Resets the button after analysis is complete."""
         self.last_ai_response = message
+        # Standardize labels: Use SAVANT EYE for vision analysis
         self.log_message(f"<span style='color:#7C4DFF;'><b>AI (Savant Eye):</b> {message}</span>")
         self.screen_btn.setText("READ SCREEN: OFF")
         self.screen_btn.setStyleSheet("background: rgba(255, 255, 255, 0.5); color: #007E44; border-radius: 15px; padding: 12px; font-weight: 900;")
@@ -1145,16 +1032,25 @@ class StealthHUD(QMainWindow):
         """Safely stops any running AI generation to prevent race conditions."""
         if hasattr(self, 'active_worker') and self.active_worker and self.active_worker.isRunning():
             try:
-                self.active_worker.chunk_received.disconnect()
-            except: pass
-            try:
-                self.active_worker.finished.disconnect()
-            except: pass
-            
-            try:
-                self.active_worker.terminate()
-                self.active_worker.wait(500)
-            except: pass
+                # Signal graceful stop
+                self.active_worker.stop()
+                
+                # Disconnect signals immediately to prevent UI updates from late chunks
+                try:
+                    self.active_worker.chunk_received.disconnect()
+                except: pass
+                try:
+                    self.active_worker.finished.disconnect()
+                except: pass
+                
+                # Give it a moment to finish cleanly
+                if not self.active_worker.wait(300):
+                    # If still running after 300ms, use more aggressive wait but avoid terminate() if possible
+                    # terminate() is the last resort and known to cause crashes
+                    print("[System] Worker sluggish. Waiting for lock release...")
+                    self.active_worker.wait(700)
+            except Exception as e:
+                print(f"[System] Stop Error: {e}")
         
         self.active_worker = None
         self.streaming_active = False
@@ -1280,3 +1176,28 @@ if __name__ == "__main__":
         window.show()
         
     sys.exit(app.exec())
+
+# --- GLOBAL TACTICAL EXCEPTION HANDLER (Auto-Healing) ---
+def global_exception_handler(etype, value, tb):
+    import traceback
+    import datetime
+    import ctypes
+    
+    error_msg = "".join(traceback.format_exception(etype, value, tb))
+    print(f"\n[CRITICAL ANOMALY] {error_msg}")
+    
+    # Persistent logging for engineering review
+    log_path = os.path.join(os.environ.get('APPDATA', os.path.expanduser('~')), "StealthHUD", "crash_log.txt")
+    try:
+        with open(log_path, "a") as f:
+            f.write(f"\n--- {datetime.datetime.now()} ---\n{error_msg}\n")
+    except: pass
+    
+    # Auto-Heal Notification
+    try:
+        ctypes.windll.user32.MessageBoxW(0, 
+            "ZenithHUD encountered a tactical anomaly. Auto-healing logic has been engaged to prevent failure. If this persists, please restart the app as Administrator.", 
+            "Tactical System Recovery", 0x10)
+    except: pass
+
+sys.excepthook = global_exception_handler
