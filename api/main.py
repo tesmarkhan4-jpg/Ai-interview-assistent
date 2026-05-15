@@ -17,6 +17,15 @@ from pydantic import BaseModel, EmailStr
 from pymongo import MongoClient
 from dotenv import load_dotenv
 from typing import Optional, List
+import datetime
+import time
+
+# --- PKT HELPER ---
+def get_pkt_date():
+    """Returns today's date string in Pakistan Time (UTC+5)"""
+    # Pakistan is UTC+5
+    pkt_now = datetime.datetime.utcnow() + datetime.timedelta(hours=5)
+    return pkt_now.strftime("%Y-%m-%d")
 
 # --- API CORE ---
 app = FastAPI(title="ZenithHUD PRO Backend")
@@ -414,9 +423,19 @@ async def get_keys():
     try:
         conn = get_conn()
         if not conn: return {"status": "error", "detail": "Database unavailable."}
+        
+        pkt_today = get_pkt_date()
         keys = list(conn.keys.find({}))
+        
         for k in keys:
             k["_id"] = str(k["_id"])
+            
+            # Reset Logic for Dashboard Visibility
+            if k.get("last_reset_date") != pkt_today:
+                conn.keys.update_one({"_id": k["_id"]}, {"$set": {"usage_count_today": 0, "last_reset_date": pkt_today}})
+                k["usage_count_today"] = 0
+                k["last_reset_date"] = pkt_today
+                
             if isinstance(k.get("last_used"), datetime.datetime):
                 k["last_used"] = k["last_used"].isoformat()
         return {"keys": keys}
@@ -462,11 +481,21 @@ async def report_key_usage(data: dict):
         if not provider or not key_value:
             return {"status": "error", "detail": "Missing provider or key_value"}
             
+        pkt_today = get_pkt_date()
+        key_doc = conn.keys.find_one({"key_value": key_value})
+        
+        if key_doc and key_doc.get("last_reset_date") != pkt_today:
+            # Force reset if day changed before incrementing
+            conn.keys.update_one(
+                {"key_value": key_value},
+                {"$set": {"usage_count_today": 0, "last_reset_date": pkt_today}}
+            )
+            
         conn.keys.update_one(
             {"key_value": key_value},
             {
                 "$inc": {"usage_count_total": 1, "usage_count_today": 1},
-                "$set": {"last_used": datetime.datetime.utcnow().isoformat()}
+                "$set": {"last_used": datetime.datetime.utcnow().isoformat(), "last_reset_date": pkt_today}
             }
         )
         return {"status": "success"}
