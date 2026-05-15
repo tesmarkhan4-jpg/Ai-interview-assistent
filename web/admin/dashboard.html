@@ -177,7 +177,7 @@
     <script>
         const API_BASE = '/api';
         const admin_token = localStorage.getItem('admin_token');
-        if (!admin_token) window.location.href = 'login.html';
+        if (!admin_token) window.location.href = '/admin/login';
 
         async function adminFetch(url, options = {}) {
             options.headers = options.headers || {};

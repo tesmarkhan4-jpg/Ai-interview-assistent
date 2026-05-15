@@ -314,7 +314,7 @@
 
                 if (data.status === 'success') {
                     localStorage.setItem('admin_token', data.token);
-                    window.location.href = 'dashboard.html';
+                    window.location.href = '/admin';
                 } else {
                     errorBox.innerText = data.detail || 'Invalid Code.';
                     errorBox.style.display = 'block';

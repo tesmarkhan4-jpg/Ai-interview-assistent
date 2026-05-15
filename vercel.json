@@ -16,6 +16,10 @@
       "destination": "/web/admin/dashboard.html"
     },
     {
+      "source": "/admin/login",
+      "destination": "/web/admin/login.html"
+    },
+    {
       "source": "/admin/(.*)",
       "destination": "/web/admin/$1"
     },
