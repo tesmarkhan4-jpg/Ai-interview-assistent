@@ -99,6 +99,8 @@
             <div class="data-card">
                 <div class="card-header"><span class="card-title">Gateway Configuration</span></div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div><label class="stat-label">SAFEPAY PUBLIC KEY</label><input type="text" id="cfg-safepay-public" style="width:100%;" placeholder="sec_..."></div>
+                    <div><label class="stat-label">SAFEPAY SECRET KEY</label><input type="password" id="cfg-safepay-secret" style="width:100%;" placeholder="b612..."></div>
                     <div><label class="stat-label">STRIPE SECRET KEY</label><input type="password" id="cfg-stripe-key" style="width:100%;"></div>
                     <div><label class="stat-label">PAYPAL CLIENT ID</label><input type="text" id="cfg-paypal-id" style="width:100%;"></div>
                     <div style="grid-column: span 2;"><label class="stat-label">EASYPAISA / MANUAL INSTRUCTIONS</label><textarea id="cfg-payment-instructions" style="width:100%; height:80px;"></textarea></div>
@@ -276,6 +278,8 @@
             document.getElementById('cfg-smtp-name').value = data.smtp_name || '';
             document.getElementById('cfg-stripe-key').value = data.stripe_key || '';
             document.getElementById('cfg-paypal-id').value = data.paypal_id || '';
+            document.getElementById('cfg-safepay-public').value = data.safepay_public || 'sec_1938fc7a-d894-4c85-bb00-16b2d63ee7a3';
+            document.getElementById('cfg-safepay-secret').value = data.safepay_secret || 'b6125a345d51cefb89c52c1a1f7b16125201fe6d524cc5bac6e6e366b89e3616';
             document.getElementById('cfg-payment-instructions').value = data.payment_instructions || '';
         }
 
@@ -291,6 +295,8 @@
                 smtp_name: document.getElementById('cfg-smtp-name').value,
                 stripe_key: document.getElementById('cfg-stripe-key').value,
                 paypal_id: document.getElementById('cfg-paypal-id').value,
+                safepay_public: document.getElementById('cfg-safepay-public').value,
+                safepay_secret: document.getElementById('cfg-safepay-secret').value,
                 payment_instructions: document.getElementById('cfg-payment-instructions').value
             }; 
             await adminFetch(`${API_BASE}/admin/config`, {method:'POST', body:JSON.stringify(cfg)}); 

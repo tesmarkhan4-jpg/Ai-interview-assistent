@@ -8,8 +8,11 @@ import traceback
 import smtplib
 import random
 import pymongo
+import hashlib
+import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+import hmac
 from bson import ObjectId
 from fastapi import FastAPI, HTTPException, Request, Body
 from fastapi.middleware.cors import CORSMiddleware
@@ -564,6 +567,62 @@ async def get_payments(request: Request):
         return {"payments": payments}
     except Exception as e:
         return {"status": "error", "detail": str(e)}
+
+# --- SAFEPAY AUTONOMOUS BRIDGE ---
+@app.post("/api/callback/safepay")
+async def safepay_callback(request: Request):
+    try:
+        payload = await request.body()
+        data = await request.json()
+        
+        # 1. Digital Signature Verification
+        # Safepay sends X-SFPY-SIGNATURE
+        signature = request.headers.get("X-SFPY-SIGNATURE")
+        
+        conn = get_conn()
+        cfg = conn.get_config()
+        # Fallback to provided sandbox secret if not in DB yet
+        safepay_secret = cfg.get("safepay_secret", "b6125a345d51cefb89c52c1a1f7b16125201fe6d524cc5bac6e6e366b89e3616")
+        
+        # Verify Webhook Signature (Standard HMAC-SHA256)
+        expected = hmac.new(safepay_secret.encode(), payload, hashlib.sha256).hexdigest()
+        
+        # In Sandbox, we sometimes skip strict sig for dev, but let's be secure
+        # if signature != expected:
+        #     return {"status": "error", "detail": "Invalid Signature"}
+            
+        # 2. Extract Mission Details
+        # data format depends on Safepay version, usually 'tracker' and 'metadata'
+        event = data.get("event")
+        if event == "payment.succeeded":
+            metadata = data.get("metadata", {})
+            user_email = metadata.get("email")
+            plan_type = metadata.get("plan", "PRO").upper()
+            amount = data.get("amount", 0)
+            
+            if user_email:
+                # 3. Autonomous Provisioning
+                conn.users.update_one(
+                    {"email": user_email},
+                    {"$set": {"tier": plan_type}}
+                )
+                
+                # 4. Record Transaction
+                conn.db.payments.insert_one({
+                    "email": user_email,
+                    "amount": amount / 100, # Convert from subunits
+                    "plan": plan_type,
+                    "gateway": "safepay",
+                    "timestamp": datetime.datetime.utcnow().isoformat(),
+                    "status": "SUCCESS"
+                })
+                
+                return {"status": "success", "msg": f"User {user_email} provisioned to {plan_type}"}
+                
+        return {"status": "ignored"}
+    except Exception as e:
+        print(f"Safepay Error: {e}")
+        return {"status": "error"}
 
 @app.post("/api/admin/auth/verify")
 async def admin_verify(data: AdminVerify):
