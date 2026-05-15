@@ -8,18 +8,11 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <style>
-        .shimmer {
-            animation: shimmer 1.5s infinite ease-in-out;
-            opacity: 0.4;
-        }
-        @keyframes shimmer {
-            0% { opacity: 0.4; }
-            50% { opacity: 1; }
-            100% { opacity: 0.4; }
-        }
-    </style>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .shimmer { animation: shimmer 1.5s infinite ease-in-out; opacity: 0.4; }
+        @keyframes shimmer { 0% { opacity: 0.4; } 50% { opacity: 1; } 100% { opacity: 0.4; } }
+    </style>
 </head>
 <body>
     <aside>
@@ -28,29 +21,15 @@
         </div>
         
         <nav style="flex: 1;" class="nav-group">
-            <a href="#" class="nav-link active" data-tab="overview">
-                <i data-lucide="layout-dashboard"></i> Overview
-            </a>
-            <a href="#" class="nav-link" data-tab="users">
-                <i data-lucide="users"></i> Manage Users
-            </a>
-            <a href="#" class="nav-link" data-tab="keys">
-                <i data-lucide="key"></i> API Key Pool
-            </a>
-            <a href="#" class="nav-link" data-tab="payments">
-                <i data-lucide="credit-card"></i> Payments
-            </a>
-            <a href="#" class="nav-link" data-tab="settings">
-                <i data-lucide="settings"></i> Settings
-            </a>
-            <a href="#" class="nav-link" data-tab="appeals">
-                <i data-lucide="message-square"></i> Appeals
-            </a>
+            <a href="#" class="nav-link active" data-tab="overview"><i data-lucide="layout-dashboard"></i> Overview</a>
+            <a href="#" class="nav-link" data-tab="users"><i data-lucide="users"></i> Manage Users</a>
+            <a href="#" class="nav-link" data-tab="keys"><i data-lucide="key"></i> API Key Pool</a>
+            <a href="#" class="nav-link" data-tab="payments"><i data-lucide="credit-card"></i> Payments</a>
+            <a href="#" class="nav-link" data-tab="settings"><i data-lucide="settings"></i> Settings</a>
+            <a href="#" class="nav-link" data-tab="appeals"><i data-lucide="message-square"></i> Appeals</a>
         </nav>
         <div class="user-footer">
-            <a href="/logout" id="admin-logout" class="nav-link" style="color: var(--rose);">
-                <i data-lucide="log-out"></i> Logout
-            </a>
+            <a href="#" onclick="adminLogout()" class="nav-link" style="color: var(--rose);"><i data-lucide="log-out"></i> Logout</a>
         </div>
     </aside>
 
@@ -61,14 +40,13 @@
                 <div class="switch-container">
                     <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted);">MAINTENANCE MODE</span>
                     <label class="switch">
-                        <input type="checkbox" id="maintenance-toggle">
+                        <input type="checkbox" id="maintenance-toggle" onchange="toggleMaintenance()">
                         <span class="slider"></span>
                     </label>
                 </div>
             </div>
         </header>
 
-        <!-- Overview Content -->
         <div id="content-overview">
             <div class="stats-grid">
                 <div class="stat-card">
@@ -83,7 +61,7 @@
                 </div>
                 <div class="stat-card">
                     <span class="stat-label">Global Health</span>
-                    <div class="stat-value">--</div>
+                    <div class="stat-value" id="stat-health">--</div>
                     <span class="stat-trend">Optimal Link Stability</span>
                 </div>
                 <div class="stat-card accent">
@@ -94,249 +72,101 @@
             </div>
 
             <div class="data-card">
-                <div class="card-header">
-                    <span class="card-title">Real-time Intelligence Stream</span>
-                    <button class="btn-action">View Full Logs</button>
-                </div>
+                <div class="card-header"><span class="card-title">Real-time Intelligence Stream</span></div>
                 <table>
-                    <thead>
-                        <tr>
-                            <th>Identity</th>
-                            <th>Mission Type</th>
-                            <th>Latency</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody id="overview-stream-list">
-                        <!-- Dynamically filled -->
-                    </tbody>
+                    <thead><tr><th>EMAIL IDENTITY</th><th>MISSION</th><th>LATENCY</th><th>STATUS</th></tr></thead>
+                    <tbody id="overview-stream-list"></tbody>
                 </table>
             </div>
         </div>
 
-        <!-- User Fleet Tab (Hidden by default) -->
         <div id="content-users" style="display: none;">
             <div class="data-card">
                 <div class="card-header">
-                    <span class="card-title">Strategic System Fleet</span>
-                    <div style="display: flex; gap: 12px;">
-                        <input type="text" placeholder="Filter by email or HWID..." style="padding: 8px 16px; border-radius: 8px; border: 1px solid var(--border); outline: none;">
-                        <button class="btn-action" onclick="showAddUserModal()" style="background: var(--primary); color: white; border: none;">+ Deploy New Identity</button>
-                    </div>
+                    <span class="card-title">Authorized Personnel</span>
+                    <button class="btn-action" onclick="showAddUserModal()">+ Add Strategic User</button>
                 </div>
                 <table>
-                    <thead>
-                        <tr>
-                            <th>Identity (Email)</th>
-                            <th>Tier</th>
-                            <th>Joined</th>
-                            <th>Status / Time Left</th>
-                            <th>System ID (HWID)</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="user-list">
-                        <!-- Dynamically filled -->
-                    </tbody>
+                    <thead><tr><th>USER IDENTITY</th><th>TIER</th><th>JOINED</th><th>ACCESS STATUS</th><th>HWID LINK</th><th>ACTIONS</th></tr></thead>
+                    <tbody id="user-list"></tbody>
                 </table>
             </div>
         </div>
 
-        <!-- Key Pool Tab (Hidden by default) -->
         <div id="content-keys" style="display: none;">
-            <div class="grid-2" style="display: grid; grid-template-columns: 1fr 2fr; gap: 24px; margin-bottom: 24px;">
-                <div class="data-card p-24">
-                    <div class="card-header">
-                        <span class="card-title">Inject AI Credentials</span>
-                    </div>
-                    <div style="margin-top: 20px; display: grid; gap: 16px;">
-                        <div>
-                            <label style="font-size: 0.65rem; font-weight: 900; color: var(--text-muted); display: block; margin-bottom: 6px;">MODEL PROVIDER</label>
-                            <select id="new-key-provider" style="width: 100%; border: 1px solid var(--border); padding: 12px; border-radius: 12px; font-weight: 600; outline: none; background: white;">
-                                <option value="gemini">Google Gemini 1.5</option>
-                                <option value="groq">Groq Llama 3</option>
-                                <option value="deepgram">Deepgram STT</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label style="font-size: 0.65rem; font-weight: 900; color: var(--text-muted); display: block; margin-bottom: 6px;">SECRET KEY TOKEN</label>
-                            <input type="password" id="new-key-value" placeholder="Paste credential string..." style="width: 100%; border: 1px solid var(--border); padding: 12px; border-radius: 12px; font-weight: 600; outline: none;">
-                        </div>
-                        <button class="btn-action" onclick="addKey()" style="background: var(--primary); color: white; border: none; padding: 14px; font-weight: 800; border-radius: 12px;">INJECT INTO POOL</button>
-                    </div>
+            <div class="stats-grid" style="margin-bottom: 30px;">
+                <div class="stat-card">
+                    <span class="stat-label">Gemini Cluster</span>
+                    <div class="stat-value shimmer" id="count-gemini">--</div>
+                    <span class="stat-trend">Active Nodes</span>
                 </div>
-
-                <div class="data-card p-24">
-                    <div class="card-header">
-                        <span class="card-title">Infrastructure Health</span>
-                    </div>
-                    <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr); margin-top: 20px;">
-                        <div class="stat-card" style="padding: 16px; border: 1px solid var(--border);">
-                            <span class="stat-label">Gemini</span>
-                            <div class="stat-value shimmer" id="count-gemini" style="font-size: 1.2rem;">...</div>
-                        </div>
-                        <div class="stat-card" style="padding: 16px; border: 1px solid var(--border);">
-                            <span class="stat-label">Groq</span>
-                            <div class="stat-value shimmer" id="count-groq" style="font-size: 1.2rem;">...</div>
-                        </div>
-                        <div class="stat-card" style="padding: 16px; border: 1px solid var(--border);">
-                            <span class="stat-label">Deepgram</span>
-                            <div class="stat-value shimmer" id="count-deepgram" style="font-size: 1.2rem;">...</div>
-                        </div>
-                    </div>
+                <div class="stat-card">
+                    <span class="stat-label">Groq Hyper-Engine</span>
+                    <div class="stat-value shimmer" id="count-groq">--</div>
+                    <span class="stat-trend">Low Latency Nodes</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">Deepgram Core</span>
+                    <div class="stat-value shimmer" id="count-deepgram">--</div>
+                    <span class="stat-trend">Audio Processor Pool</span>
                 </div>
             </div>
-
             <div class="data-card">
                 <div class="card-header">
-                    <span class="card-title">Active Key Rotation Pool</span>
+                    <span class="card-title">API Rotation Pool</span>
+                    <div style="display: flex; gap: 10px;">
+                        <select id="new-key-provider" class="btn-action" style="background: var(--bg-alt); text-transform: uppercase;">
+                            <option value="gemini">Gemini</option>
+                            <option value="groq">Groq</option>
+                            <option value="deepgram">Deepgram</option>
+                        </select>
+                        <input type="text" id="new-key-value" placeholder="Enter API Key..." style="background: var(--bg-alt); border: 1px solid var(--border); border-radius: 8px; padding: 0 15px; color: white; width: 300px;">
+                        <button class="btn-action" onclick="addKey()">Inject Key</button>
+                    </div>
                 </div>
                 <table>
-                    <thead>
-                        <tr>
-                            <th>Provider</th>
-                            <th>Key Mask</th>
-                            <th>Status</th>
-                            <th>Today</th>
-                            <th>Total</th>
-                            <th>Last Usage</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody id="key-pool-body">
-                        <!-- Dynamically filled -->
-                    </tbody>
+                    <thead><tr><th>PROVIDER</th><th>KEY MASK</th><th>STATUS</th><th>TODAY</th><th>TOTAL</th><th>LAST USAGE</th><th>ACTION</th></tr></thead>
+                    <tbody id="key-pool-body"></tbody>
                 </table>
             </div>
         </div>
 
-        <!-- Payments Tab (Hidden by default) -->
-        <div id="content-payments" style="display: none;">
-            <div class="grid-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
-                <div class="data-card p-24">
-                    <div class="card-header">
-                        <span class="card-title">Monetization Hub</span>
-                    </div>
-                    <div class="form-group" style="margin-top: 20px;">
-                        <label style="font-size: 0.7rem; font-weight: 800; color: var(--text-muted); display: block; margin-bottom: 8px;">AUTO-UPGRADE WEBHOOK URL</label>
-                        <input type="text" id="webhook-url-display" readonly style="width: 100%; background: var(--bg); border: 1px solid var(--border); padding: 12px; border-radius: 12px; font-size: 0.8rem; font-family: monospace;">
-                    </div>
-                    <div class="form-group" style="margin-top: 20px;">
-                        <label style="font-size: 0.7rem; font-weight: 800; color: var(--text-muted); display: block; margin-bottom: 8px;">ACTIVE UPGRADE URL (SHOWN TO USERS)</label>
-                        <input type="text" id="cfg-checkout-url" placeholder="https://buy.stripe.com/..." style="width: 100%; border: 1px solid var(--border); padding: 12px; border-radius: 12px; font-size: 0.8rem;">
-                    </div>
-                </div>
-
-                <div class="data-card p-24" style="background: #0f172a; color: white;">
-                    <div class="card-header">
-                        <span class="card-title" style="color: white;">Strategy Engine</span>
-                    </div>
-                    <div class="form-group" style="margin-top: 20px;">
-                        <label style="font-size: 0.7rem; font-weight: 800; color: #64748b; display: block; margin-bottom: 8px;">STRIPE SECRET KEY</label>
-                        <input type="password" id="cfg-stripe-key" placeholder="sk_live_..." style="width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 12px; border-radius: 12px; color: white; outline: none;">
-                    </div>
-                    <div class="form-group" style="margin-top: 20px;">
-                        <label style="font-size: 0.7rem; font-weight: 800; color: #64748b; display: block; margin-bottom: 8px;">LEMONSQUEEZY API KEY</label>
-                        <input type="password" id="cfg-ls-key" placeholder="ls_..." style="width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 12px; border-radius: 12px; color: white; outline: none;">
-                    </div>
-                    <button class="btn-action" onclick="updateConfig()" style="width: 100%; margin-top: 20px; background: var(--primary); color: white; border: none; padding: 14px; font-weight: 800;">DEPLOY STRATEGY</button>
-                </div>
-            </div>
-            <div class="data-card p-24" style="margin-top: 24px;">
-                <div class="card-header"><span class="card-title">LemonSqueezy Webhook URL</span></div>
-                <input type="text" id="ls-webhook-url" readonly style="width: 100%; background: var(--bg); border: 1px solid var(--border); padding: 12px; border-radius: 12px; font-family: monospace; margin-top: 10px;">
-            </div>
-        </div>
-
-        <!-- Settings Tab (Hidden by default) -->
         <div id="content-settings" style="display: none;">
-            <div class="data-card p-24">
-                <div class="card-header">
-                    <span class="card-title">Global System Settings</span>
-                </div>
-                <div class="grid-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 24px;">
-                    <div class="form-group">
-                        <label style="font-size: 0.7rem; font-weight: 800; color: var(--text-muted); display: block; margin-bottom: 8px;">TRIAL VALIDITY (DAYS)</label>
-                        <input type="number" id="cfg-trial-days" value="7" style="width: 100%; border: 1px solid var(--border); padding: 12px; border-radius: 12px;">
+            <div class="data-card">
+                <div class="card-header"><span class="card-title">Strategic System Configuration</span></div>
+                <div style="padding: 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+                    <div>
+                        <label style="display:block; margin-bottom:8px; font-weight:700;">Deployment Version</label>
+                        <input type="text" id="cfg-app-version" style="width:100%; background:var(--bg-alt); border:1px solid var(--border); color:white; padding:12px; border-radius:8px;">
                     </div>
-                    <div class="form-group">
-                        <label style="font-size: 0.7rem; font-weight: 800; color: var(--text-muted); display: block; margin-bottom: 8px;">BRANDING NAME</label>
-                        <input type="text" id="cfg-branding" value="StealthHUD" style="width: 100%; border: 1px solid var(--border); padding: 12px; border-radius: 12px;">
+                    <div>
+                        <label style="display:block; margin-bottom:8px; font-weight:700;">Payload URL (Download)</label>
+                        <input type="text" id="cfg-download-url" style="width:100%; background:var(--bg-alt); border:1px solid var(--border); color:white; padding:12px; border-radius:8px;">
                     </div>
-                </div>
-                <div class="form-group" style="margin-top: 24px;">
-                    <label style="font-size: 0.7rem; font-weight: 800; color: var(--text-muted); display: block; margin-bottom: 8px;">MAINTENANCE MESSAGE</label>
-                    <input type="text" id="cfg-maint-msg" placeholder="Strategic calibration in progress..." style="width: 100%; border: 1px solid var(--border); padding: 12px; border-radius: 12px;">
-                </div>
-
-                <div class="grid-2" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; margin-top: 24px; border-top: 1px solid var(--border); padding-top: 24px;">
-                    <div class="form-group">
-                        <label style="font-size: 0.7rem; font-weight: 800; color: var(--text-muted); display: block; margin-bottom: 8px;">GMAIL SMTP USER</label>
-                        <input type="text" id="cfg-smtp-user" placeholder="example@gmail.com" style="width: 100%; border: 1px solid var(--border); padding: 12px; border-radius: 12px;">
+                    <div style="grid-column: span 2;">
+                        <label style="display:block; margin-bottom:8px; font-weight:700;">Release Notes</label>
+                        <textarea id="cfg-release-notes" style="width:100%; height:100px; background:var(--bg-alt); border:1px solid var(--border); color:white; padding:12px; border-radius:8px;"></textarea>
                     </div>
-                    <div class="form-group">
-                        <label style="font-size: 0.7rem; font-weight: 800; color: var(--text-muted); display: block; margin-bottom: 8px;">GMAIL APP PASSWORD</label>
-                        <input type="password" id="cfg-smtp-pass" placeholder="•••• •••• •••• ••••" style="width: 100%; border: 1px solid var(--border); padding: 12px; border-radius: 12px;">
-                    </div>
-                    <div class="form-group">
-                        <label style="font-size: 0.7rem; font-weight: 800; color: var(--text-muted); display: block; margin-bottom: 8px;">SMTP HOST</label>
-                        <input type="text" id="cfg-smtp-host" value="smtp.gmail.com" style="width: 100%; border: 1px solid var(--border); padding: 12px; border-radius: 12px;">
-                    </div>
+                    <button class="btn-action" onclick="updateConfig()" style="grid-column: span 2; padding:16px;">Synchronize Infrastructure</button>
                 </div>
-
-                <div class="grid-2" style="display: grid; grid-template-columns: 1fr 2fr; gap: 24px; margin-top: 24px; border-top: 1px solid var(--border); padding-top: 24px;">
-                    <div class="form-group">
-                        <label style="font-size: 0.7rem; font-weight: 800; color: var(--text-muted); display: block; margin-bottom: 8px;">APP VERSION (e.g., 1.1.0)</label>
-                        <input type="text" id="cfg-app-version" placeholder="1.0.0" style="width: 100%; border: 1px solid var(--border); padding: 12px; border-radius: 12px;">
-                    </div>
-                    <div class="form-group">
-                        <label style="font-size: 0.7rem; font-weight: 800; color: var(--text-muted); display: block; margin-bottom: 8px;">UPDATE DOWNLOAD URL (.EXE)</label>
-                        <input type="text" id="cfg-download-url" placeholder="https://github.com/..." style="width: 100%; border: 1px solid var(--border); padding: 12px; border-radius: 12px;">
-                    </div>
-                </div>
-                <div class="form-group" style="margin-top: 24px;">
-                    <label style="font-size: 0.7rem; font-weight: 800; color: var(--text-muted); display: block; margin-bottom: 8px;">RELEASE NOTES</label>
-                    <textarea id="cfg-release-notes" placeholder="Minor bug fixes and performance improvements." style="width: 100%; border: 1px solid var(--border); padding: 12px; border-radius: 12px; resize: vertical; min-height: 80px;"></textarea>
-                </div>
-                <div class="form-group" style="margin-top: 24px;">
-                    <label style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); display: flex; align-items: center; gap: 12px;">
-                        <input type="checkbox" id="cfg-force-update" style="width: 16px; height: 16px;">
-                        FORCE MANDATORY UPDATE
-                    </label>
-                </div>
-
-                <button class="btn-action" onclick="updateConfig()" style="margin-top: 24px; background: var(--primary); color: white; border: none; padding: 12px 24px; font-weight: 800;">SAVE GLOBAL CONFIG</button>
             </div>
         </div>
 
-        <!-- Appeals Tab (Hidden by default) -->
         <div id="content-appeals" style="display: none;">
-            <div class="grid-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
-                <div class="data-card" style="height: 600px; overflow-y: auto; padding: 0;">
-                    <div class="card-header" style="padding: 24px;">
-                        <span class="card-title">Strategic Support Stream</span>
-                        <button class="btn-action" onclick="fetchTickets()">Refresh</button>
-                    </div>
-                    <div id="ticket-list-container">
-                        <!-- Tickets list -->
-                    </div>
+             <div style="display: grid; grid-template-columns: 350px 1fr; gap: 24px; height: calc(100vh - 180px);">
+                <div class="data-card" style="margin: 0; overflow-y: auto;">
+                    <div class="card-header"><span class="card-title">Support Tickets</span></div>
+                    <div id="ticket-list-container"></div>
                 </div>
-
-                <div class="data-card" id="chat-window" style="height: 600px; display: flex; flex-direction: column; padding: 0; background: #f8fafc;">
-                    <div id="chat-header" style="padding: 20px; background: white; border-bottom: 1px solid var(--border); display: none;">
-                        <b id="chat-user-email">Select an Identity</b><br>
-                        <span id="chat-user-hwid" style="font-size: 0.7rem; color: var(--text-muted);">Strategic System Fingerprint</span>
+                <div class="data-card" style="margin: 0; display: flex; flex-direction: column;">
+                    <div id="chat-header" style="display: none; padding: 20px; border-bottom: 1px solid var(--border);">
+                        <b id="chat-user-email"></b>
                     </div>
-                    <div id="chat-messages" style="flex: 1; overflow-y: auto; padding: 24px; display: flex; flex-direction: column; gap: 16px;">
-                        <div style="margin: auto; text-align: center; color: var(--text-muted);">
-                            <i data-lucide="message-square" style="width: 48px; height: 48px; opacity: 0.2; margin-bottom: 16px;"></i><br>
-                            Select a ticket to begin communication
-                        </div>
-                    </div>
-                    <div id="chat-input-container" style="padding: 20px; background: white; border-top: 1px solid var(--border); display: none;">
-                        <div style="display: flex; gap: 12px;">
-                            <input type="text" id="ticket-reply-input" placeholder="Compose mission response..." style="flex: 1; padding: 12px; border-radius: 10px; border: 1px solid var(--border); outline: none;">
-                            <button class="btn-action" onclick="sendReply()" style="background: var(--primary); color: white; border: none; padding: 0 24px;">SEND</button>
+                    <div id="chat-messages" style="flex:1; overflow-y:auto; padding:20px; display:flex; flex-direction:column; gap:12px;"></div>
+                    <div id="chat-input-container" style="display:none; padding:20px; border-top:1px solid var(--border);">
+                        <div style="display:flex; gap:10px;">
+                            <input type="text" id="ticket-reply-input" placeholder="Type tactical response..." style="flex:1; background:var(--bg-alt); border:1px solid var(--border); color:white; padding:12px; border-radius:8px;">
+                            <button class="btn-action" onclick="sendReply()">SEND</button>
                         </div>
                     </div>
                 </div>
@@ -345,442 +175,199 @@
     </main>
 
     <script>
-        // --- SECURITY PROTOCOL ---
-        const authUser = JSON.parse(localStorage.getItem('zenith_user'));
-        const allowedAdmins = ['tesmarkhan4@gmail.com', 'faheemkhan101992@gmail.com'];
-        if (!authUser || (!allowedAdmins.includes(authUser.email) && authUser.role !== 'OWNER')) {
-            window.location.href = '/login';
+        const API_BASE = '/api';
+        const admin_token = localStorage.getItem('admin_token');
+        if (!admin_token) window.location.href = 'login.html';
+
+        async function adminFetch(url, options = {}) {
+            options.headers = options.headers || {};
+            options.headers['Authorization'] = `Bearer ${admin_token}`;
+            options.headers['Content-Type'] = 'application/json';
+            try {
+                const res = await fetch(url, options);
+                if (res.status === 401) { adminLogout(); return null; }
+                return res;
+            } catch (e) { return null; }
         }
 
-        document.getElementById('admin-logout').addEventListener('click', (e) => {
-            e.preventDefault();
-            localStorage.removeItem('zenith_user');
-            window.location.href = '/login';
-        });
+        function adminLogout() {
+            localStorage.removeItem('admin_token');
+            window.location.href = 'login.html';
+        }
 
-        // Initialize Lucide icons
         lucide.createIcons();
 
-        const API_BASE = window.location.origin + "/api";
-
-        // Tab Switching Logic
+        // Tab Logic
         const navLinks = document.querySelectorAll('.nav-link');
-        const tabTitle = document.getElementById('tab-title');
         const contents = {
             overview: document.getElementById('content-overview'),
             users: document.getElementById('content-users'),
             keys: document.getElementById('content-keys'),
-            payments: document.getElementById('content-payments'),
             settings: document.getElementById('content-settings'),
             appeals: document.getElementById('content-appeals')
         };
 
         navLinks.forEach(link => {
             link.addEventListener('click', (e) => {
-                e.preventDefault();
                 const tab = link.getAttribute('data-tab');
+                if(!tab) return;
+                e.preventDefault();
                 navLinks.forEach(l => l.classList.remove('active'));
                 link.classList.add('active');
-                tabTitle.innerText = link.innerText.trim();
+                document.getElementById('tab-title').innerText = link.innerText.trim();
                 Object.values(contents).forEach(c => c.style.display = 'none');
                 if (contents[tab]) contents[tab].style.display = 'block';
                 
                 if(tab === 'users') fetchUsers();
-                if(tab === 'keys') { fetchKeys(); fetchStats(); }
-                if(tab === 'payments' || tab === 'settings') fetchConfig();
+                if(tab === 'keys') fetchKeys();
+                if(tab === 'settings') fetchConfig();
                 if(tab === 'overview') fetchStats();
                 if(tab === 'appeals') fetchTickets();
-                
-                if(tab === 'payments') {
-                    document.getElementById('webhook-url-display').value = window.location.origin + "/api/webhook/stripe";
-                    document.getElementById('ls-webhook-url').value = window.location.origin + "/api/webhook/lemonsqueezy";
-                }
             });
         });
 
-        async function fetchConfig() {
-            try {
-                const res = await fetch(`/api/admin/config`);
-                const data = await res.json();
-                document.getElementById('cfg-checkout-url').value = data.checkout_url || '';
-                document.getElementById('cfg-stripe-key').value = data.stripe_secret_key || '';
-                document.getElementById('cfg-ls-key').value = data.ls_api_key || '';
-                document.getElementById('cfg-trial-days').value = data.trial_days || 7;
-                document.getElementById('cfg-branding').value = data.branding || 'ZenithHUD';
-                document.getElementById('cfg-maint-msg').value = data.maintenance_message || '';
-                document.getElementById('cfg-smtp-user').value = data.SMTP_USER || '';
-                document.getElementById('cfg-smtp-pass').value = data.SMTP_PASS || '';
-                document.getElementById('cfg-smtp-host').value = data.SMTP_HOST || 'smtp.gmail.com';
-                document.getElementById('cfg-app-version').value = data.app_version || '1.0.0';
-                document.getElementById('cfg-download-url').value = data.download_url || '';
-                document.getElementById('cfg-release-notes').value = data.release_notes || 'Minor bug fixes and performance improvements.';
-                document.getElementById('cfg-force-update').checked = data.force_update || false;
-            } catch (e) { console.error("Config fetch failed", e); }
+        async function fetchStats() {
+            const res = await adminFetch(`${API_BASE}/admin/stats`);
+            if(!res) return;
+            const data = await res.json();
+            document.getElementById('stat-total-users').innerText = data.total_users || 0;
+            document.getElementById('stat-active-sessions').innerText = data.active_sessions || 0;
+            document.getElementById('stat-health').innerText = (data.key_health || 100) + "%";
+            document.getElementById('stat-revenue').innerText = "$" + (data.revenue || 0);
+            document.getElementById('maintenance-toggle').checked = data.maintenance_mode;
+            
+            const stream = document.getElementById('overview-stream-list');
+            if(data.recent_missions) {
+                stream.innerHTML = data.recent_missions.map(m => `
+                    <tr><td><b>${m.email}</b></td><td>${m.mission_type}</td><td>${m.latency}</td><td><span class="status-pill status-active">${m.status}</span></td></tr>
+                `).join('');
+            }
         }
 
-        async function updateConfig() {
-            const config = {
-                checkout_url: document.getElementById('cfg-checkout-url').value,
-                stripe_secret_key: document.getElementById('cfg-stripe-key').value,
-                ls_api_key: document.getElementById('cfg-ls-key').value,
-                trial_days: parseInt(document.getElementById('cfg-trial-days').value),
-                branding: document.getElementById('cfg-branding').value,
-                maintenance_message: document.getElementById('cfg-maint-msg').value,
-                SMTP_USER: document.getElementById('cfg-smtp-user').value,
-                SMTP_PASS: document.getElementById('cfg-smtp-pass').value,
-                SMTP_HOST: document.getElementById('cfg-smtp-host').value,
-                app_version: document.getElementById('cfg-app-version').value,
-                download_url: document.getElementById('cfg-download-url').value,
-                release_notes: document.getElementById('cfg-release-notes').value,
-                force_update: document.getElementById('cfg-force-update').checked
-            };
-            try {
-                await fetch(`/api/admin/config`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(config)
-                });
-                alert("Strategic Infrastructure Updated Successfully");
-            } catch (e) { alert("Failed to update config"); }
+        async function fetchUsers() {
+            const res = await adminFetch(`${API_BASE}/admin/users`);
+            if(!res) return;
+            const data = await res.json();
+            document.getElementById('user-list').innerHTML = data.users.map(u => `
+                <tr>
+                    <td><b>${u.full_name}</b><br><span style="font-size:0.75rem;">${u.email}</span></td>
+                    <td><span class="status-pill status-active">${u.tier}</span></td>
+                    <td>${new Date(u.join_date).toLocaleDateString()}</td>
+                    <td><b>${u.status_label || 'ACTIVE'}</b></td>
+                    <td><code>${u.hwid ? u.hwid.substring(0,8) : 'NONE'}</code></td>
+                    <td>
+                        <button class="btn-action" onclick="upgradeUser('${u.email}')">PRO</button>
+                        <button class="btn-action" onclick="resetHWID('${u.email}')">ID</button>
+                        <button class="btn-action btn-delete" onclick="deleteUser('${u.email}')">Kill</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function upgradeUser(email) {
+            if(confirm("Upgrade " + email + "?")) { await adminFetch(`${API_BASE}/admin/users/upgrade?email=${email}`, {method:'POST'}); fetchUsers(); }
+        }
+        async function resetHWID(email) {
+            if(confirm("Reset HWID?")) { await adminFetch(`${API_BASE}/admin/users/reset-hwid?email=${email}`, {method:'POST'}); fetchUsers(); }
+        }
+        async function deleteUser(email) {
+            if(confirm("Delete?")) { await adminFetch(`${API_BASE}/admin/users/${email}`, {method:'DELETE'}); fetchUsers(); }
+        }
+
+        async function fetchKeys() {
+            const res = await adminFetch(`${API_BASE}/admin/keys`);
+            if(!res) return;
+            const data = await res.json();
+            document.getElementById('key-pool-body').innerHTML = data.keys.map(k => `
+                <tr>
+                    <td><b>${k.provider}</b></td><td><code>${k.key_value.substring(0,10)}...</code></td>
+                    <td>${k.status}</td><td style="color:var(--primary);">${k.usage_count_today || 0}</td>
+                    <td>${k.usage_count_total || 0}</td><td>${k.last_used ? new Date(k.last_used).toLocaleTimeString() : 'NEVER'}</td>
+                    <td><button class="btn-action btn-delete" onclick="removeKey('${k._id}')">Kill</button></td>
+                </tr>
+            `).join('');
+            
+            ['gemini', 'groq', 'deepgram'].forEach(p => {
+                document.getElementById('count-'+p).innerText = data.keys.filter(k => k.provider === p).length;
+                document.getElementById('count-'+p).classList.remove('shimmer');
+            });
         }
 
         async function addKey() {
             const provider = document.getElementById('new-key-provider').value;
             const key_value = document.getElementById('new-key-value').value;
-            if(!key_value) return alert("Please enter a key value");
-
-            try {
-                const res = await fetch(`/api/admin/keys?provider=${provider}&key_value=${encodeURIComponent(key_value)}`, {
-                    method: 'POST'
-                });
-                if(res.ok) {
-                    alert("Key injected into rotation pool");
-                    document.getElementById('new-key-value').value = '';
-                    fetchKeys();
-                } else {
-                    alert("Failed to inject key");
-                }
-            } catch (e) { alert("Error connecting to infrastructure"); }
+            await adminFetch(`${API_BASE}/admin/keys?provider=${provider}&key_value=${encodeURIComponent(key_value)}`, {method:'POST'});
+            fetchKeys();
         }
 
-        // --- Backend Integration ---
+        async function removeKey(id) {
+            if(confirm("Revoke?")) { await adminFetch(`${API_BASE}/admin/keys/${id}`, {method:'DELETE'}); fetchKeys(); }
+        }
 
-        async function fetchStats() {
-            try {
-                const res = await fetch(`/api/admin/stats`);
-                if (!res.ok) throw new Error(`HTTP Error: ${res.status}`);
-                const data = await res.json();
-                if (data.status === 'error') throw new Error(data.detail || "API Error");
-                
-                const statValues = document.querySelectorAll('.stat-value');
-                if (statValues.length >= 1) statValues[0].innerText = (data.total_users || 0).toLocaleString();
-                if (statValues.length >= 2) statValues[1].innerText = (data.active_sessions || 0).toLocaleString();
-                if (statValues.length >= 3) statValues[2].innerText = (data.key_health || 100) + "%";
-                if (statValues.length >= 4) statValues[3].innerText = "$" + (data.revenue || 0).toLocaleString();
-                document.getElementById('maintenance-toggle').checked = data.maintenance_mode;
+        async function fetchConfig() {
+            const res = await adminFetch(`${API_BASE}/admin/config`);
+            if(!res) return;
+            const data = await res.json();
+            document.getElementById('cfg-app-version').value = data.app_version || '';
+            document.getElementById('cfg-download-url').value = data.download_url || '';
+            document.getElementById('cfg-release-notes').value = data.release_notes || '';
+        }
 
-                // Populate Real-time Intelligence Stream
-                const streamList = document.getElementById('overview-stream-list');
-                if (streamList && data.recent_missions) {
-                    if (data.recent_missions.length === 0) {
-                        streamList.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:20px; color:var(--text-muted);">No active missions in the database.</td></tr>`;
-                    } else {
-                        streamList.innerHTML = data.recent_missions.map(m => `
-                            <tr>
-                                <td><b>${m.email}</b></td>
-                                <td>${m.mission_type}</td>
-                                <td>${m.latency}</td>
-                                <td><span class="status-pill status-active">${m.status}</span></td>
-                            </tr>
-                        `).join('');
-                    }
-                }
-            } catch (e) { 
-                console.error("Stats fetch failed", e);
-                const statValues = document.querySelectorAll('.stat-value');
-                statValues.forEach(el => el.innerText = "ERR");
-            }
+        async function updateConfig() {
+            const cfg = {
+                app_version: document.getElementById('cfg-app-version').value,
+                download_url: document.getElementById('cfg-download-url').value,
+                release_notes: document.getElementById('cfg-release-notes').value
+            };
+            await adminFetch(`${API_BASE}/admin/config`, {method:'POST', body:JSON.stringify(cfg)});
+            alert("Updated.");
         }
 
         async function toggleMaintenance() {
             const active = document.getElementById('maintenance-toggle').checked;
-            await fetch(`${API_BASE}/admin/maintenance?active=${active}`, { method: 'POST' });
+            await adminFetch(`${API_BASE}/admin/maintenance?active=${active}`, {method:'POST'});
         }
 
-        async function fetchUsers() {
-            const list = document.getElementById('user-list');
-            try {
-                const res = await fetch(`/api/admin/users`);
-                if (!res.ok) throw new Error(`HTTP Error: ${res.status}`);
-                const data = await res.json();
-                if (data.status === 'error') throw new Error(data.detail || "API Error");
-
-                // Sort users: Admins/Owners first
-                data.users.sort((a, b) => {
-                    if (a.role === 'OWNER' && b.role !== 'OWNER') return -1;
-                    if (a.role !== 'OWNER' && b.role === 'OWNER') return 1;
-                    return new Date(b.join_date || 0) - new Date(a.join_date || 0);
-                });
-
-                list.innerHTML = data.users.map(u => {
-                    const joined = u.join_date && u.join_date !== 'N/A' ? new Date(u.join_date).toLocaleDateString() : 'N/A';
-                    let actionsHtml = '';
-                    let statusHtml = '';
-
-                    if (u.role === 'OWNER') {
-                        actionsHtml = `<button class="btn-action" style="background:var(--primary);color:white;border:none;" onclick="changeUserPassword('${u.email}')">Change Password</button>`;
-                        statusHtml = `<span style="font-weight: 700;">OWNER</span><br><span style="font-size: 0.75rem; color: var(--primary);">UNLIMITED</span>`;
-                    } else {
-                        actionsHtml = `
-                            <div style="display: flex; gap: 8px;">
-                                <button class="btn-action" onclick="upgradeUser('${u.email}')">PRO</button>
-                                <button class="btn-action" onclick="resetHWID('${u.email}')">Reset ID</button>
-                                <button class="btn-action btn-delete" onclick="deleteUser('${u.email}')">Terminate</button>
-                            </div>
-                        `;
-                        statusHtml = `
-                            <span style="font-weight: 700;">${u.status_label}</span><br>
-                            <span style="font-size: 0.75rem; color: var(--primary);">${u.timer}</span>
-                        `;
-                    }
-
-                    return `
-                    <tr>
-                        <td>
-                            <b style="color: var(--text);">${u.full_name}</b><br>
-                            <span style="font-size: 0.75rem; color: var(--text-muted);">${u.email}</span>
-                        </td>
-                        <td>
-                            <span class="status-pill status-${u.tier === 'PRO' || u.tier === 'ELITE' ? 'active' : 'trial'}">${u.tier}</span>
-                            ${u.suspended ? '<span class="status-pill status-suspended" style="margin-left:5px;">SUSPENDED</span>' : ''}
-                        </td>
-                        <td style="font-size: 0.85rem; color: var(--text-muted);">${joined}</td>
-                        <td>${statusHtml}</td>
-                        <td><code style="font-size: 0.7rem; color: var(--text-muted); background: #f1f5f9; padding: 2px 6px; border-radius: 4px;" title="${u.hwid || ''}">${u.hwid ? u.hwid.substring(0,8)+'...' : 'NOT LINKED'}</code></td>
-                        <td>
-                            <div style="display: flex; gap: 6px; align-items: center;">
-                                ${actionsHtml}
-                                ${u.role !== 'OWNER' ? `
-                                    <button class="btn-action ${u.suspended ? 'btn-unsuspend' : 'btn-suspend'}" 
-                                            onclick="toggleUserSuspension('${u.email}', ${!u.suspended})"
-                                            style="background: ${u.suspended ? 'var(--emerald)' : 'var(--rose)'}; color: white; border: none; padding: 6px 10px;">
-                                        ${u.suspended ? 'Unsuspend' : 'Suspend'}
-                                    </button>
-                                ` : ''}
-                            </div>
-                        </td>
-                    </tr>
-                `}).join('');
-            } catch (e) { 
-                console.error("User fetch failed", e);
-                list.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 40px; color: var(--rose);">Failed to link with database. Reconnecting...</td></tr>`;
-            }
-        }
-
-        async function upgradeUser(email) {
-            if(confirm("Manually upgrade " + email + " to PRO?")) {
-                await fetch(`/api/admin/users/upgrade?email=${email}`, { method: 'POST' });
-                fetchUsers();
-            }
-        }
-
-        async function resetHWID(email) {
-            if(confirm("Reset Hardware ID (HWID) for " + email + "? This will allow them to login from a new device.")) {
-                await fetch(`/api/admin/users/reset-hwid?email=${email}`, { method: 'POST' });
-                fetchUsers();
-            }
-        }
-
-        async function deleteUser(email) {
-            if(confirm("Terminate user " + email + " permanently?")) {
-                await fetch(`/api/admin/users/${email}`, { method: 'DELETE' });
-                fetchUsers();
-            }
-        }
-
-        async function changeUserPassword(email) {
-            const newPass = prompt("Enter new password for " + email + ":");
-            if (newPass) {
-                try {
-                    await fetch(`/api/admin/users/password`, { 
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ email: email, password: newPass })
-                    });
-                    alert("Password updated successfully.");
-                } catch (e) {
-                    alert("Failed to update password.");
-                }
-            }
-        }
-
-        function showAddUserModal() {
-            const email = prompt("Enter Email:");
-            const pass = prompt("Enter Password:");
-            const name = prompt("Enter Full Name:");
-            const hwid = prompt("Enter HWID (Optional):") || "MANUAL_ENTRY";
-            
-            if(email && pass) {
-                fetch(`/api/admin/users`, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({email, password: pass, full_name: name, hwid})
-                }).then(() => fetchUsers());
-            }
-        }
-
-        async function fetchKeys() {
-            console.log("Fetching Keys...");
-            try {
-                const res = await fetch(`/api/admin/keys?_=${Date.now()}`);
-                const data = await res.json();
-                
-                const list = document.getElementById('key-pool-body');
-                if (!list) return;
-
-                list.innerHTML = data.keys.map(k => {
-                    const lastUsed = k.last_used ? new Date(k.last_used).toLocaleString() : 'NEVER';
-                    return `
-                    <tr>
-                        <td><b style="text-transform: capitalize;">${k.provider}</b></td>
-                        <td><code>${k.key_value.substring(0, 12)}...</code></td>
-                        <td><span class="status-pill status-${k.status === 'healthy' ? 'active' : 'trial'}">${k.status.toUpperCase()}</span></td>
-                        <td style="font-weight: 700; color: var(--primary);">${k.usage_count_today || 0}</td>
-                        <td style="font-weight: 700; color: #64748b;">${k.usage_count_total || 0}</td>
-                        <td style="font-size: 0.75rem; color: #94a3b8;">${lastUsed}</td>
-                        <td><button class="btn-action btn-delete" onclick="removeKey('${k._id}')">Revoke</button></td>
-                    </tr>
-                `}).join('');
-                
-                // Update key counts and remove shimmers
-                ['count-gemini', 'count-groq', 'count-deepgram'].forEach(id => {
-                    const el = document.getElementById(id);
-                    if (el) {
-                        el.classList.remove('shimmer');
-                        const provider = id.replace('count-', '');
-                        el.innerText = data.keys.filter(k => k.provider === provider).length;
-                    }
-                });
-            } catch (e) { console.error("Keys fetch failed", e); }
-        }
-
-        async function removeKey(id) {
-            if(confirm("Are you sure you want to revoke this key?")) {
-                await fetch(`${API_BASE}/admin/keys/${id}`, { method: 'DELETE' });
-                fetchKeys();
-            }
+        // Tickets
+        async function fetchTickets() {
+            const res = await adminFetch(`${API_BASE}/admin/tickets`);
+            if(!res) return;
+            const data = await res.json();
+            document.getElementById('ticket-list-container').innerHTML = data.tickets.map(t => `
+                <div class="ticket-item" onclick="selectTicket('${t.email}')" style="padding:15px; border-bottom:1px solid var(--border); cursor:pointer;">
+                    <b>${t.email}</b><br><span style="font-size:0.7rem;">${t.status}</span>
+                </div>
+            `).join('');
         }
 
         let currentTicketEmail = null;
-
-        async function fetchTickets() {
-            const container = document.getElementById('ticket-list-container');
-            try {
-                const res = await fetch(`/api/admin/tickets`);
-                const data = await res.json();
-                container.innerHTML = data.tickets.map(t => {
-                    const lastMsg = t.messages[t.messages.length - 1]?.text || "No messages";
-                    const isNew = t.status === 'active';
-                    return `
-                    <div class="ticket-item ${currentTicketEmail === t.email ? 'active' : ''}" onclick="selectTicket('${t.email}', '${t.hwid}')" 
-                         style="padding: 20px; border-bottom: 1px solid var(--border); cursor: pointer; transition: 0.2s; position: relative;">
-                        ${isNew ? '<div style="position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--primary);"></div>' : ''}
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-                            <b style="font-size: 0.9rem;">${t.email}</b>
-                            <span style="font-size: 0.7rem; color: var(--text-muted);">${new Date(t.last_activity).toLocaleTimeString()}</span>
-                        </div>
-                        <div style="font-size: 0.8rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                            ${lastMsg}
-                        </div>
-                    </div>
-                `}).join('');
-                if(window.lucide) lucide.createIcons();
-            } catch (e) { console.error("Tickets fetch failed", e); }
-        }
-
-        async function selectTicket(email, hwid) {
+        async function selectTicket(email) {
             currentTicketEmail = email;
             document.getElementById('chat-header').style.display = 'block';
             document.getElementById('chat-input-container').style.display = 'block';
             document.getElementById('chat-user-email').innerText = email;
-            document.getElementById('chat-user-hwid').innerText = "HWID: " + hwid;
-            
-            // Refresh list to show active state
-            const items = document.querySelectorAll('.ticket-item');
-            items.forEach(i => i.classList.remove('active'));
-            // Re-fetch to update UI properly
-            fetchTickets();
             loadMessages(email);
         }
 
         async function loadMessages(email) {
-            if(currentTicketEmail !== email) return;
-            const container = document.getElementById('chat-messages');
-            try {
-                const res = await fetch(`/api/auth/ticket/history?email=${email}`);
-                const data = await res.json();
-                container.innerHTML = data.messages.map(m => {
-                    const isAdmin = m.role === 'admin';
-                    return `
-                    <div style="align-self: ${isAdmin ? 'flex-end' : 'flex-start'}; max-width: 80%;">
-                        <div style="font-size: 0.65rem; font-weight: 800; color: var(--text-muted); margin-bottom: 4px; text-align: ${isAdmin ? 'right' : 'left'};">
-                            ${isAdmin ? 'ZENITH COMMAND' : 'USER'}
-                        </div>
-                        <div style="background: ${isAdmin ? 'var(--primary)' : 'white'}; color: ${isAdmin ? 'white' : 'var(--text)'}; 
-                                    padding: 12px 16px; border-radius: 16px; font-size: 0.9rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-                                    border: ${isAdmin ? 'none' : '1px solid var(--border)'}">
-                            ${m.text}
-                        </div>
-                        <div style="font-size: 0.65rem; color: var(--text-muted); margin-top: 4px; text-align: ${isAdmin ? 'right' : 'left'};">
-                            ${new Date(m.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                        </div>
-                    </div>
-                `}).join('');
-                container.scrollTop = container.scrollHeight;
-            } catch (e) { console.error("Messages fetch failed", e); }
+            const res = await adminFetch(`${API_BASE}/auth/ticket/history?email=${email}`);
+            if(!res) return;
+            const data = await res.json();
+            document.getElementById('chat-messages').innerHTML = data.messages.map(m => `
+                <div style="align-self: ${m.role==='admin'?'flex-end':'flex-start'}; background: ${m.role==='admin'?'var(--primary)':'#f1f5f9'}; color: ${m.role==='admin'?'white':'black'}; padding:10px; border-radius:10px; max-width:80%;">
+                    ${m.text}
+                </div>
+            `).join('');
         }
 
         async function sendReply() {
-            const input = document.getElementById('ticket-reply-input');
-            const text = input.value.trim();
-            if(!text || !currentTicketEmail) return;
-            
-            input.value = '';
-            try {
-                await fetch(`/api/admin/ticket/reply?email=${currentTicketEmail}&message=${encodeURIComponent(text)}`, { method: 'POST' });
-                loadMessages(currentTicketEmail);
-                fetchTickets();
-            } catch (e) { console.error("Reply failed", e); }
+            const text = document.getElementById('ticket-reply-input').value;
+            await adminFetch(`${API_BASE}/admin/ticket/reply?email=${currentTicketEmail}&message=${encodeURIComponent(text)}`, {method:'POST'});
+            document.getElementById('ticket-reply-input').value = '';
+            loadMessages(currentTicketEmail);
         }
 
-        async function toggleUserSuspension(email, status) {
-            if(confirm(`${status ? 'Suspend' : 'Unsuspend'} user ${email}?`)) {
-                await fetch(`/api/admin/users/suspend?email=${email}&status=${status}`, { method: 'POST' });
-                fetchUsers();
-            }
-        }
-
-        document.getElementById('maintenance-toggle').addEventListener('change', toggleMaintenance);
-
-        // --- INITIALIZATION ---
-        window.addEventListener('DOMContentLoaded', () => {
-            const activeLink = document.querySelector('.nav-link.active');
-            if (activeLink) {
-                const tab = activeLink.getAttribute('data-tab');
-                if (tab === 'users') fetchUsers();
-                if (tab === 'keys') { fetchKeys(); fetchStats(); }
-                if (tab === 'payments' || tab === 'settings') fetchConfig();
-                if (tab === 'overview') fetchStats();
-            }
-            
-            // Auto-refresh every 60 seconds
-            setInterval(() => {
-                const activeTab = document.querySelector('.nav-link.active').getAttribute('data-tab');
-                if (activeTab === 'overview') fetchStats();
-                if (activeTab === 'keys') { fetchKeys(); fetchStats(); }
-                if (activeTab === 'users') fetchUsers();
-            }, 60000);
-        });
+        window.addEventListener('DOMContentLoaded', () => fetchStats());
     </script>
 </body>
 </html>

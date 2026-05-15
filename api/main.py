@@ -119,6 +119,14 @@ class PasswordUpdate(BaseModel):
     email: str
     password: str
 
+class AdminLogin(BaseModel):
+    email: str
+    password: str
+
+class AdminVerify(BaseModel):
+    email: str
+    otp: str
+
 # --- AUTH & OTP ---
 # --- USER INTELLIGENCE ---
 @app.get("/api/user/interviews")
@@ -418,8 +426,72 @@ async def get_stats():
     except Exception as e:
         return {"status": "error", "detail": str(e)}
 
+# --- ADMIN SECURITY CORE ---
+ADMIN_EMAIL = "faheemkhan101992@gmail.com"
+# Plaintext check for master admin (provided by user)
+ADMIN_PASS = "Mannat08112025" 
+
+def verify_admin_token(request: Request):
+    token = request.headers.get("Authorization")
+    if not token or token != f"Bearer {hashlib.sha256(ADMIN_PASS.encode()).hexdigest()}":
+        raise HTTPException(status_code=401, detail="Unauthorized Command Center Access.")
+
+@app.post("/api/admin/auth/login")
+async def admin_login(data: AdminLogin):
+    if data.email != ADMIN_EMAIL or data.password != ADMIN_PASS:
+        return {"status": "error", "detail": "Invalid Command Center Credentials."}
+    
+    try:
+        conn = get_conn()
+        otp = str(random.randint(100000, 999999))
+        conn.otps.update_one(
+            {"email": ADMIN_EMAIL},
+            {"$set": {"otp": otp, "created_at": datetime.datetime.utcnow()}},
+            upsert=True
+        )
+        
+        # Reuse existing SMTP logic to send OTP
+        smtp_user = "faheemkhan101992@gmail.com"
+        smtp_pass = "pseuniogagkbbhrn"
+        
+        msg = MIMEMultipart()
+        msg['From'] = f"Zenith Security <{smtp_user}>"
+        msg['To'] = ADMIN_EMAIL
+        msg['Subject'] = f"Command Center Access: {otp}"
+        
+        body = f"Admin Login OTP: {otp}. Valid for 5 minutes."
+        msg.attach(MIMEText(body, 'plain'))
+        
+        server = smtplib.SMTP("smtp.gmail.com", 587)
+        server.starttls()
+        server.login(smtp_user, smtp_pass)
+        server.send_message(msg)
+        server.quit()
+        
+        return {"status": "success", "msg": "Strategic OTP dispatched."}
+    except Exception as e:
+        return {"status": "error", "detail": str(e)}
+
+@app.post("/api/admin/auth/verify")
+async def admin_verify(data: AdminVerify):
+    if data.email != ADMIN_EMAIL:
+        return {"status": "error", "detail": "Identity Mismatch."}
+        
+    conn = get_conn()
+    record = conn.otps.find_one({"email": ADMIN_EMAIL})
+    
+    if record and record["otp"] == data.otp:
+        # Check expiry (5 mins)
+        if (datetime.datetime.utcnow() - record["created_at"]).total_seconds() > 300:
+            return {"status": "error", "detail": "OTP Expired."}
+            
+        token = hashlib.sha256(ADMIN_PASS.encode()).hexdigest()
+        return {"status": "success", "token": token}
+    
+    return {"status": "error", "detail": "Invalid Strategy Code."}
 @app.get("/api/admin/keys")
-async def get_keys():
+async def get_keys(request: Request):
+    verify_admin_token(request)
     try:
         conn = get_conn()
         if not conn: return {"status": "error", "detail": "Database unavailable."}
@@ -443,7 +515,8 @@ async def get_keys():
         return {"status": "error", "detail": str(e)}
 
 @app.post("/api/admin/keys")
-async def add_key(provider: str, key_value: str):
+async def add_key(provider: str, key_value: str, request: Request):
+    verify_admin_token(request)
     try:
         conn = get_conn()
         if not conn: return {"status": "error", "detail": "Database unavailable."}
@@ -460,7 +533,8 @@ async def add_key(provider: str, key_value: str):
         return {"status": "error", "detail": str(e)}
 
 @app.delete("/api/admin/keys/{key_id}")
-async def delete_key(key_id: str):
+async def delete_key(key_id: str, request: Request):
+    verify_admin_token(request)
     try:
         conn = get_conn()
         if not conn: return {"status": "error", "detail": "Database unavailable."}
@@ -503,7 +577,8 @@ async def report_key_usage(data: dict):
         return {"status": "error", "detail": str(e)}
 
 @app.post("/api/admin/users/upgrade")
-async def upgrade_user(email: str):
+async def upgrade_user(email: str, request: Request):
+    verify_admin_token(request)
     try:
         conn = get_conn()
         if not conn: return {"status": "error", "detail": "Database unavailable."}
@@ -513,7 +588,8 @@ async def upgrade_user(email: str):
         return {"status": "error", "detail": str(e)}
 
 @app.post("/api/admin/users/password")
-async def update_user_password(data: PasswordUpdate):
+async def update_user_password(data: PasswordUpdate, request: Request):
+    verify_admin_token(request)
     try:
         if not conn: return {"status": "error", "detail": "Database unavailable."}
         hashed = hashlib.sha256(data.password.encode()).hexdigest()
@@ -523,7 +599,8 @@ async def update_user_password(data: PasswordUpdate):
         return {"status": "error", "detail": str(e)}
 
 @app.post("/api/admin/users/reset-hwid")
-async def reset_hwid(email: str):
+async def reset_hwid(email: str, request: Request):
+    verify_admin_token(request)
     try:
         conn = StealthDB()
         conn.users.update_one({"email": email}, {"$set": {"hwid": None}})
@@ -532,7 +609,8 @@ async def reset_hwid(email: str):
         return {"status": "error", "detail": str(e)}
 
 @app.delete("/api/admin/users/{email}")
-async def delete_user(email: str):
+async def delete_user(email: str, request: Request):
+    verify_admin_token(request)
     try:
         conn = StealthDB()
         conn.users.delete_one({"email": email})
@@ -541,7 +619,8 @@ async def delete_user(email: str):
         return {"status": "error", "detail": str(e)}
 
 @app.get("/api/admin/config")
-async def get_config():
+async def get_config(request: Request):
+    verify_admin_token(request)
     try:
         conn = StealthDB()
         return conn.get_config()
@@ -549,7 +628,8 @@ async def get_config():
         return {"status": "error", "detail": str(e)}
 
 @app.post("/api/admin/config")
-async def update_config(config: dict = Body(...)):
+async def update_config(request: Request, config: dict = Body(...)):
+    verify_admin_token(request)
     try:
         conn = StealthDB()
         conn.config.update_one({}, {"$set": config}, upsert=True)
@@ -558,7 +638,8 @@ async def update_config(config: dict = Body(...)):
         return {"status": "error", "detail": str(e)}
 
 @app.post("/api/admin/maintenance")
-async def toggle_maintenance(active: bool):
+async def toggle_maintenance(active: bool, request: Request):
+    verify_admin_token(request)
     try:
         conn = StealthDB()
         conn.config.update_one({}, {"$set": {"maintenance_mode": active}}, upsert=True)
@@ -567,7 +648,8 @@ async def toggle_maintenance(active: bool):
         return {"status": "error", "detail": str(e)}
 
 @app.post("/api/admin/users/suspend")
-async def suspend_user(email: str, status: bool):
+async def suspend_user(email: str, status: bool, request: Request):
+    verify_admin_token(request)
     try:
         conn = StealthDB()
         conn.users.update_one({"email": email}, {"$set": {"suspended": status}})
@@ -637,7 +719,8 @@ async def get_ticket_history(email: str):
         return {"status": "error", "detail": str(e)}
 
 @app.get("/api/admin/tickets")
-async def get_all_tickets():
+async def get_all_tickets(request: Request):
+    verify_admin_token(request)
     try:
         conn = StealthDB()
         tickets = list(conn.db.tickets.find({}).sort("last_activity", -1))
@@ -648,12 +731,14 @@ async def get_all_tickets():
         return {"status": "error", "detail": str(e)}
 
 @app.post("/api/admin/ticket/reply")
-async def reply_to_ticket(email: str, message: str):
+async def reply_to_ticket(email: str, message: str, request: Request):
+    verify_admin_token(request)
     # Admin reply is just a send with role=admin
     return await send_ticket_message(email, message, "ADMIN", role="admin")
 
 @app.delete("/api/admin/tickets/{email}")
-async def delete_ticket(email: str):
+async def delete_ticket(email: str, request: Request):
+    verify_admin_token(request)
     try:
         conn = StealthDB()
         conn.db.tickets.delete_one({"email": email})

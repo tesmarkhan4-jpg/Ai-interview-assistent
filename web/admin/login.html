@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZenithHUD | Command Center Access</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --bg: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --border: rgba(255, 255, 255, 0.1);
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --rose: #f43f5e;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+
+        body {
+            background: var(--bg);
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(79, 70, 229, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(14, 165, 233, 0.1) 0px, transparent 50%);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text);
+            overflow: hidden;
+        }
+
+        .login-card {
+            width: 100%;
+            max-width: 440px;
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            border-radius: 32px;
+            padding: 48px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .logo-container {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .logo-text {
+            font-size: 24px;
+            font-weight: 900;
+            letter-spacing: -1px;
+            background: linear-gradient(to right, #fff, #94a3b8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header {
+            margin-bottom: 32px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 800;
+            letter-spacing: -1px;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        input {
+            width: 100%;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 14px 16px;
+            color: white;
+            font-size: 15px;
+            transition: all 0.2s;
+            outline: none;
+        }
+
+        input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+            background: rgba(15, 23, 42, 0.8);
+        }
+
+        .btn-primary {
+            width: 100%;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 14px;
+            padding: 16px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 12px;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 10px 20px -5px rgba(79, 70, 229, 0.4);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .error-box {
+            background: rgba(244, 63, 94, 0.1);
+            border: 1px solid rgba(244, 63, 94, 0.2);
+            color: var(--rose);
+            padding: 12px;
+            border-radius: 12px;
+            font-size: 13px;
+            margin-bottom: 24px;
+            display: none;
+            text-align: center;
+        }
+
+        #otp-section {
+            display: none;
+        }
+
+        .otp-inputs {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin: 24px 0;
+        }
+
+        .otp-input {
+            width: 48px;
+            height: 56px;
+            text-align: center;
+            font-size: 24px;
+            font-weight: 800;
+            border-radius: 12px;
+        }
+
+        .loader {
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 0.8s linear infinite;
+            display: none;
+            margin: 0 auto;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <div class="logo-container">
+            <span class="logo-text">ZENITH COMMAND CENTER</span>
+        </div>
+
+        <div id="login-section">
+            <div class="header">
+                <h1>Welcome Back</h1>
+                <p>Enter your tactical credentials to proceed.</p>
+            </div>
+
+            <div class="error-box" id="login-error"></div>
+
+            <div class="form-group">
+                <label>Admin Identity</label>
+                <input type="email" id="email" placeholder="admin@zenith.com" value="faheemkhan101992@gmail.com">
+            </div>
+
+            <div class="form-group" style="margin-bottom: 32px;">
+                <label>Access Key</label>
+                <input type="password" id="password" placeholder="••••••••">
+            </div>
+
+            <button class="btn-primary" id="login-btn" onclick="handleLogin()">
+                <span id="login-text">Authorize Access</span>
+                <div class="loader" id="login-loader"></div>
+            </button>
+        </div>
+
+        <div id="otp-section">
+            <div class="header">
+                <h1>Verify Identity</h1>
+                <p>A strategic code has been dispatched to your email.</p>
+            </div>
+
+            <div class="error-box" id="otp-error"></div>
+
+            <div class="form-group">
+                <label>6-Digit Strategy Code</label>
+                <div class="otp-inputs">
+                    <input type="text" maxlength="6" id="otp-input" style="text-align: center; font-size: 32px; letter-spacing: 8px; font-family: monospace;" placeholder="000000">
+                </div>
+            </div>
+
+            <button class="btn-primary" id="verify-btn" onclick="handleVerify()">
+                <span id="verify-text">Confirm Identity</span>
+                <div class="loader" id="verify-loader"></div>
+            </button>
+            <p style="text-align: center; font-size: 13px; color: var(--text-muted); margin-top: 24px; cursor: pointer;" onclick="location.reload()">Back to login</p>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '/api';
+
+        async function handleLogin() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const errorBox = document.getElementById('login-error');
+            const btn = document.getElementById('login-btn');
+            const text = document.getElementById('login-text');
+            const loader = document.getElementById('login-loader');
+
+            if (!email || !password) return;
+
+            errorBox.style.display = 'none';
+            btn.disabled = true;
+            text.style.display = 'none';
+            loader.style.display = 'block';
+
+            try {
+                const res = await fetch(`${API_BASE}/admin/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                const data = await res.json();
+
+                if (data.status === 'success') {
+                    document.getElementById('login-section').style.display = 'none';
+                    document.getElementById('otp-section').style.display = 'block';
+                } else {
+                    errorBox.innerText = data.detail || 'Access Denied.';
+                    errorBox.style.display = 'block';
+                }
+            } catch (e) {
+                errorBox.innerText = 'Infrastructure Offline.';
+                errorBox.style.display = 'block';
+            } finally {
+                btn.disabled = false;
+                text.style.display = 'block';
+                loader.style.display = 'none';
+            }
+        }
+
+        async function handleVerify() {
+            const email = document.getElementById('email').value;
+            const otp = document.getElementById('otp-input').value;
+            const errorBox = document.getElementById('otp-error');
+            const btn = document.getElementById('verify-btn');
+            const text = document.getElementById('verify-text');
+            const loader = document.getElementById('verify-loader');
+
+            if (otp.length !== 6) return;
+
+            errorBox.style.display = 'none';
+            btn.disabled = true;
+            text.style.display = 'none';
+            loader.style.display = 'block';
+
+            try {
+                const res = await fetch(`${API_BASE}/admin/auth/verify`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, otp })
+                });
+                const data = await res.json();
+
+                if (data.status === 'success') {
+                    localStorage.setItem('admin_token', data.token);
+                    window.location.href = 'dashboard.html';
+                } else {
+                    errorBox.innerText = data.detail || 'Invalid Code.';
+                    errorBox.style.display = 'block';
+                }
+            } catch (e) {
+                errorBox.innerText = 'Verification Failed.';
+                errorBox.style.display = 'block';
+            } finally {
+                btn.disabled = false;
+                text.style.display = 'block';
+                loader.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>
