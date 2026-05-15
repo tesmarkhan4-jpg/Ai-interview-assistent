@@ -132,15 +132,30 @@ td { padding: 14px 12px; font-size: 0.85rem; border-bottom: 1px solid var(--glas
 
 .btn-action {
     background: #000; color: white; border: none;
-    padding: 8px 16px; border-radius: 10px; font-weight: 700; font-size: 0.75rem;
+    padding: 8px 16px; border-radius: 10px; font-weight: 800; font-size: 0.7rem;
     cursor: pointer; transition: all 0.2s; white-space: nowrap;
 }
 .btn-action:hover { background: #1e293b; transform: translateY(-1px); }
-.btn-secondary { background: #f1f5f9; color: #000; }
+.btn-secondary { 
+    background: #ffffff; 
+    color: #000; 
+    border: 1px solid #e2e8f0;
+}
+.btn-secondary:hover { background: #f8fafc; border-color: var(--primary); }
+
+select.btn-action {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 32px !important;
+    font-weight: 900;
+}
 
 input, select, textarea {
-    background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 14px;
+    background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 14px;
     font-size: 0.85rem; color: #000; outline: none; transition: 0.2s;
+    font-weight: 600;
 }
 input:focus { border-color: var(--primary); background: white; }
 
