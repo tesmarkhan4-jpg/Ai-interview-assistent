@@ -187,6 +187,19 @@ class AIEngine:
         if not user_input or len(user_input.strip()) < 2: return "..."
         if not auth_manager.current_user: return "Auth Error: Please sign in."
         
+        # --- PLAN LIMIT ENFORCEMENT ---
+        if auth_manager.tier == "BASIC":
+            from history_manager import history_manager
+            import datetime
+            history = history_manager.get_user_history(auth_manager.current_user)
+            if history:
+                try:
+                    last_mission_time = datetime.datetime.strptime(history[0]["id"], "%Y%m%d%H%M%S")
+                    if (datetime.datetime.now() - last_mission_time).days < 7:
+                        return "TACTICAL LIMIT REACHED: Basic Tier is restricted to 1 mission per week. Upgrade to PRO for Unlimited Dominance."
+                except Exception as e:
+                    print(f"Time parse error: {e}")
+                    
         # Proactively rotate key before starting the request
         if provider == "groq":
             self.groq_client = self._get_next_client() or self.groq_client
@@ -227,6 +240,20 @@ class AIEngine:
         """Yields chunks of the AI response with proactive rotation failsafes."""
         if not user_input or len(user_input.strip()) < 2: return
         
+        # --- PLAN LIMIT ENFORCEMENT ---
+        if auth_manager.tier == "BASIC":
+            from history_manager import history_manager
+            import datetime
+            history = history_manager.get_user_history(auth_manager.current_user)
+            if history:
+                try:
+                    last_mission_time = datetime.datetime.strptime(history[0]["id"], "%Y%m%d%H%M%S")
+                    if (datetime.datetime.now() - last_mission_time).days < 7:
+                        yield "TACTICAL LIMIT REACHED: Basic Tier is restricted to 1 mission per week. Upgrade to PRO for Unlimited Dominance."
+                        return
+                except Exception as e:
+                    print(f"Time parse error: {e}")
+
         # Proactively rotate key before starting the request
         if provider == "groq":
             self.groq_client = self._get_next_client() or self.groq_client
