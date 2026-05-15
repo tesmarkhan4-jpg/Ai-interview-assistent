@@ -398,7 +398,8 @@ async def get_admin_users():
         return {"status": "error", "detail": str(e)}
 
 @app.get("/api/admin/stats")
-async def get_stats():
+async def get_stats(request: Request):
+    verify_admin_token(request)
     try:
         conn = get_conn()
         if not conn: return {"status": "error", "detail": "Database unavailable."}
