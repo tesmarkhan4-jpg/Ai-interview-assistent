@@ -28,7 +28,7 @@ def get_resource_path(relative_path):
 env_path = get_resource_path(".env")
 load_dotenv(env_path, override=True)
 
-APP_VERSION = "1.1.4"
+APP_VERSION = "1.1.5"
 
 # Import Handlers with Error Reporting
 try:
