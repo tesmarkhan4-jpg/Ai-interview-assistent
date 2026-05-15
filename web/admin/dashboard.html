@@ -97,6 +97,15 @@
 
         <div id="content-payments" style="display: none;">
             <div class="data-card">
+                <div class="card-header"><span class="card-title">Gateway Configuration</span></div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div><label class="stat-label">STRIPE SECRET KEY</label><input type="password" id="cfg-stripe-key" style="width:100%;"></div>
+                    <div><label class="stat-label">PAYPAL CLIENT ID</label><input type="text" id="cfg-paypal-id" style="width:100%;"></div>
+                    <div style="grid-column: span 2;"><label class="stat-label">EASYPAISA / MANUAL INSTRUCTIONS</label><textarea id="cfg-payment-instructions" style="width:100%; height:80px;"></textarea></div>
+                    <button class="btn-action" onclick="updateConfig()" style="grid-column: span 2; padding:16px;">Synchronize Gateways</button>
+                </div>
+            </div>
+            <div class="data-card">
                 <div class="card-header"><span class="card-title">Financial Transaction Ledger</span></div>
                 <table>
                     <thead><tr><th>Transaction ID</th><th>Identity</th><th>Amount</th><th>Status</th><th>Timestamp</th></tr></thead>
@@ -106,6 +115,17 @@
         </div>
 
         <div id="content-settings" style="display: none;">
+            <div class="data-card">
+                <div class="card-header"><span class="card-title">Global SMTP Relay Setup</span></div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div><label class="stat-label">SMTP HOST</label><input type="text" id="cfg-smtp-host" placeholder="smtp.gmail.com" style="width:100%;"></div>
+                    <div><label class="stat-label">SMTP PORT</label><input type="text" id="cfg-smtp-port" placeholder="587" style="width:100%;"></div>
+                    <div><label class="stat-label">MASTER EMAIL</label><input type="text" id="cfg-smtp-user" style="width:100%;"></div>
+                    <div><label class="stat-label">APP PASSWORD</label><input type="password" id="cfg-smtp-pass" style="width:100%;"></div>
+                    <div style="grid-column: span 2;"><label class="stat-label">SENDER NAME</label><input type="text" id="cfg-smtp-name" placeholder="Zenith Support" style="width:100%;"></div>
+                    <button class="btn-action" onclick="updateConfig()" style="grid-column: span 2; padding:16px;">Update Relay State</button>
+                </div>
+            </div>
             <div class="data-card">
                 <div class="card-header"><span class="card-title">System Configuration</span></div>
                 <div style="display: grid; gap: 20px;">
@@ -242,8 +262,40 @@
             document.getElementById('new-key-value').value = ''; fetchKeys();
         }
 
-        async function fetchConfig() { const res = await adminFetch(`${API_BASE}/admin/config`); const data = await res.json(); document.getElementById('cfg-app-version').value = data.app_version || ''; document.getElementById('cfg-download-url').value = data.download_url || ''; document.getElementById('cfg-release-notes').value = data.release_notes || ''; }
-        async function updateConfig() { const cfg = { app_version: document.getElementById('cfg-app-version').value, download_url: document.getElementById('cfg-download-url').value, release_notes: document.getElementById('cfg-release-notes').value }; await adminFetch(`${API_BASE}/admin/config`, {method:'POST', body:JSON.stringify(cfg)}); alert("Updated."); }
+        async function fetchConfig() { 
+            const res = await adminFetch(`${API_BASE}/admin/config`); 
+            const data = await res.json(); 
+            document.getElementById('cfg-app-version').value = data.app_version || ''; 
+            document.getElementById('cfg-download-url').value = data.download_url || ''; 
+            document.getElementById('cfg-release-notes').value = data.release_notes || ''; 
+            // New Config Fields
+            document.getElementById('cfg-smtp-host').value = data.smtp_host || '';
+            document.getElementById('cfg-smtp-port').value = data.smtp_port || '';
+            document.getElementById('cfg-smtp-user').value = data.smtp_user || '';
+            document.getElementById('cfg-smtp-pass').value = data.smtp_pass || '';
+            document.getElementById('cfg-smtp-name').value = data.smtp_name || '';
+            document.getElementById('cfg-stripe-key').value = data.stripe_key || '';
+            document.getElementById('cfg-paypal-id').value = data.paypal_id || '';
+            document.getElementById('cfg-payment-instructions').value = data.payment_instructions || '';
+        }
+
+        async function updateConfig() { 
+            const cfg = { 
+                app_version: document.getElementById('cfg-app-version').value, 
+                download_url: document.getElementById('cfg-download-url').value, 
+                release_notes: document.getElementById('cfg-release-notes').value,
+                smtp_host: document.getElementById('cfg-smtp-host').value,
+                smtp_port: document.getElementById('cfg-smtp-port').value,
+                smtp_user: document.getElementById('cfg-smtp-user').value,
+                smtp_pass: document.getElementById('cfg-smtp-pass').value,
+                smtp_name: document.getElementById('cfg-smtp-name').value,
+                stripe_key: document.getElementById('cfg-stripe-key').value,
+                paypal_id: document.getElementById('cfg-paypal-id').value,
+                payment_instructions: document.getElementById('cfg-payment-instructions').value
+            }; 
+            await adminFetch(`${API_BASE}/admin/config`, {method:'POST', body:JSON.stringify(cfg)}); 
+            alert("Infrastructure Configuration Updated."); 
+        }
         async function toggleMaintenance() { const active = document.getElementById('maintenance-toggle').checked; await adminFetch(`${API_BASE}/admin/maintenance?active=${active}`, {method:'POST'}); }
 
         async function fetchTickets() { const res = await adminFetch(`${API_BASE}/admin/tickets`); const data = await res.json(); document.getElementById('ticket-list-container').innerHTML = data.tickets.map(t => `<div class="ticket-item" onclick="selectTicket('${t.email}')" style="padding:16px 20px; border-bottom:1px solid var(--glass-border); cursor:pointer;"><b>${t.email}</b><br><span style="font-size:0.7rem; color:var(--text-muted); font-weight:800;">${t.status.toUpperCase()}</span></div>`).join(''); }

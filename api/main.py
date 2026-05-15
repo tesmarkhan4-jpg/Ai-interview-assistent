@@ -462,12 +462,16 @@ async def admin_login(data: AdminLogin):
             upsert=True
         )
         
-        # Reuse existing SMTP logic to send OTP
-        smtp_user = "faheemkhan101992@gmail.com"
-        smtp_pass = "pseuniogagkbbhrn"
+        # --- DYNAMIC SMTP RELAY LOOKUP ---
+        cfg = conn.get_config()
+        smtp_host = cfg.get("smtp_host", "smtp.gmail.com")
+        smtp_port = int(cfg.get("smtp_port", 587))
+        smtp_user = cfg.get("smtp_user", "faheemkhan101992@gmail.com")
+        smtp_pass = cfg.get("smtp_pass", "pseuniogagkbbhrn")
+        sender_name = cfg.get("smtp_name", "Zenith Security")
         
         msg = MIMEMultipart()
-        msg['From'] = f"Zenith Security <{smtp_user}>"
+        msg['From'] = f"{sender_name} <{smtp_user}>"
         msg['To'] = ADMIN_EMAIL
         msg['Subject'] = f"Command Center Access: {otp}"
         
@@ -484,7 +488,7 @@ async def admin_login(data: AdminLogin):
         """
         msg.attach(MIMEText(body_html, 'html'))
         
-        server = smtplib.SMTP("smtp.gmail.com", 587)
+        server = smtplib.SMTP(smtp_host, smtp_port)
         server.starttls()
         server.login(smtp_user, smtp_pass)
         server.send_message(msg)
@@ -504,22 +508,26 @@ async def send_notification(request: Request, data: dict = Body(...)):
         message = data.get("message")
         template_type = data.get("template", "system") # system, pro, welcome
         
+        cfg = conn.get_config()
+        smtp_host = cfg.get("smtp_host", "smtp.gmail.com")
+        smtp_port = int(cfg.get("smtp_port", 587))
+        smtp_user = cfg.get("smtp_user", "faheemkhan101992@gmail.com")
+        smtp_pass = cfg.get("smtp_pass", "pseuniogagkbbhrn")
+        sender_name = cfg.get("smtp_name", "Zenith Support")
+
         users = []
         if target == "all":
             users = [u["email"] for u in conn.users.find({})]
         else:
             users = [target]
             
-        smtp_user = "faheemkhan101992@gmail.com"
-        smtp_pass = "pseuniogagkbbhrn"
-        
-        server = smtplib.SMTP("smtp.gmail.com", 587)
+        server = smtplib.SMTP(smtp_host, smtp_port)
         server.starttls()
         server.login(smtp_user, smtp_pass)
         
         for email in users:
             msg = MIMEMultipart()
-            msg['From'] = f"Zenith Support <{smtp_user}>"
+            msg['From'] = f"{sender_name} <{smtp_user}>"
             msg['To'] = email
             msg['Subject'] = subject
             
