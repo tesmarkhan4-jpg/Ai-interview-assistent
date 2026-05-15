@@ -596,8 +596,17 @@ async def safepay_callback(request: Request):
         event = data.get("event")
         if event == "payment.succeeded":
             metadata = data.get("metadata", {})
+            # Handle standard metadata OR Quick Checkout order_id (format: email_plan)
+            order_id = data.get("tracker", {}).get("order_id", "") or data.get("reference", "")
+            
             user_email = metadata.get("email")
             plan_type = metadata.get("plan", "PRO").upper()
+            
+            if not user_email and "_" in order_id:
+                parts = order_id.split("_")
+                user_email = parts[0]
+                plan_type = parts[1].upper() if len(parts) > 1 else "PRO"
+                
             amount = data.get("amount", 0)
             
             if user_email:

@@ -188,14 +188,29 @@
             <div class="plan-card" style="padding: 32px;">
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 32px;">
                     <div>
-                        <span class="pill pill-trial" style="margin-bottom: 8px; display: inline-block;">Current Plan</span>
-                        <h2 style="font-size: 2rem; font-weight: 900; color: #1e293b; letter-spacing: -1px;">Zenith Trial</h2>
+                        <span class="pill pill-trial" id="billing-pill" style="margin-bottom: 8px; display: inline-block;">Current Plan</span>
+                        <h2 id="billing-title" style="font-size: 2rem; font-weight: 900; color: #1e293b; letter-spacing: -1px;">Zenith Trial</h2>
                     </div>
                     <div style="text-align: right;">
-                        <div style="font-size: 1.5rem; font-weight: 900; color: #1e293b;">$0.00</div>
+                        <div id="billing-price" style="font-size: 1.5rem; font-weight: 900; color: #1e293b;">$0.00</div>
                     </div>
                 </div>
-                <button class="btn-action" style="width: 100%; justify-content: center;">Upgrade to PRO Intelligence</button>
+                
+                <div id="upgrade-options" style="display: grid; gap: 16px;">
+                    <button class="btn-action" style="width: 100%; justify-content: center; background: #64748b;" onclick="initSafepay('BASIC', 2900)">
+                        <i data-lucide="shield"></i> Upgrade to BASIC Tier (Rs. 2,900 / mo)
+                    </button>
+                    <button class="btn-action" style="width: 100%; justify-content: center; background: #0ea5e9;" onclick="initSafepay('PRO', 4900)">
+                        <i data-lucide="shield-check"></i> Upgrade to PRO Intelligence (Rs. 4,900 / mo)
+                    </button>
+                    <button class="btn-action" style="width: 100%; justify-content: center; background: #1e293b;" onclick="initSafepay('LIFETIME', 19900)">
+                        <i data-lucide="infinity"></i> Buy Lifetime Mastery (Rs. 19,900 / once)
+                    </button>
+                    <div style="text-align: center; margin-top: 12px;">
+                        <p style="font-size: 0.75rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; margin-bottom: 4px;">SECURED BY</p>
+                        <h3 style="color: #0ea5e9; font-weight: 900; font-size: 1.2rem; letter-spacing: -0.5px;">SAFEPAY <span style="font-size: 0.7rem; color: #f59e0b; background: #fef3c7; padding: 2px 6px; border-radius: 4px; vertical-align: middle;">SANDBOX</span></h3>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -245,7 +260,33 @@
             const exp = new Date(user.trial_expiry);
             const now = new Date();
             const diff = Math.ceil((exp - now) / (1000 * 60 * 60 * 24));
-            document.getElementById('days-left').innerText = `${diff} Days`;
+            document.getElementById('days-left').innerText = `${diff > 0 ? diff : 0} Days`;
+        }
+
+        // Update Billing Tab info
+        document.getElementById('billing-pill').innerText = `${user.tier} TIER`;
+        document.getElementById('billing-title').innerText = `Zenith ${user.tier.charAt(0).toUpperCase() + user.tier.slice(1).toLowerCase()}`;
+        if(user.tier === 'PRO' || user.tier === 'LIFETIME') {
+            document.getElementById('upgrade-options').style.display = 'none';
+            document.getElementById('billing-price').innerText = "PAID";
+        }
+
+        // Safepay Checkout Logic
+        function initSafepay(plan, amount) {
+            const pubKey = "sec_1938fc7a-d894-4c85-bb00-16b2d63ee7a3";
+            const orderId = `${user.email}_${plan}`;
+            const baseUrl = window.location.href.split('?')[0];
+            const redirectUrl = encodeURIComponent(`${baseUrl}?payment=success`);
+            const url = `https://sandbox.api.getsafepay.com/checkout/pay?env=sandbox&api_key=${pubKey}&amount=${amount * 100}&currency=PKR&source=custom&order_id=${orderId}&redirect_url=${redirectUrl}`;
+            window.location.href = url;
+        }
+
+        // Check for Payment Success Return
+        const urlParams = new URLSearchParams(window.location.search);
+        if(urlParams.get('payment') === 'success') {
+            alert("Payment signal sent! Your account will be upgraded within a few seconds. Please refresh the page shortly.");
+            // Clean URL
+            window.history.replaceState({}, document.title, window.location.pathname);
         }
 
         // Tab Logic
