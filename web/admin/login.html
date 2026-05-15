@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ZenithHUD | Command Center Access</title>
+    <title>ZenithHUD | Secure Access</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -11,11 +11,11 @@
         :root {
             --primary: #4f46e5;
             --primary-hover: #4338ca;
-            --bg: #f9fafb;
+            --bg: #ffffff;
             --card-bg: #ffffff;
-            --border: rgba(0, 0, 0, 0.05);
-            --text: #111827;
-            --text-muted: #6b7280;
+            --border: #e2e8f0;
+            --text: #0f172a;
+            --text-muted: #64748b;
             --rose: #ef4444;
         }
 
@@ -24,8 +24,8 @@
         body {
             background: var(--bg);
             background-image: 
-                radial-gradient(at 0% 0%, rgba(79, 70, 229, 0.05) 0px, transparent 50%),
-                radial-gradient(at 100% 100%, rgba(14, 165, 233, 0.05) 0px, transparent 50%);
+                radial-gradient(at 0% 0%, rgba(79, 70, 229, 0.03) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(14, 165, 233, 0.03) 0px, transparent 50%);
             height: 100vh;
             display: flex;
             align-items: center;
@@ -36,103 +36,99 @@
 
         .login-card {
             width: 100%;
-            max-width: 440px;
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 32px;
-            padding: 48px;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.02);
-            animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+            max-width: 400px;
+            padding: 40px;
+            animation: slideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(40px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
         .logo-container {
             text-align: center;
-            margin-bottom: 40px;
+            margin-bottom: 48px;
         }
 
         .logo-text {
-            font-size: 24px;
-            font-weight: 900;
-            letter-spacing: -1px;
-            background: linear-gradient(to right, var(--primary), #818cf8);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            font-size: 14px;
+            font-weight: 800;
+            letter-spacing: 4px;
+            color: var(--primary);
+            text-transform: uppercase;
         }
 
         .header {
-            margin-bottom: 32px;
+            margin-bottom: 40px;
             text-align: center;
         }
 
         .header h1 {
-            font-size: 28px;
-            font-weight: 800;
-            letter-spacing: -1.2px;
-            margin-bottom: 8px;
-            color: #111827;
+            font-size: 32px;
+            font-weight: 900;
+            letter-spacing: -1.5px;
+            margin-bottom: 12px;
+            color: #000;
         }
 
         .header p {
             color: var(--text-muted);
-            font-size: 14px;
+            font-size: 15px;
             font-weight: 500;
         }
 
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 24px;
         }
 
         .form-group label {
             display: block;
-            font-size: 11px;
+            font-size: 12px;
             font-weight: 700;
             color: var(--text-muted);
-            margin-bottom: 8px;
+            margin-bottom: 10px;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 0.5px;
         }
 
         input {
             width: 100%;
-            background: #fdfdfd;
-            border: 1px solid #e5e7eb;
-            border-radius: 14px;
-            padding: 14px 16px;
-            color: #111827;
+            background: #fff;
+            border: 1px solid #cbd5e1;
+            border-radius: 12px;
+            padding: 16px;
+            color: #000;
             font-size: 15px;
-            transition: all 0.2s;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
             outline: none;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
         }
 
         input:focus {
             border-color: var(--primary);
-            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
-            background: #fff;
+            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1), 0 4px 6px -1px rgba(0,0,0,0.1);
         }
 
         .btn-primary {
             width: 100%;
-            background: var(--primary);
+            background: #000;
             color: white;
             border: none;
-            border-radius: 14px;
-            padding: 16px;
+            border-radius: 12px;
+            padding: 18px;
             font-size: 15px;
             font-weight: 700;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             margin-top: 12px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
         }
 
         .btn-primary:hover {
-            background: var(--primary-hover);
-            transform: translateY(-1px);
-            box-shadow: 0 10px 20px -5px rgba(79, 70, 229, 0.3);
+            background: #1e293b;
+            transform: translateY(-2px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
         }
 
         .btn-primary:active {
@@ -140,12 +136,12 @@
         }
 
         .error-box {
-            background: #fef2f2;
-            border: 1px solid #fee2e2;
-            color: var(--rose);
-            padding: 12px;
-            border-radius: 12px;
-            font-size: 13px;
+            background: #fff1f2;
+            border: 1px solid #ffe4e6;
+            color: #e11d48;
+            padding: 14px;
+            border-radius: 10px;
+            font-size: 14px;
             margin-bottom: 24px;
             display: none;
             text-align: center;
@@ -156,77 +152,82 @@
             display: none;
         }
 
-        .otp-inputs {
-            display: flex;
-            gap: 12px;
-            justify-content: center;
-            margin: 24px 0;
-        }
-
         .loader {
             width: 20px;
             height: 20px;
-            border: 3px solid rgba(255,255,255,0.3);
+            border: 2px solid rgba(255,255,255,0.2);
             border-radius: 50%;
             border-top-color: #fff;
-            animation: spin 0.8s linear infinite;
+            animation: spin 0.6s linear infinite;
             display: none;
             margin: 0 auto;
         }
 
         @keyframes spin { to { transform: rotate(360deg); } }
+
+        .back-link {
+            text-align: center;
+            margin-top: 32px;
+            font-size: 14px;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-weight: 600;
+            transition: color 0.2s;
+        }
+
+        .back-link:hover {
+            color: var(--text);
+        }
     </style>
 </head>
 <body>
     <div class="login-card">
         <div class="logo-container">
-            <span class="logo-text">ZENITH COMMAND CENTER</span>
+            <span class="logo-text">ZENITH COMMAND</span>
         </div>
 
         <div id="login-section">
             <div class="header">
-                <h1>Welcome Back</h1>
-                <p>Enter your tactical credentials to proceed.</p>
+                <h1>Command Access</h1>
+                <p>Authorize your administrative terminal.</p>
             </div>
 
             <div class="error-box" id="login-error"></div>
 
             <div class="form-group">
-                <label>Admin Identity</label>
-                <input type="email" id="email" placeholder="admin@zenith.com" value="faheemkhan101992@gmail.com">
+                <label>Terminal Identity</label>
+                <input type="email" id="email" autocomplete="off" placeholder="Email Address">
             </div>
 
             <div class="form-group" style="margin-bottom: 32px;">
-                <label>Access Key</label>
-                <input type="password" id="password" placeholder="••••••••">
+                <label>Security Key</label>
+                <input type="password" id="password" autocomplete="new-password" placeholder="Password">
             </div>
 
             <button class="btn-primary" id="login-btn" onclick="handleLogin()">
-                <span id="login-text">Authorize Access</span>
+                <span id="login-text">Login to Command Center</span>
                 <div class="loader" id="login-loader"></div>
             </button>
         </div>
 
         <div id="otp-section">
             <div class="header">
-                <h1>Verify Identity</h1>
-                <p>A strategic code has been dispatched to your email.</p>
+                <h1>Verification Required</h1>
+                <p>Enter the strategic code dispatched to your mail.</p>
             </div>
 
             <div class="error-box" id="otp-error"></div>
 
             <div class="form-group">
-                <label>6-Digit Strategy Code</label>
-                <div class="otp-inputs">
-                    <input type="text" maxlength="6" id="otp-input" style="text-align: center; font-size: 32px; letter-spacing: 8px; font-weight: 800; font-family: monospace;" placeholder="000000">
-                </div>
+                <label>6-Digit Tactical Code</label>
+                <input type="text" maxlength="6" id="otp-input" autocomplete="off" style="text-align: center; font-size: 32px; letter-spacing: 12px; font-weight: 900; border-radius: 16px; border-width: 2px;" placeholder="000000">
             </div>
 
             <button class="btn-primary" id="verify-btn" onclick="handleVerify()">
-                <span id="verify-text">Confirm Identity</span>
+                <span id="verify-text">Authenticate Terminal</span>
                 <div class="loader" id="verify-loader"></div>
             </button>
-            <p style="text-align: center; font-size: 13px; color: var(--text-muted); margin-top: 24px; cursor: pointer; font-weight: 600;" onclick="location.reload()">Back to login</p>
+            <div class="back-link" onclick="location.reload()">Return to Identification</div>
         </div>
     </div>
 
@@ -260,11 +261,11 @@
                     document.getElementById('login-section').style.display = 'none';
                     document.getElementById('otp-section').style.display = 'block';
                 } else {
-                    errorBox.innerText = data.detail || 'Access Denied.';
+                    errorBox.innerText = data.detail || 'Strategic Refusal.';
                     errorBox.style.display = 'block';
                 }
             } catch (e) {
-                errorBox.innerText = 'Infrastructure Offline.';
+                errorBox.innerText = 'Relay Unavailable.';
                 errorBox.style.display = 'block';
             } finally {
                 btn.disabled = false;
@@ -300,11 +301,11 @@
                     localStorage.setItem('admin_token', data.token);
                     window.location.href = '/admin';
                 } else {
-                    errorBox.innerText = data.detail || 'Invalid Code.';
+                    errorBox.innerText = data.detail || 'Invalid Signature.';
                     errorBox.style.display = 'block';
                 }
             } catch (e) {
-                errorBox.innerText = 'Verification Failed.';
+                errorBox.innerText = 'Authentication Failed.';
                 errorBox.style.display = 'block';
             } finally {
                 btn.disabled = false;
