@@ -169,15 +169,25 @@
         async function fetchUsers() {
             const res = await adminFetch(`${API_BASE}/admin/users`); if(!res) return;
             const data = await res.json();
-            document.getElementById('user-list').innerHTML = data.users.map(u => `
+            document.getElementById('user-list').innerHTML = data.users.map(u => {
+                const isAdmin = u.email === 'faheemkhan101992@gmail.com';
+                return `
                 <tr>
-                    <td><b>${u.email}</b><br><span style="font-size:0.7rem; color:var(--text-muted);">${u.full_name || 'LEGACY'}</span></td>
-                    <td><span class="status-pill ${u.email.includes('faheem')?'badge-admin':'status-active'}">${u.email.includes('faheem')?'MASTER':'USER'}</span></td>
+                    <td><b>${u.email}</b><br><span style="font-size:0.7rem; color:var(--text-muted);">${u.full_name || 'LEGACY'} ${isAdmin ? '(System Master)' : ''}</span></td>
+                    <td><span class="status-pill ${isAdmin ? 'badge-admin' : 'status-active'}">${isAdmin ? 'MASTER' : 'USER'}</span></td>
                     <td>${new Date(u.join_date).toLocaleDateString()}</td>
-                    <td><code>${u.hwid ? u.hwid.substring(0,8) : 'NONE'}</code></td>
-                    <td><div style="display:flex; gap:6px;"><button class="btn-action btn-secondary" onclick="upgradeUser('${u.email}')">PRO</button><button class="btn-action btn-secondary" onclick="resetHWID('${u.email}')">HWID</button><button class="btn-action btn-secondary" style="color:var(--rose);" onclick="deleteUser('${u.email}')">KILL</button></div></td>
+                    <td><code>${!isAdmin && u.hwid ? u.hwid.substring(0,8) : ''}</code></td>
+                    <td>
+                        <div style="display:flex; gap:6px;">
+                            ${isAdmin ? '<span style="font-size: 0.7rem; color: var(--text-muted); font-weight: 700;">ROOT ACCESS</span>' : `
+                                <button class="btn-action btn-secondary" onclick="upgradeUser('${u.email}')">PRO</button>
+                                <button class="btn-action btn-secondary" onclick="resetHWID('${u.email}')">HWID</button>
+                                <button class="btn-action btn-secondary" style="color:var(--rose);" onclick="deleteUser('${u.email}')">KILL</button>
+                            `}
+                        </div>
+                    </td>
                 </tr>
-            `).join('');
+            `}).join('');
         }
 
         async function fetchKeys() {
