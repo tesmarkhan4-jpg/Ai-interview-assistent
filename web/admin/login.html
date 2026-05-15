@@ -23,43 +23,76 @@
             overflow: hidden;
         }
 
-        /* Left Side - Visual section */
+        /* Left Side - Luxury Visual section */
         .visual-side {
             flex: 1.2;
-            background: linear-gradient(135deg, #4f46e5 0%, #a855f7 100%);
+            background: linear-gradient(-45deg, #4f46e5, #7c3aed, #2563eb, #9333ea);
+            background-size: 400% 400%;
+            animation: aurora 15s ease infinite;
             position: relative;
             display: flex;
             align-items: center;
             justify-content: center;
+            overflow: hidden;
         }
 
-        .visual-side::after {
+        @keyframes aurora {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Ambient glows for extra premium feel */
+        .glow {
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            background: rgba(255, 255, 255, 0.15);
+            filter: blur(80px);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        .visual-side::before {
             content: '';
             position: absolute;
             width: 100%;
             height: 100%;
-            background-image: radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.1) 0%, transparent 40%),
-                              radial-gradient(circle at 80% 70%, rgba(255, 255, 255, 0.1) 0%, transparent 40%);
+            background: radial-gradient(circle at center, transparent 0%, rgba(0,0,0,0.1) 100%);
         }
 
-        .brand-box {
+        .brand-content {
             position: relative;
-            z-index: 2;
-            color: white;
+            z-index: 5;
             text-align: center;
+            animation: logoFadeIn 1.2s ease-out;
+        }
+
+        @keyframes logoFadeIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .brand-logo {
+            height: 120px;
+            filter: drop-shadow(0 0 20px rgba(255,255,255,0.3));
+            margin-bottom: 30px;
         }
 
         .brand-name {
-            font-size: 48px;
+            font-size: 36px;
             font-weight: 900;
-            letter-spacing: -2px;
-            margin-bottom: 12px;
+            color: white;
+            letter-spacing: -1.5px;
+            margin-bottom: 10px;
         }
 
         .brand-tag {
-            font-size: 18px;
+            font-size: 16px;
             font-weight: 500;
-            opacity: 0.8;
+            color: rgba(255, 255, 255, 0.7);
+            letter-spacing: 2px;
+            text-transform: uppercase;
         }
 
         /* Right Side - Form section */
@@ -70,16 +103,17 @@
             justify-content: center;
             padding: 60px;
             background: white;
+            position: relative;
         }
 
         .login-container {
             width: 100%;
             max-width: 400px;
-            animation: fadeIn 0.8s ease-out;
+            animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateX(20px); }
+            from { opacity: 0; transform: translateX(30px); }
             to { opacity: 1; transform: translateX(0); }
         }
 
@@ -89,8 +123,8 @@
 
         .header h1 {
             font-size: 32px;
-            font-weight: 800;
-            letter-spacing: -1px;
+            font-weight: 900;
+            letter-spacing: -1.5px;
             margin-bottom: 8px;
             color: var(--text);
         }
@@ -98,6 +132,7 @@
         .header p {
             color: var(--text-muted);
             font-size: 16px;
+            font-weight: 500;
         }
 
         .form-group {
@@ -106,28 +141,30 @@
 
         .form-group label {
             display: block;
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--text);
+            font-size: 13px;
+            font-weight: 700;
+            color: #374151;
             margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         input {
             width: 100%;
-            background: #f9fafb;
-            border: 1px solid #e5e7eb;
-            border-radius: 12px;
-            padding: 14px 16px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 16px;
             color: var(--text);
             font-size: 16px;
-            transition: all 0.2s;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
             outline: none;
         }
 
         input:focus {
             background: white;
             border-color: var(--primary);
-            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.08);
         }
 
         .btn-primary {
@@ -135,32 +172,33 @@
             background: var(--primary);
             color: white;
             border: none;
-            border-radius: 12px;
-            padding: 16px;
+            border-radius: 14px;
+            padding: 18px;
             font-size: 16px;
             font-weight: 700;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             margin-top: 12px;
+            box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.3);
         }
 
         .btn-primary:hover {
             background: #4338ca;
-            transform: translateY(-1px);
-            box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.2);
+            transform: translateY(-2px);
+            box-shadow: 0 20px 25px -5px rgba(79, 70, 229, 0.4);
         }
 
         .error-message {
-            background: #fef2f2;
+            background: #fff1f2;
             border: 1px solid #fee2e2;
-            color: #ef4444;
-            padding: 12px;
-            border-radius: 10px;
+            color: #e11d48;
+            padding: 14px;
+            border-radius: 12px;
             font-size: 14px;
             margin-bottom: 24px;
             display: none;
             text-align: center;
-            font-weight: 500;
+            font-weight: 600;
         }
 
         #otp-section {
@@ -186,12 +224,13 @@
             font-size: 14px;
             color: var(--text-muted);
             cursor: pointer;
-            font-weight: 500;
+            font-weight: 600;
+            transition: color 0.2s;
         }
 
         .back-btn:hover { color: var(--text); }
 
-        @media (max-width: 900px) {
+        @media (max-width: 1024px) {
             .visual-side { display: none; }
             .form-side { padding: 40px; }
         }
@@ -199,9 +238,12 @@
 </head>
 <body>
     <div class="visual-side">
-        <div class="brand-box">
+        <div class="glow" style="top: -50px; left: -50px;"></div>
+        <div class="glow" style="bottom: -50px; right: -50px;"></div>
+        <div class="brand-content">
+            <img src="/logo.png" alt="Zenith Logo" class="brand-logo">
             <h2 class="brand-name">Zenith Admin</h2>
-            <p class="brand-tag">Professional Management Suite</p>
+            <p class="brand-tag">Premium Management</p>
         </div>
     </div>
 
@@ -241,7 +283,7 @@
 
                 <div class="form-group">
                     <label>Verification Code</label>
-                    <input type="text" maxlength="6" id="otp-input" autocomplete="off" style="text-align: center; font-size: 32px; letter-spacing: 12px; font-weight: 800;" placeholder="000000">
+                    <input type="text" maxlength="6" id="otp-input" autocomplete="off" style="text-align: center; font-size: 32px; letter-spacing: 12px; font-weight: 900; border-radius: 16px;" placeholder="000000">
                 </div>
 
                 <button class="btn-primary" id="verify-btn" onclick="handleVerify()">
@@ -283,11 +325,11 @@
                     document.getElementById('login-section').style.display = 'none';
                     document.getElementById('otp-section').style.display = 'block';
                 } else {
-                    errorBox.innerText = data.detail || 'Email or password incorrect.';
+                    errorBox.innerText = data.detail || 'Incorrect credentials.';
                     errorBox.style.display = 'block';
                 }
             } catch (e) {
-                errorBox.innerText = 'Connection error. Please try again.';
+                errorBox.innerText = 'Connection failure.';
                 errorBox.style.display = 'block';
             } finally {
                 btn.disabled = false;
@@ -323,11 +365,11 @@
                     localStorage.setItem('admin_token', data.token);
                     window.location.href = '/admin';
                 } else {
-                    errorBox.innerText = data.detail || 'Incorrect verification code.';
+                    errorBox.innerText = data.detail || 'Incorrect code.';
                     errorBox.style.display = 'block';
                 }
             } catch (e) {
-                errorBox.innerText = 'Verification failed. Please try again.';
+                errorBox.innerText = 'Verification failed.';
                 errorBox.style.display = 'block';
             } finally {
                 btn.disabled = false;
