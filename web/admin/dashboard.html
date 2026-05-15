@@ -187,7 +187,12 @@
                     <td>
                         <div style="display:flex; gap:6px;">
                             ${isAdmin ? '<span style="font-size: 0.7rem; color: var(--text-muted); font-weight: 700;">ROOT ACCESS</span>' : `
-                                <button class="btn-action btn-secondary" onclick="upgradeUser('${u.email}')">PRO</button>
+                                <select class="btn-action btn-secondary" onchange="upgradeUser('${u.email}', this.value)" style="padding: 4px 8px; font-size: 0.7rem;">
+                                    <option value="">SET PLAN</option>
+                                    <option value="basic">BASIC</option>
+                                    <option value="pro">PRO</option>
+                                    <option value="lifetime">LIFETIME</option>
+                                </select>
                                 <button class="btn-action btn-secondary" onclick="resetHWID('${u.email}')">HWID</button>
                                 <button class="btn-action btn-secondary" style="color:var(--rose);" onclick="deleteUser('${u.email}')">KILL</button>
                             `}
@@ -202,6 +207,20 @@
             const data = await res.json();
             document.getElementById('key-pool-body').innerHTML = data.keys.map(k => `<tr><td><b>${k.provider.toUpperCase()}</b></td><td><code>${k.key_value.substring(0,10)}...</code></td><td>${k.usage_count_today || 0}</td><td>${k.usage_count_total || 0}</td><td>${k.last_used ? new Date(k.last_used).toLocaleTimeString() : 'NEVER'}</td><td><button class="btn-action btn-secondary" style="color:var(--rose);" onclick="removeKey('${k._id}')">Revoke</button></td></tr>`).join('');
             ['gemini', 'groq', 'deepgram'].forEach(p => document.getElementById('count-'+p).innerText = data.keys.filter(k => k.provider === p).length);
+        }
+
+        async function upgradeUser(email, plan) {
+            if(!plan) return;
+            if(confirm(`Provision ${email} as ${plan.toUpperCase()}?`)) { 
+                await adminFetch(`${API_BASE}/admin/users/upgrade?email=${email}&plan=${plan}`, {method:'POST'}); 
+                fetchUsers(); 
+            }
+        }
+        async function resetHWID(email) {
+            if(confirm("Reset Hardware Identity?")) { await adminFetch(`${API_BASE}/admin/users/reset-hwid?email=${email}`, {method:'POST'}); fetchUsers(); }
+        }
+        async function deleteUser(email) {
+            if(confirm("Terminate Access Permanently?")) { await adminFetch(`${API_BASE}/admin/users/${email}`, {method:'DELETE'}); fetchUsers(); }
         }
 
         async function sendBroadcast() {

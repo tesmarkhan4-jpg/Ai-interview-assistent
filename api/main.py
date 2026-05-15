@@ -662,12 +662,14 @@ async def report_key_usage(data: dict):
         return {"status": "error", "detail": str(e)}
 
 @app.post("/api/admin/users/upgrade")
-async def upgrade_user(email: str, request: Request):
+async def upgrade_user(email: str, plan: str, request: Request):
     verify_admin_token(request)
     try:
         conn = get_conn()
         if not conn: return {"status": "error", "detail": "Database unavailable."}
-        conn.users.update_one({"email": email}, {"$set": {"tier": "PRO"}})
+        
+        # Strategic tier mapping
+        conn.users.update_one({"email": email}, {"$set": {"tier": plan.upper()}})
         return {"status": "success"}
     except Exception as e:
         return {"status": "error", "detail": str(e)}
