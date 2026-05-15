@@ -12,6 +12,10 @@
   ],
   "rewrites": [
     {
+      "source": "/logo.png",
+      "destination": "/web/logo.png"
+    },
+    {
       "source": "/admin",
       "destination": "/web/admin/dashboard.html"
     },
