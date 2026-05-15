@@ -3,155 +3,126 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ZenithHUD | Elite Command Center</title>
+    <title>ZenithHUD | Elite Admin</title>
     <link rel="stylesheet" href="/admin/admin.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body>
     <aside>
-        <div style="margin-bottom: 48px; padding-left: 14px;">
-            <img src="/logo.png" alt="Zenith Logo" style="height: 38px;">
-        </div>
-        
+        <div style="margin-bottom: 32px; padding-left: 10px;"><img src="/logo.png" alt="Logo" style="height: 30px;"></div>
         <nav class="nav-group">
             <a href="#" class="nav-link active" data-tab="overview"><i data-lucide="layout-grid"></i> <span>Overview</span></a>
-            <a href="#" class="nav-link" data-tab="users"><i data-lucide="users"></i> <span>Users</span></a>
-            <a href="#" class="nav-link" data-tab="keys"><i data-lucide="key"></i> <span>API Keys</span></a>
-            <a href="#" class="nav-link" data-tab="settings"><i data-lucide="settings"></i> <span>Configuration</span></a>
+            <a href="#" class="nav-link" data-tab="users"><i data-lucide="users"></i> <span>User Fleet</span></a>
+            <a href="#" class="nav-link" data-tab="keys"><i data-lucide="key"></i> <span>API Pool</span></a>
+            <a href="#" class="nav-link" data-tab="notify"><i data-lucide="send"></i> <span>Broadcast</span></a>
+            <a href="#" class="nav-link" data-tab="payments"><i data-lucide="credit-card"></i> <span>Financials</span></a>
+            <a href="#" class="nav-link" data-tab="settings"><i data-lucide="settings"></i> <span>System</span></a>
             <a href="#" class="nav-link" data-tab="appeals"><i data-lucide="message-square"></i> <span>Support</span></a>
         </nav>
-        <div style="margin-top: 40px; padding: 0 10px;">
-            <a href="#" onclick="adminLogout()" class="nav-link" style="color: var(--rose); background: rgba(239, 68, 68, 0.05);"><i data-lucide="log-out"></i> <span>Sign Out</span></a>
-        </div>
+        <div style="margin-top: 20px;"><a href="#" onclick="adminLogout()" class="nav-link" style="color: var(--rose);"><i data-lucide="log-out"></i> <span>Sign Out</span></a></div>
     </aside>
 
     <main>
         <header>
             <h1 id="tab-title">Infrastructure Overview</h1>
-            <div style="display: flex; align-items: center; gap: 12px; background: white; padding: 10px 20px; border-radius: 100px; border: 1px solid var(--glass-border);">
-                <span style="font-size: 11px; font-weight: 800; color: var(--text-muted); letter-spacing: 1px;">MAINTENANCE</span>
-                <label class="switch">
-                    <input type="checkbox" id="maintenance-toggle" onchange="toggleMaintenance()">
-                    <span class="slider"></span>
-                </label>
+            <div style="display: flex; gap: 10px; align-items: center; background: white; padding: 6px 14px; border-radius: 100px; border: 1px solid var(--glass-border);">
+                <span style="font-size: 10px; font-weight: 800; color: var(--text-muted);">MAINTENANCE</span>
+                <label class="switch"><input type="checkbox" id="maintenance-toggle" onchange="toggleMaintenance()"><span class="slider"></span></label>
             </div>
         </header>
 
         <div id="content-overview">
             <div class="stats-grid">
-                <div class="stat-card">
-                    <span class="stat-label">Global User Fleet</span>
-                    <div class="stat-value" id="stat-total-users">--</div>
-                    <span class="stat-trend">Live Infrastructure</span>
-                </div>
-                <div class="stat-card">
-                    <span class="stat-label">Active Missions</span>
-                    <div class="stat-value" id="stat-active-sessions">--</div>
-                    <span class="stat-trend">Current Load</span>
-                </div>
-                <div class="stat-card">
-                    <span class="stat-label">System Health</span>
-                    <div class="stat-value" id="stat-health">--</div>
-                    <span class="stat-trend" style="color: var(--emerald);">Operational</span>
-                </div>
-                <div class="stat-card accent">
-                    <span class="stat-label">Total Pro Tier</span>
-                    <div class="stat-value" id="stat-pro-users">--</div>
-                    <span class="stat-trend">Elite Fleet</span>
-                </div>
+                <div class="stat-card"><span class="stat-label">Total Fleet</span><div class="stat-value" id="stat-total-users">--</div><span class="stat-trend">Managed Nodes</span></div>
+                <div class="stat-card"><span class="stat-label">Active Missions</span><div class="stat-value" id="stat-active-sessions">--</div><span class="stat-trend">Live Sync</span></div>
+                <div class="stat-card"><span class="stat-label">Health Index</span><div class="stat-value" id="stat-health">--</div><span class="stat-trend" style="color:var(--emerald);">Optimal</span></div>
+                <div class="stat-card accent"><span class="stat-label">Pro Users</span><div class="stat-value" id="stat-pro-users">--</div><span class="stat-trend">Elite Tier</span></div>
             </div>
-
             <div class="data-card">
-                <div class="card-header"><span class="card-title">Real-time Activity Stream</span></div>
+                <div class="card-header"><span class="card-title">Real-time Activity</span></div>
                 <table>
-                    <thead><tr><th>Identity</th><th>Mission Type</th><th>Latency</th><th>Status</th></tr></thead>
-                    <tbody id="overview-stream-list">
-                        <tr><td colspan="4"><div class="skeleton" style="height: 50px; margin: 10px 0;"></div></td></tr>
-                    </tbody>
+                    <thead><tr><th>Identity</th><th>Mission</th><th>Latency</th><th>Status</th></tr></thead>
+                    <tbody id="overview-stream-list"></tbody>
                 </table>
             </div>
         </div>
 
         <div id="content-users" style="display: none;">
             <div class="data-card">
-                <div class="card-header">
-                    <span class="card-title">Authorized Personnel</span>
-                    <button class="btn-action" onclick="alert('Feature coming soon')">+ New Entry</button>
-                </div>
+                <div class="card-header"><span class="card-title">User Fleet Management</span></div>
                 <table>
-                    <thead><tr><th>Identity</th><th>Tier</th><th>Registered</th><th>Status</th><th>Hardware</th><th>Control</th></tr></thead>
+                    <thead><tr><th>User Identity</th><th>Tier</th><th>Registered</th><th>Hardware</th><th>Actions</th></tr></thead>
                     <tbody id="user-list"></tbody>
                 </table>
             </div>
         </div>
 
         <div id="content-keys" style="display: none;">
-            <div class="stats-grid" style="margin-bottom: 30px;">
-                <div class="stat-card"><span class="stat-label">Gemini Core</span><div class="stat-value" id="count-gemini">--</div></div>
-                <div class="stat-card"><span class="stat-label">Groq Engine</span><div class="stat-value" id="count-groq">--</div></div>
-                <div class="stat-card"><span class="stat-label">Deepgram Core</span><div class="stat-value" id="count-deepgram">--</div></div>
+            <div class="stats-grid" style="margin-bottom: 24px;">
+                <div class="stat-card"><span class="stat-label">Gemini</span><div class="stat-value" id="count-gemini">--</div></div>
+                <div class="stat-card"><span class="stat-label">Groq</span><div class="stat-value" id="count-groq">--</div></div>
+                <div class="stat-card"><span class="stat-label">Deepgram</span><div class="stat-value" id="count-deepgram">--</div></div>
             </div>
             <div class="data-card">
                 <div class="card-header">
-                    <span class="card-title">API Rotation Pool</span>
-                    <div style="display: flex; gap: 12px;">
-                        <select id="new-key-provider" class="btn-action btn-secondary" style="height: 48px;">
-                            <option value="gemini">GEMINI</option>
-                            <option value="groq">GROQ</option>
-                            <option value="deepgram">DEEPGRAM</option>
-                        </select>
-                        <input type="text" id="new-key-value" placeholder="Enter API Key..." style="width: 350px; background: white; border: 1px solid var(--glass-border); border-radius: 14px; padding: 0 20px;">
+                    <span class="card-title">API Key Pool</span>
+                    <div style="display:flex; gap:8px;">
+                        <select id="new-key-provider" class="btn-action btn-secondary"><option value="gemini">GEMINI</option><option value="groq">GROQ</option><option value="deepgram">DEEPGRAM</option></select>
+                        <input type="text" id="new-key-value" placeholder="Enter API Key..." style="width:280px;">
                         <button class="btn-action" onclick="addKey()">Inject</button>
                     </div>
                 </div>
                 <table>
-                    <thead><tr><th>Provider</th><th>Key Hash</th><th>Status</th><th>Daily</th><th>Lifetime</th><th>Activity</th><th>Action</th></tr></thead>
+                    <thead><tr><th>Provider</th><th>Key Hash</th><th>Today</th><th>Total</th><th>Activity</th><th>Action</th></tr></thead>
                     <tbody id="key-pool-body"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="content-notify" style="display: none;">
+            <div class="data-card">
+                <div class="card-header"><span class="card-title">Broadcast Relay System</span></div>
+                <div style="display: grid; gap: 20px;">
+                    <div style="display: flex; gap: 20px;">
+                        <div style="flex:1;"><label style="display:block; margin-bottom:8px; font-weight:800; font-size:11px; color:var(--text-muted);">TARGET</label><input type="text" id="notify-target" placeholder="all or email@user.com" style="width:100%;"></div>
+                        <div style="flex:1;"><label style="display:block; margin-bottom:8px; font-weight:800; font-size:11px; color:var(--text-muted);">TEMPLATE</label><select id="notify-template" style="width:100%;"><option value="system">System Alert (Black)</option><option value="pro">Pro Upgrade (Indigo)</option><option value="welcome">Welcome (Green)</option></select></div>
+                    </div>
+                    <div><label style="display:block; margin-bottom:8px; font-weight:800; font-size:11px; color:var(--text-muted);">SUBJECT</label><input type="text" id="notify-subject" style="width:100%;" placeholder="Enter subject line..."></div>
+                    <div><label style="display:block; margin-bottom:8px; font-weight:800; font-size:11px; color:var(--text-muted);">MESSAGE CONTENT (HTML SUPPORTED)</label><textarea id="notify-message" style="width:100%; height:150px;" placeholder="Type your strategic message..."></textarea></div>
+                    <button class="btn-action" onclick="sendBroadcast()" style="padding:16px;">Initiate Broadcast Relay</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="content-payments" style="display: none;">
+            <div class="data-card">
+                <div class="card-header"><span class="card-title">Financial Transaction Ledger</span></div>
+                <table>
+                    <thead><tr><th>Transaction ID</th><th>Identity</th><th>Amount</th><th>Status</th><th>Timestamp</th></tr></thead>
+                    <tbody id="payment-list"></tbody>
                 </table>
             </div>
         </div>
 
         <div id="content-settings" style="display: none;">
             <div class="data-card">
-                <div class="card-header"><span class="card-title">Global Configuration</span></div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 32px;">
-                    <div>
-                        <label style="display:block; margin-bottom:12px; font-weight:800; font-size: 12px; color: var(--text-muted);">RELEASE VERSION</label>
-                        <input type="text" id="cfg-app-version" style="width:100%; background:white; border:1px solid var(--glass-border); padding:16px; border-radius:14px; font-weight:700;">
-                    </div>
-                    <div>
-                        <label style="display:block; margin-bottom:12px; font-weight:800; font-size: 12px; color: var(--text-muted);">PAYLOAD URL</label>
-                        <input type="text" id="cfg-download-url" style="width:100%; background:white; border:1px solid var(--glass-border); padding:16px; border-radius:14px; font-weight:700;">
-                    </div>
-                    <div style="grid-column: span 2;">
-                        <label style="display:block; margin-bottom:12px; font-weight:800; font-size: 12px; color: var(--text-muted);">STRATEGIC NOTES</label>
-                        <textarea id="cfg-release-notes" style="width:100%; height:120px; background:white; border:1px solid var(--glass-border); padding:16px; border-radius:14px; font-weight:600;"></textarea>
-                    </div>
-                    <button class="btn-action" onclick="updateConfig()" style="grid-column: span 2; padding:20px; font-size: 1rem;">Update Global State</button>
+                <div class="card-header"><span class="card-title">System Configuration</span></div>
+                <div style="display: grid; gap: 20px;">
+                    <div style="display: flex; gap: 20px;"><div style="flex:1;"><label class="stat-label">VERSION</label><input type="text" id="cfg-app-version" style="width:100%;"></div><div style="flex:1;"><label class="stat-label">PAYLOAD URL</label><input type="text" id="cfg-download-url" style="width:100%;"></div></div>
+                    <div><label class="stat-label">RELEASE NOTES</label><textarea id="cfg-release-notes" style="width:100%; height:100px;"></textarea></div>
+                    <button class="btn-action" onclick="updateConfig()" style="padding:16px;">Synchronize Infrastructure</button>
                 </div>
             </div>
         </div>
 
         <div id="content-appeals" style="display: none;">
-             <div style="display: grid; grid-template-columns: 380px 1fr; gap: 32px; height: calc(100vh - 220px);">
-                <div class="data-card" style="margin: 0; padding: 0; overflow-y: auto;">
-                    <div class="card-header" style="padding: 30px;"><span class="card-title">Support Tickets</span></div>
-                    <div id="ticket-list-container"></div>
-                </div>
+             <div style="display: grid; grid-template-columns: 320px 1fr; gap: 24px; height: calc(100vh - 180px);">
+                <div class="data-card" style="margin: 0; padding: 0; overflow-y: auto;"><div id="ticket-list-container"></div></div>
                 <div class="data-card" style="margin: 0; padding: 0; display: flex; flex-direction: column;">
-                    <div id="chat-header" style="display: none; padding: 24px 32px; border-bottom: 1px solid var(--glass-border); background: white; border-radius: 36px 36px 0 0;">
-                        <b id="chat-user-email" style="font-size: 1.1rem; letter-spacing: -0.5px;"></b>
-                    </div>
-                    <div id="chat-messages" style="flex:1; overflow-y:auto; padding:32px; display:flex; flex-direction:column; gap:16px;"></div>
-                    <div id="chat-input-container" style="display:none; padding:32px; border-top:1px solid var(--glass-border);">
-                        <div style="display:flex; gap:12px;">
-                            <input type="text" id="ticket-reply-input" placeholder="Type your response..." style="flex:1; background:white; border:1px solid var(--glass-border); padding:16px; border-radius:16px; font-weight:600;">
-                            <button class="btn-action" onclick="sendReply()">Send</button>
-                        </div>
-                    </div>
+                    <div id="chat-header" style="display: none; padding: 20px; border-bottom: 1px solid var(--glass-border); background: white;"><b id="chat-user-email"></b></div>
+                    <div id="chat-messages" style="flex:1; overflow-y:auto; padding:24px; display:flex; flex-direction:column; gap:12px;"></div>
+                    <div id="chat-input-container" style="display:none; padding:20px; border-top:1px solid var(--glass-border);"><div style="display:flex; gap:10px;"><input type="text" id="ticket-reply-input" placeholder="Type tactical response..." style="flex:1;"><button class="btn-action" onclick="sendReply()">Send</button></div></div>
                 </div>
             </div>
         </div>
@@ -166,197 +137,83 @@
             options.headers = options.headers || {};
             options.headers['Authorization'] = `Bearer ${admin_token}`;
             options.headers['Content-Type'] = 'application/json';
-            try {
-                const res = await fetch(url, options);
-                if (res.status === 401) { adminLogout(); return null; }
-                return res;
-            } catch (e) { return null; }
+            try { const res = await fetch(url, options); if (res.status === 401) adminLogout(); return res; } catch (e) { return null; }
         }
 
-        function adminLogout() {
-            localStorage.removeItem('admin_token');
-            window.location.href = '/admin/login';
-        }
-
+        function adminLogout() { localStorage.removeItem('admin_token'); window.location.href = '/admin/login'; }
         lucide.createIcons();
 
-        // Tab Management
         const navLinks = document.querySelectorAll('.nav-link');
-        const contents = {
-            overview: document.getElementById('content-overview'),
-            users: document.getElementById('content-users'),
-            keys: document.getElementById('content-keys'),
-            settings: document.getElementById('content-settings'),
-            appeals: document.getElementById('content-appeals')
-        };
-
         navLinks.forEach(link => {
             link.addEventListener('click', (e) => {
-                const tab = link.getAttribute('data-tab');
-                if(!tab) return;
-                e.preventDefault();
-                navLinks.forEach(l => l.classList.remove('active'));
-                link.classList.add('active');
+                const tab = link.getAttribute('data-tab'); if(!tab) return;
+                e.preventDefault(); navLinks.forEach(l => l.classList.remove('active')); link.classList.add('active');
                 document.getElementById('tab-title').innerText = link.querySelector('span').innerText;
-                Object.values(contents).forEach(c => c.style.display = 'none');
-                if (contents[tab]) contents[tab].style.display = 'block';
-                
-                if(tab === 'users') fetchUsers();
-                if(tab === 'keys') fetchKeys();
-                if(tab === 'settings') fetchConfig();
-                if(tab === 'overview') fetchStats();
-                if(tab === 'appeals') fetchTickets();
+                document.querySelectorAll('main > div').forEach(c => c.style.display = 'none');
+                document.getElementById('content-'+tab).style.display = 'block';
+                if(tab === 'users') fetchUsers(); if(tab === 'keys') fetchKeys(); if(tab === 'settings') fetchConfig(); if(tab === 'overview') fetchStats(); if(tab === 'appeals') fetchTickets(); if(tab === 'payments') fetchPayments();
             });
         });
 
         async function fetchStats() {
-            const res = await adminFetch(`${API_BASE}/admin/stats`);
-            if(!res) return;
+            const res = await adminFetch(`${API_BASE}/admin/stats`); if(!res) return;
             const data = await res.json();
             document.getElementById('stat-total-users').innerText = data.total_users || 0;
             document.getElementById('stat-active-sessions').innerText = data.active_sessions || 0;
             document.getElementById('stat-health').innerText = (data.key_health || 100) + "%";
             document.getElementById('stat-pro-users').innerText = data.pro_users || 0;
             document.getElementById('maintenance-toggle').checked = data.maintenance_mode;
-            
-            const stream = document.getElementById('overview-stream-list');
-            if(data.recent_missions) {
-                stream.innerHTML = data.recent_missions.map(m => `
-                    <tr><td><b>${m.email}</b></td><td>${m.mission_type}</td><td>${m.latency}</td><td><span class="status-pill status-active">${m.status}</span></td></tr>
-                `).join('');
-            }
+            if(data.recent_missions) document.getElementById('overview-stream-list').innerHTML = data.recent_missions.map(m => `<tr><td><b>${m.email}</b></td><td>${m.mission_type}</td><td>${m.latency}</td><td><span class="status-pill status-active">COMPLETED</span></td></tr>`).join('');
         }
 
         async function fetchUsers() {
-            const res = await adminFetch(`${API_BASE}/admin/users`);
-            if(!res) return;
+            const res = await adminFetch(`${API_BASE}/admin/users`); if(!res) return;
             const data = await res.json();
             document.getElementById('user-list').innerHTML = data.users.map(u => `
                 <tr>
-                    <td><b>${u.full_name || 'Legacy User'}</b><br><span style="font-size:0.75rem; color:var(--text-muted);">${u.email}</span></td>
-                    <td><span class="status-pill ${u.tier==='PRO'?'status-active':'status-suspended'}" style="background: ${u.tier==='PRO'?'#eff6ff':'#f8fafc'}; color: ${u.tier==='PRO'?'#1d4ed8':'#64748b'};">${u.tier}</span></td>
+                    <td><b>${u.email}</b><br><span style="font-size:0.7rem; color:var(--text-muted);">${u.full_name || 'LEGACY'}</span></td>
+                    <td><span class="status-pill ${u.email.includes('faheem')?'badge-admin':'status-active'}">${u.email.includes('faheem')?'MASTER':'USER'}</span></td>
                     <td>${new Date(u.join_date).toLocaleDateString()}</td>
-                    <td><b>ACTIVE</b></td>
-                    <td><code>${u.hwid ? u.hwid.substring(0,12) : 'NOT LINKED'}</code></td>
-                    <td>
-                        <div style="display:flex; gap:8px;">
-                            <button class="btn-action btn-secondary" onclick="upgradeUser('${u.email}')">PRO</button>
-                            <button class="btn-action btn-secondary" onclick="resetHWID('${u.email}')">ID</button>
-                            <button class="btn-action btn-secondary" style="color:var(--rose);" onclick="deleteUser('${u.email}')">Kill</button>
-                        </div>
-                    </td>
+                    <td><code>${u.hwid ? u.hwid.substring(0,8) : 'NONE'}</code></td>
+                    <td><div style="display:flex; gap:6px;"><button class="btn-action btn-secondary" onclick="upgradeUser('${u.email}')">PRO</button><button class="btn-action btn-secondary" onclick="resetHWID('${u.email}')">HWID</button><button class="btn-action btn-secondary" style="color:var(--rose);" onclick="deleteUser('${u.email}')">KILL</button></div></td>
                 </tr>
             `).join('');
-        }
-
-        async function upgradeUser(email) {
-            if(confirm("Promote to PRO?")) { await adminFetch(`${API_BASE}/admin/users/upgrade?email=${email}`, {method:'POST'}); fetchUsers(); }
-        }
-        async function resetHWID(email) {
-            if(confirm("Reset Hardware Identity?")) { await adminFetch(`${API_BASE}/admin/users/reset-hwid?email=${email}`, {method:'POST'}); fetchUsers(); }
-        }
-        async function deleteUser(email) {
-            if(confirm("Terminate Access Permanently?")) { await adminFetch(`${API_BASE}/admin/users/${email}`, {method:'DELETE'}); fetchUsers(); }
         }
 
         async function fetchKeys() {
-            const res = await adminFetch(`${API_BASE}/admin/keys`);
-            if(!res) return;
+            const res = await adminFetch(`${API_BASE}/admin/keys`); if(!res) return;
             const data = await res.json();
-            document.getElementById('key-pool-body').innerHTML = data.keys.map(k => `
-                <tr>
-                    <td><b>${k.provider.toUpperCase()}</b></td><td><code>${k.key_value.substring(0,12)}...</code></td>
-                    <td><span class="status-pill status-active">${k.status}</span></td>
-                    <td style="color:var(--primary); font-weight:800;">${k.usage_count_today || 0}</td>
-                    <td>${k.usage_count_total || 0}</td>
-                    <td>${k.last_used ? new Date(k.last_used).toLocaleTimeString() : 'NEVER'}</td>
-                    <td><button class="btn-action btn-secondary" style="color:var(--rose);" onclick="removeKey('${k._id}')">Revoke</button></td>
-                </tr>
-            `).join('');
-            
-            ['gemini', 'groq', 'deepgram'].forEach(p => {
-                document.getElementById('count-'+p).innerText = data.keys.filter(k => k.provider === p).length;
-            });
+            document.getElementById('key-pool-body').innerHTML = data.keys.map(k => `<tr><td><b>${k.provider.toUpperCase()}</b></td><td><code>${k.key_value.substring(0,10)}...</code></td><td>${k.usage_count_today || 0}</td><td>${k.usage_count_total || 0}</td><td>${k.last_used ? new Date(k.last_used).toLocaleTimeString() : 'NEVER'}</td><td><button class="btn-action btn-secondary" style="color:var(--rose);" onclick="removeKey('${k._id}')">Revoke</button></td></tr>`).join('');
+            ['gemini', 'groq', 'deepgram'].forEach(p => document.getElementById('count-'+p).innerText = data.keys.filter(k => k.provider === p).length);
+        }
+
+        async function sendBroadcast() {
+            const data = { target: document.getElementById('notify-target').value, template: document.getElementById('notify-template').value, subject: document.getElementById('notify-subject').value, message: document.getElementById('notify-message').value };
+            if(!data.target || !data.subject || !data.message) return alert("Missing fields.");
+            await adminFetch(`${API_BASE}/admin/notify`, {method:'POST', body:JSON.stringify(data)});
+            alert("Broadcast Dispatched.");
+        }
+
+        async function fetchPayments() {
+            const res = await adminFetch(`${API_BASE}/admin/payments`); if(!res) return;
+            const data = await res.json();
+            document.getElementById('payment-list').innerHTML = data.payments.map(p => `<tr><td><code>${p._id.substring(0,10)}</code></td><td>${p.email}</td><td>$${p.amount}</td><td><span class="status-pill status-active">SUCCESS</span></td><td>${new Date(p.timestamp).toLocaleString()}</td></tr>`).join('');
         }
 
         async function addKey() {
-            const provider = document.getElementById('new-key-provider').value;
-            const key_value = document.getElementById('new-key-value').value;
-            if(!key_value) return;
-            await adminFetch(`${API_BASE}/admin/keys?provider=${provider}&key_value=${encodeURIComponent(key_value)}`, {method:'POST'});
-            document.getElementById('new-key-value').value = '';
-            fetchKeys();
+            const p = document.getElementById('new-key-provider').value, k = document.getElementById('new-key-value').value;
+            if(!k) return; await adminFetch(`${API_BASE}/admin/keys?provider=${p}&key_value=${encodeURIComponent(k)}`, {method:'POST'});
+            document.getElementById('new-key-value').value = ''; fetchKeys();
         }
 
-        async function removeKey(id) {
-            if(confirm("Revoke this node?")) { await adminFetch(`${API_BASE}/admin/keys/${id}`, {method:'DELETE'}); fetchKeys(); }
-        }
+        async function fetchConfig() { const res = await adminFetch(`${API_BASE}/admin/config`); const data = await res.json(); document.getElementById('cfg-app-version').value = data.app_version || ''; document.getElementById('cfg-download-url').value = data.download_url || ''; document.getElementById('cfg-release-notes').value = data.release_notes || ''; }
+        async function updateConfig() { const cfg = { app_version: document.getElementById('cfg-app-version').value, download_url: document.getElementById('cfg-download-url').value, release_notes: document.getElementById('cfg-release-notes').value }; await adminFetch(`${API_BASE}/admin/config`, {method:'POST', body:JSON.stringify(cfg)}); alert("Updated."); }
+        async function toggleMaintenance() { const active = document.getElementById('maintenance-toggle').checked; await adminFetch(`${API_BASE}/admin/maintenance?active=${active}`, {method:'POST'}); }
 
-        async function fetchConfig() {
-            const res = await adminFetch(`${API_BASE}/admin/config`);
-            if(!res) return;
-            const data = await res.json();
-            document.getElementById('cfg-app-version').value = data.app_version || '';
-            document.getElementById('cfg-download-url').value = data.download_url || '';
-            document.getElementById('cfg-release-notes').value = data.release_notes || '';
-        }
-
-        async function updateConfig() {
-            const cfg = {
-                app_version: document.getElementById('cfg-app-version').value,
-                download_url: document.getElementById('cfg-download-url').value,
-                release_notes: document.getElementById('cfg-release-notes').value
-            };
-            await adminFetch(`${API_BASE}/admin/config`, {method:'POST', body:JSON.stringify(cfg)});
-            alert("Infrastructure Updated.");
-        }
-
-        async function toggleMaintenance() {
-            const active = document.getElementById('maintenance-toggle').checked;
-            await adminFetch(`${API_BASE}/admin/maintenance?active=${active}`, {method:'POST'});
-        }
-
-        async function fetchTickets() {
-            const res = await adminFetch(`${API_BASE}/admin/tickets`);
-            if(!res) return;
-            const data = await res.json();
-            document.getElementById('ticket-list-container').innerHTML = data.tickets.map(t => `
-                <div class="ticket-item" onclick="selectTicket('${t.email}')" style="padding:24px 30px; border-bottom:1px solid var(--glass-border); cursor:pointer; transition:all 0.2s;">
-                    <b style="font-size:1rem;">${t.email}</b><br>
-                    <span style="font-size:0.75rem; color:var(--text-muted); font-weight:700;">STATUS: ${t.status.toUpperCase()}</span>
-                </div>
-            `).join('');
-        }
-
-        let currentTicketEmail = null;
-        async function selectTicket(email) {
-            currentTicketEmail = email;
-            document.getElementById('chat-header').style.display = 'block';
-            document.getElementById('chat-input-container').style.display = 'block';
-            document.getElementById('chat-user-email').innerText = email;
-            loadMessages(email);
-        }
-
-        async function loadMessages(email) {
-            const res = await adminFetch(`${API_BASE}/auth/ticket/history?email=${email}`);
-            if(!res) return;
-            const data = await res.json();
-            document.getElementById('chat-messages').innerHTML = data.messages.map(m => `
-                <div style="align-self: ${m.role==='admin'?'flex-end':'flex-start'}; background: ${m.role==='admin'?'#000':'#f1f5f9'}; color: ${m.role==='admin'?'#fff':'#000'}; padding:14px 20px; border-radius:20px; max-width:80%; font-weight:600; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
-                    ${m.text}
-                </div>
-            `).join('');
-            const chat = document.getElementById('chat-messages');
-            chat.scrollTop = chat.scrollHeight;
-        }
-
-        async function sendReply() {
-            const text = document.getElementById('ticket-reply-input').value;
-            if(!text) return;
-            await adminFetch(`${API_BASE}/admin/ticket/reply?email=${currentTicketEmail}&message=${encodeURIComponent(text)}`, {method:'POST'});
-            document.getElementById('ticket-reply-input').value = '';
-            loadMessages(currentTicketEmail);
-        }
+        async function fetchTickets() { const res = await adminFetch(`${API_BASE}/admin/tickets`); const data = await res.json(); document.getElementById('ticket-list-container').innerHTML = data.tickets.map(t => `<div class="ticket-item" onclick="selectTicket('${t.email}')" style="padding:16px 20px; border-bottom:1px solid var(--glass-border); cursor:pointer;"><b>${t.email}</b><br><span style="font-size:0.7rem; color:var(--text-muted); font-weight:800;">${t.status.toUpperCase()}</span></div>`).join(''); }
+        let currentTicketEmail = null; async function selectTicket(e) { currentTicketEmail = e; document.getElementById('chat-header').style.display = 'block'; document.getElementById('chat-input-container').style.display = 'block'; document.getElementById('chat-user-email').innerText = e; loadMessages(e); }
+        async function loadMessages(e) { const res = await adminFetch(`${API_BASE}/auth/ticket/history?email=${e}`); const data = await res.json(); document.getElementById('chat-messages').innerHTML = data.messages.map(m => `<div style="align-self:${m.role==='admin'?'flex-end':'flex-start'}; background:${m.role==='admin'?'#000':'#f1f5f9'}; color:${m.role==='admin'?'#fff':'#000'}; padding:10px 14px; border-radius:14px; max-width:85%; font-weight:600;">${m.text}</div>`).join(''); const chat = document.getElementById('chat-messages'); chat.scrollTop = chat.scrollHeight; }
+        async function sendReply() { const t = document.getElementById('ticket-reply-input').value; if(!t) return; await adminFetch(`${API_BASE}/admin/ticket/reply?email=${currentTicketEmail}&message=${encodeURIComponent(t)}`, {method:'POST'}); document.getElementById('ticket-reply-input').value = ''; loadMessages(currentTicketEmail); }
 
         window.addEventListener('DOMContentLoaded', () => fetchStats());
     </script>

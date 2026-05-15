@@ -460,8 +460,18 @@ async def admin_login(data: AdminLogin):
         msg['To'] = ADMIN_EMAIL
         msg['Subject'] = f"Command Center Access: {otp}"
         
-        body = f"Admin Login OTP: {otp}. Valid for 5 minutes."
-        msg.attach(MIMEText(body, 'plain'))
+        # --- PREMIUM HTML OTP TEMPLATE ---
+        body_html = f"""
+        <div style="font-family: 'Inter', sans-serif; max-width: 400px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 20px; padding: 40px; text-align: center;">
+            <h2 style="color: #000; font-size: 24px; font-weight: 800; letter-spacing: -1px;">Verify Identity</h2>
+            <p style="color: #6b7280; font-size: 14px;">Enter the code below to access the Command Center.</p>
+            <div style="background: #f9fafb; border-radius: 12px; padding: 20px; margin: 30px 0; font-size: 32px; font-weight: 800; letter-spacing: 10px; color: #4f46e5;">
+                {otp}
+            </div>
+            <p style="color: #9ca3af; font-size: 11px;">This code expires in 5 minutes.</p>
+        </div>
+        """
+        msg.attach(MIMEText(body_html, 'html'))
         
         server = smtplib.SMTP("smtp.gmail.com", 587)
         server.starttls()
@@ -470,6 +480,69 @@ async def admin_login(data: AdminLogin):
         server.quit()
         
         return {"status": "success", "msg": "Strategic OTP dispatched."}
+    except Exception as e:
+        return {"status": "error", "detail": str(e)}
+
+@app.post("/api/admin/notify")
+async def send_notification(request: Request, data: dict = Body(...)):
+    verify_admin_token(request)
+    try:
+        conn = get_conn()
+        target = data.get("target") # "all" or email
+        subject = data.get("subject")
+        message = data.get("message")
+        template_type = data.get("template", "system") # system, pro, welcome
+        
+        users = []
+        if target == "all":
+            users = [u["email"] for u in conn.users.find({})]
+        else:
+            users = [target]
+            
+        smtp_user = "faheemkhan101992@gmail.com"
+        smtp_pass = "pseuniogagkbbhrn"
+        
+        server = smtplib.SMTP("smtp.gmail.com", 587)
+        server.starttls()
+        server.login(smtp_user, smtp_pass)
+        
+        for email in users:
+            msg = MIMEMultipart()
+            msg['From'] = f"Zenith Support <{smtp_user}>"
+            msg['To'] = email
+            msg['Subject'] = subject
+            
+            # Template Selection
+            bg_color = "#4f46e5" if template_type == "pro" else "#000"
+            html = f"""
+            <div style="font-family: 'Inter', sans-serif; max-width: 500px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 24px; overflow: hidden;">
+                <div style="background: {bg_color}; padding: 30px; text-align: center; color: white;">
+                    <h2 style="margin:0; font-size: 20px; font-weight: 800; letter-spacing: -0.5px;">{subject}</h2>
+                </div>
+                <div style="padding: 40px; color: #1f2937; line-height: 1.6;">
+                    {message}
+                </div>
+                <div style="background: #f9fafb; padding: 20px; text-align: center; font-size: 11px; color: #9ca3af;">
+                    ZenithHUD Infrastructure Protocol
+                </div>
+            </div>
+            """
+            msg.attach(MIMEText(html, 'html'))
+            server.send_message(msg)
+            
+        server.quit()
+        return {"status": "success"}
+    except Exception as e:
+        return {"status": "error", "detail": str(e)}
+
+@app.get("/api/admin/payments")
+async def get_payments(request: Request):
+    verify_admin_token(request)
+    try:
+        conn = get_conn()
+        payments = list(conn.db.payments.find({}).sort("timestamp", -1))
+        for p in payments: p["_id"] = str(p["_id"])
+        return {"payments": payments}
     except Exception as e:
         return {"status": "error", "detail": str(e)}
 
