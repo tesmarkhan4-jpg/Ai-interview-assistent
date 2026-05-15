@@ -60,6 +60,12 @@
             .info-side { display: none; }
             .form-side { padding: 40px; }
         }
+        .trial-notice {
+            background: #ecfdf5; border: 1px solid #10b981; border-radius: 20px;
+            padding: 24px; margin-bottom: 32px; display: none;
+            animation: fadeIn 0.5s ease;
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
 </head>
 <body>
@@ -73,6 +79,16 @@
             </div>
             <h2 style="margin-bottom: 8px; font-weight: 900; letter-spacing: -1.5px; color: #1e293b; font-size: 2rem;">Join the Elite</h2>
             <p style="color: #64748b; font-size: 1rem; margin-bottom: 32px;">Join the elite tier of verified agents.</p>
+            
+            <div id="trial-notice" class="trial-notice">
+                <div style="display: flex; gap: 16px; align-items: flex-start;">
+                    <div style="font-size: 1.5rem;">🎁</div>
+                    <div>
+                        <h4 style="color: #065f46; margin-bottom: 4px;">7-Day Trial Mission Active</h4>
+                        <p style="font-size: 0.85rem; color: #047857; line-height: 1.5;">Register your account below, then download the app. Your free 7-day tactical access will start instantly upon your first login.</p>
+                    </div>
+                </div>
+            </div>
             
             <div id="error" class="error-msg">Error details here</div>
             <div id="success" class="success-msg">Success details here</div>
@@ -140,6 +156,12 @@
     </div>
 
     <script>
+        // DETECT TRIAL MISSION
+        const urlParams = new URLSearchParams(window.location.search);
+        if(urlParams.get('plan') === 'trial') {
+            document.getElementById('trial-notice').style.display = 'block';
+        }
+
         const btnOtp = document.getElementById('btn-otp');
         const otpGroup = document.getElementById('otp-group');
         const error = document.getElementById('error');

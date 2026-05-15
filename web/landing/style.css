@@ -121,16 +121,18 @@ h2 { font-size: 3.5rem; font-weight: 900; margin-top: 12px; letter-spacing: -1.5
 .pain-card h3 { font-size: 1.5rem; margin-bottom: 16px; font-weight: 800; color: #1e293b; }
 .pain-card p { color: var(--text-muted); font-size: 1rem; line-height: 1.7; }
 
-.pricing-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; align-items: center; }
+.pricing-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; align-items: stretch; }
 .price-card {
-    background: var(--bg-white); padding: 56px 40px;
-    border-radius: 32px; border: 1px solid var(--border);
+    background: var(--bg-white); padding: 40px 24px;
+    border-radius: 28px; border: 1px solid var(--border);
     text-align: center;
     box-shadow: 0 10px 30px rgba(0,0,0,0.02);
+    display: flex; flex-direction: column; justify-content: space-between;
 }
-.price-card.featured { border: 2px solid var(--primary); background: #ffffff; transform: scale(1.05); box-shadow: 0 30px 60px rgba(79, 70, 229, 0.1); }
+.price-card h3 { font-size: 1.25rem; font-weight: 800; margin-bottom: 8px; }
+.price-card.featured { border: 2px solid var(--primary); background: #ffffff; transform: scale(1.05); box-shadow: 0 30px 60px rgba(79, 70, 229, 0.1); z-index: 2; }
 
-.price-value { font-size: 4.5rem; font-weight: 950; margin: 24px 0; color: #1e293b; letter-spacing: -2px; }
+.price-value { font-size: 3rem; font-weight: 950; margin: 16px 0; color: #1e293b; letter-spacing: -1.5px; }
 .price-value span { font-size: 1.1rem; color: var(--text-muted); font-weight: 600; letter-spacing: 0; }
 
 .benefit-list { list-style: none; margin-bottom: 40px; text-align: left; }
