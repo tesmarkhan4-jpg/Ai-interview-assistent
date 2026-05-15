@@ -52,7 +52,7 @@
             <div class="data-card">
                 <div class="card-header"><span class="card-title">User Fleet Management</span></div>
                 <table>
-                    <thead><tr><th>User Identity</th><th>Tier</th><th>Registered</th><th>Hardware</th><th>Actions</th></tr></thead>
+                    <thead><tr><th>User Identity</th><th>Plan</th><th>Registered</th><th>Remaining</th><th>Hardware</th><th>Actions</th></tr></thead>
                     <tbody id="user-list"></tbody>
                 </table>
             </div>
@@ -171,11 +171,18 @@
             const data = await res.json();
             document.getElementById('user-list').innerHTML = data.users.map(u => {
                 const isAdmin = u.email === 'faheemkhan101992@gmail.com';
+                let planColor = 'var(--text-muted)';
+                if(u.plan === 'MASTER') planColor = 'var(--amber)';
+                if(u.plan === 'PRO') planColor = 'var(--primary)';
+                if(u.plan === 'LIFETIME') planColor = '#8b5cf6';
+                if(u.plan === 'TRIAL') planColor = 'var(--emerald)';
+
                 return `
                 <tr>
                     <td><b>${u.email}</b><br><span style="font-size:0.7rem; color:var(--text-muted);">${u.full_name || 'LEGACY'} ${isAdmin ? '(System Master)' : ''}</span></td>
-                    <td><span class="status-pill ${isAdmin ? 'badge-admin' : 'status-active'}">${isAdmin ? 'MASTER' : 'USER'}</span></td>
+                    <td><span class="status-pill" style="background: ${planColor}15; color: ${planColor}; border: 1px solid ${planColor}30;">${u.plan}</span></td>
                     <td>${new Date(u.join_date).toLocaleDateString()}</td>
+                    <td><b style="color: ${u.plan==='EXPIRED'?'var(--rose)':'var(--text)'};">${u.timer}</b></td>
                     <td><code>${!isAdmin && u.hwid ? u.hwid.substring(0,8) : ''}</code></td>
                     <td>
                         <div style="display:flex; gap:6px;">

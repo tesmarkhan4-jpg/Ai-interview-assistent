@@ -373,20 +373,31 @@ async def get_admin_users():
         now = datetime.datetime.utcnow()
         for u in users:
             u["_id"] = str(u["_id"])
-            if u.get("tier") == "PRO":
-                u["status_label"] = "PRO"
-                u["timer"] = "UNLIMITED"
+            
+            # Determine Plan Type
+            if u.get("email") == ADMIN_EMAIL:
+                u["plan"] = "MASTER"
+                u["timer"] = "INFINITY"
+            elif u.get("tier") == "PRO":
+                u["plan"] = "PRO"
+                u["timer"] = "LIFETIME"
+            elif u.get("tier") == "LIFETIME":
+                u["plan"] = "LIFETIME"
+                u["timer"] = "LIFETIME"
             elif u.get("trial_expiry"):
                 diff = u["trial_expiry"] - now
                 if diff.total_seconds() > 0:
-                    u["status_label"] = "TRIAL"
-                    u["timer"] = f"{diff.days}d {diff.seconds // 3600}h"
+                    u["plan"] = "TRIAL"
+                    days = diff.days
+                    hours = diff.seconds // 3600
+                    mins = (diff.seconds % 3600) // 60
+                    u["timer"] = f"{days}d {hours}h {mins}m"
                 else:
-                    u["status_label"] = "EXPIRED"
-                    u["timer"] = "0h"
+                    u["plan"] = "EXPIRED"
+                    u["timer"] = "0m"
                 u["trial_expiry"] = u["trial_expiry"].isoformat()
             else:
-                u["status_label"] = "TRIAL"
+                u["plan"] = "BASIC"
                 u["timer"] = "7d"
 
             if "join_date" in u and isinstance(u["join_date"], datetime.datetime):
