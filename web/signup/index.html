@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZenithHUD | Join the Elite</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --bg: #f8fafc;
+            --text: #0f172a;
+            --text-muted: #64748b;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background: var(--bg); 
+            color: var(--text); 
+            min-height: 100vh;
+            display: flex; align-items: center; justify-content: center;
+            overflow-x: hidden;
+        }
+
+        .bg-animate {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -1;
+        }
+        .blob {
+            position: absolute; border-radius: 50%;
+            filter: blur(80px); animation: move 20s infinite alternate;
+        }
+        .blob-1 { width: 400px; height: 400px; background: rgba(79, 70, 229, 0.1); top: -100px; left: -100px; }
+        .blob-2 { width: 300px; height: 300px; background: rgba(14, 165, 233, 0.1); bottom: -100px; right: -100px; animation-delay: -5s; }
+        @keyframes move { 0% { transform: translate(0, 0); } 100% { transform: translate(50px, 100px); } }
+
+        .signup-card {
+            width: 100%; max-width: 440px; padding: 48px;
+            background: white; border-radius: 32px;
+            border: 1px solid rgba(0,0,0,0.05);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.04);
+            animation: slideIn 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        .logo { display: flex; align-items: center; gap: 10px; margin-bottom: 32px; justify-content: center; }
+        .logo span { font-weight: 900; font-size: 1.4rem; letter-spacing: -1px; }
+
+        h2 { font-size: 1.8rem; font-weight: 900; letter-spacing: -1px; margin-bottom: 8px; text-align: center; }
+        p.subtitle { color: var(--text-muted); text-align: center; margin-bottom: 32px; font-size: 0.9rem; }
+
+        .form-group { margin-bottom: 20px; }
+        .form-label { display: block; font-size: 0.7rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px; }
+        .form-input {
+            width: 100%; padding: 14px 18px; border-radius: 12px;
+            border: 1px solid #e2e8f0; outline: none; transition: 0.2s;
+            font-weight: 600; font-size: 0.95rem;
+        }
+        .form-input:focus { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.05); }
+
+        .btn-signup {
+            width: 100%; padding: 16px; border-radius: 14px;
+            background: var(--primary); color: white; border: none;
+            font-weight: 800; font-size: 1rem; cursor: pointer;
+            transition: 0.3s; margin-top: 10px;
+        }
+        .btn-signup:hover { background: #4338ca; transform: translateY(-2px); }
+
+        .login-link { text-align: center; margin-top: 24px; font-size: 0.9rem; color: var(--text-muted); }
+        .login-link a { color: var(--primary); font-weight: 700; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <div class="bg-animate">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+    </div>
+
+    <div class="signup-card">
+        <div class="logo">
+            <img src="/icon.png" alt="Z" style="height: 32px; width: 32px; border-radius: 8px;">
+            <span>Zenith<span style="color:var(--primary);">HUD</span></span>
+        </div>
+
+        <h2>Create Elite Account</h2>
+        <p class="subtitle">Join the ranks of high-performance professionals.</p>
+
+        <form id="signup-form">
+            <div class="form-group">
+                <label class="form-label">Full Name</label>
+                <input type="text" id="full_name" class="form-input" placeholder="Enter your full name..." required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Email Address</label>
+                <input type="email" id="email" class="form-input" placeholder="name@company.com" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Password</label>
+                <input type="password" id="password" class="form-input" placeholder="Create tactical password..." required>
+            </div>
+
+            <button type="submit" class="btn-signup" id="signup-btn">Initialize Registration</button>
+        </form>
+
+        <p class="login-link">Already have an account? <a href="/login">Sign In</a></p>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const plan = urlParams.get('plan') || 'trial';
+
+        document.getElementById('signup-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('signup-btn');
+            const full_name = document.getElementById('full_name').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            btn.innerText = "Registering...";
+            btn.disabled = true;
+
+            try {
+                const res = await fetch('/api/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password, full_name, plan })
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    // Registration success - now login automatically
+                    const loginRes = await fetch('/api/auth/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email, password, hwid: 'WEB_SIGNUP' })
+                    });
+                    const loginData = await loginRes.json();
+                    if (loginData.status === 'success') {
+                        localStorage.setItem('zenith_user', JSON.stringify(loginData.user));
+                        window.location.href = `/checkout?plan=${plan}`;
+                    }
+                } else {
+                    alert(data.detail || "Registration failed.");
+                    btn.innerText = "Initialize Registration";
+                    btn.disabled = false;
+                }
+            } catch (err) {
+                alert("System error. Please try again.");
+                btn.innerText = "Initialize Registration";
+                btn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>

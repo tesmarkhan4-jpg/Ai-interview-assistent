@@ -257,9 +257,9 @@
                     localStorage.setItem('zenith_user', JSON.stringify(data.user));
                     const adminEmails = ['tesmarkhan4@gmail.com', 'faheemkhan101992@gmail.com'];
                     
-                    // Prioritize manual payment flow via dashboard until Paddle is approved
+                    // Redirect to Premium Custom Checkout for manual payments
                     if (planParam) {
-                        window.location.href = `/dashboard?plan=${planParam}`;
+                        window.location.href = `/checkout?plan=${planParam}`;
                     } else if (adminEmails.includes(data.user.email) || data.user.role === 'OWNER') {
                         window.location.href = '/admin';
                     } else {
