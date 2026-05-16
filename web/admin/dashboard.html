@@ -97,20 +97,25 @@
 
         <div id="content-payments" style="display: none;">
             <div class="data-card">
+                <div class="card-header"><span class="card-title">Pending Manual Approvals</span></div>
+                <table>
+                    <thead><tr><th>TID</th><th>User</th><th>Tier</th><th>Timestamp</th><th>Action</th></tr></thead>
+                    <tbody id="pending-payment-list"></tbody>
+                </table>
+            </div>
+            <div class="data-card">
                 <div class="card-header"><span class="card-title">Gateway Configuration</span></div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                    <div><label class="stat-label">SAFEPAY PUBLIC KEY</label><input type="text" id="cfg-safepay-public" style="width:100%;" placeholder="sec_..."></div>
-                    <div><label class="stat-label">SAFEPAY SECRET KEY</label><input type="password" id="cfg-safepay-secret" style="width:100%;" placeholder="b612..."></div>
-                    <div><label class="stat-label">STRIPE SECRET KEY</label><input type="password" id="cfg-stripe-key" style="width:100%;"></div>
-                    <div><label class="stat-label">PAYPAL CLIENT ID</label><input type="text" id="cfg-paypal-id" style="width:100%;"></div>
-                    <div style="grid-column: span 2;"><label class="stat-label">EASYPAISA / MANUAL INSTRUCTIONS</label><textarea id="cfg-payment-instructions" style="width:100%; height:80px;"></textarea></div>
-                    <button class="btn-action" onclick="updateConfig()" style="grid-column: span 2; padding:16px;">Synchronize Gateways</button>
+                    <div><label class="stat-label">PADDLE CLIENT TOKEN</label><input type="text" id="cfg-safepay-public" style="width:100%;" placeholder="live_..."></div>
+                    <div><label class="stat-label">PADDLE API KEY</label><input type="password" id="cfg-safepay-secret" style="width:100%;" placeholder="pdl_..."></div>
+                    <div style="grid-column: span 2;"><label class="stat-label">LOCAL BANK DETAILS (HBL/PAYONEER)</label><textarea id="cfg-payment-instructions" style="width:100%; height:80px;"></textarea></div>
+                    <button class="btn-action" onclick="updateConfig()" style="grid-column: span 2; padding:16px;">Synchronize Infrastructure</button>
                 </div>
             </div>
             <div class="data-card">
                 <div class="card-header"><span class="card-title">Financial Transaction Ledger</span></div>
                 <table>
-                    <thead><tr><th>Transaction ID</th><th>Identity</th><th>Amount</th><th>Status</th><th>Timestamp</th></tr></thead>
+                    <thead><tr><th>ID</th><th>Identity</th><th>Amount</th><th>Status</th><th>Timestamp</th></tr></thead>
                     <tbody id="payment-list"></tbody>
                 </table>
             </div>
@@ -255,7 +260,32 @@
         async function fetchPayments() {
             const res = await adminFetch(`${API_BASE}/admin/payments`); if(!res) return;
             const data = await res.json();
-            document.getElementById('payment-list').innerHTML = data.payments.map(p => `<tr><td><code>${p._id.substring(0,10)}</code></td><td>${p.email}</td><td>$${p.amount}</td><td><span class="status-pill status-active">SUCCESS</span></td><td>${new Date(p.timestamp).toLocaleString()}</td></tr>`).join('');
+            document.getElementById('payment-list').innerHTML = data.payments.map(p => `<tr><td><code>${p._id.substring(0,10)}</code></td><td>${p.email}</td><td>$${p.amount || 'MANUAL'}</td><td><span class="status-pill status-active">SUCCESS</span></td><td>${new Date(p.timestamp).toLocaleString()}</td></tr>`).join('');
+            
+            const pendingRes = await adminFetch(`${API_BASE}/admin/payments/pending`);
+            const pendingData = await pendingRes.json();
+            document.getElementById('pending-payment-list').innerHTML = pendingData.payments.map(p => `
+                <tr>
+                    <td><code>${p.tid}</code></td>
+                    <td>${p.email}</td>
+                    <td><b style="color:var(--primary);">${p.tier}</b></td>
+                    <td>${new Date(p.timestamp).toLocaleTimeString()}</td>
+                    <td><button class="btn-action" style="padding:4px 12px; font-size:0.7rem;" onclick="approvePayment('${p._id}', '${p.email}', '${p.tier}')">APPROVE</button></td>
+                </tr>
+            `).join('');
+        }
+
+        async function approvePayment(id, email, tier) {
+            if(confirm(`Confirm payment and upgrade ${email} to ${tier}?`)) {
+                const res = await adminFetch(`${API_BASE}/admin/payments/approve`, {
+                    method: 'POST',
+                    body: JSON.stringify({id, email, tier})
+                });
+                if(res.ok) {
+                    alert("User Upgraded Successfully!");
+                    fetchPayments();
+                }
+            }
         }
 
         async function addKey() {

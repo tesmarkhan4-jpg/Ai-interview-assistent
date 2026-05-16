@@ -210,6 +210,13 @@
                         <p style="font-size: 0.75rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; margin-bottom: 4px;">SECURED BY</p>
                         <h3 style="color: #4f46e5; font-weight: 900; font-size: 1.2rem; letter-spacing: -0.5px;">PADDLE <span style="font-size: 0.7rem; color: #10b981; background: #ecfdf5; padding: 2px 6px; border-radius: 4px; vertical-align: middle;">LIVE</span></h3>
                     </div>
+                    
+                    <div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid #e2e8f0;">
+                        <p style="text-align: center; font-size: 0.8rem; font-weight: 800; color: #64748b; margin-bottom: 16px;">LOCAL & INTERNATIONAL TRANSFERS</p>
+                        <button class="btn-action" style="width: 100%; justify-content: center; background: #059669;" onclick="openBankModal()">
+                            <i data-lucide="landmark"></i> Pay via Bank Transfer / Raast / Payoneer
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -239,6 +246,54 @@
             </div>
         </div>
     </main>
+
+    <!-- Bank Transfer Modal -->
+    <div id="bank-modal" class="modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); z-index: 1000; align-items: center; justify-content: center;">
+        <div class="data-card" style="width: 90%; max-width: 500px; padding: 32px; max-height: 90vh; overflow-y: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                <h2 style="font-weight: 900; font-size: 1.5rem; letter-spacing: -0.5px;">Manual Transfer</h2>
+                <button onclick="closeBankModal()" style="background: none; border: none; cursor: pointer; color: #64748b;"><i data-lucide="x"></i></button>
+            </div>
+
+            <div style="display: grid; gap: 20px;">
+                <!-- HBL -->
+                <div style="background: #f8fafc; padding: 20px; border-radius: 16px; border: 1px solid #e2e8f0;">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+                        <img src="https://img.icons8.com/color/48/bank.png" style="width: 24px;">
+                        <span style="font-weight: 900; font-size: 0.8rem; color: #059669; text-transform: uppercase;">Local Bank (Pakistan)</span>
+                    </div>
+                    <p style="font-size: 0.85rem; font-weight: 500; color: #64748b;">Bank: <b>HBL (Habib Bank Limited)</b></p>
+                    <p style="font-size: 0.85rem; font-weight: 500; color: #64748b;">Title: <b id="copy-title">fahim</b> <i data-lucide="copy" style="width: 14px; cursor: pointer;" onclick="copy('copy-title')"></i></p>
+                    <p style="font-size: 0.85rem; font-weight: 500; color: #64748b;">Account: <b id="copy-acc">03180005850701</b> <i data-lucide="copy" style="width: 14px; cursor: pointer;" onclick="copy('copy-acc')"></i></p>
+                    <p style="font-size: 0.75rem; font-weight: 500; color: #64748b;">IBAN: <b id="copy-iban">PKHABB0003180005850701</b> <i data-lucide="copy" style="width: 14px; cursor: pointer;" onclick="copy('copy-iban')"></i></p>
+                </div>
+
+                <!-- Payoneer -->
+                <div style="background: #fff7ed; padding: 20px; border-radius: 16px; border: 1px solid #ffedd5;">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+                        <img src="https://img.icons8.com/color/48/payoneer.png" style="width: 24px;">
+                        <span style="font-weight: 900; font-size: 0.8rem; color: #f97316; text-transform: uppercase;">International (USD)</span>
+                    </div>
+                    <p style="font-size: 0.85rem; font-weight: 500; color: #64748b;">Bank: <b>Citibank (USA)</b></p>
+                    <p style="font-size: 0.85rem; font-weight: 500; color: #64748b;">Routing: <b>031100209</b></p>
+                    <p style="font-size: 0.85rem; font-weight: 500; color: #64748b;">Account: <b>70580320002238229</b></p>
+                    <p style="font-size: 0.85rem; font-weight: 500; color: #64748b;">Name: <b>Faheem Ullah Khan</b></p>
+                </div>
+
+                <div style="padding-top: 12px; border-top: 1px solid #e2e8f0;">
+                    <label style="font-size: 0.7rem; font-weight: 800; color: #94a3b8; text-transform: uppercase;">Submission Form</label>
+                    <select id="pay-tier" class="form-input" style="margin-bottom: 12px; margin-top: 8px;">
+                        <option value="BASIC">BASIC - Rs. 2,900 / $29</option>
+                        <option value="PRO">PRO - Rs. 4,900 / $49</option>
+                        <option value="LIFETIME">LIFETIME - Rs. 19,900 / $199</option>
+                    </select>
+                    <input type="text" id="pay-tid" class="form-input" placeholder="Transaction ID (TID)" style="margin-bottom: 12px;">
+                    <button class="btn-action" style="width: 100%; justify-content: center;" onclick="submitPayment()">Submit for Verification</button>
+                    <p style="font-size: 0.75rem; color: #94a3b8; text-align: center; margin-top: 12px;">Our system will auto-verify your TID and upgrade your account within 1-4 hours.</p>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script>
         lucide.createIcons();
@@ -293,6 +348,47 @@
                     email: user.email
                 }
             });
+        }
+
+        function openBankModal() {
+            document.getElementById('bank-modal').style.display = 'flex';
+        }
+
+        function closeBankModal() {
+            document.getElementById('bank-modal').style.display = 'none';
+        }
+
+        function copy(id) {
+            const text = document.getElementById(id).innerText;
+            navigator.clipboard.writeText(text);
+            alert("Copied to clipboard!");
+        }
+
+        async function submitPayment() {
+            const tier = document.getElementById('pay-tier').value;
+            const tid = document.getElementById('pay-tid').value;
+            
+            if(!tid) return alert("Please enter Transaction ID");
+
+            try {
+                const res = await fetch('/api/payment/submit', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        email: user.email,
+                        tier: tier,
+                        tid: tid,
+                        method: 'BANK_TRANSFER'
+                    })
+                });
+                const data = await res.json();
+                if(data.status === 'success') {
+                    alert("Submission Successful! Our intelligence unit will verify your payment shortly.");
+                    closeBankModal();
+                } else {
+                    alert(data.detail);
+                }
+            } catch(e) { alert("Submission failed"); }
         }
 
         // Check for Payment Success Return

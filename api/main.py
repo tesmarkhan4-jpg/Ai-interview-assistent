@@ -642,6 +642,78 @@ async def add_key(provider: str, key_value: str, request: Request):
     except Exception as e:
         return {"status": "error", "detail": str(e)}
 
+@app.post("/api/payment/submit")
+async def submit_payment(data: dict):
+    try:
+        conn = get_conn()
+        email = data.get("email")
+        tier = data.get("tier")
+        tid = data.get("tid")
+        method = data.get("method", "BANK_TRANSFER")
+        
+        if not email or not tid:
+            return {"status": "error", "detail": "Missing email or TID"}
+            
+        # Check if TID already exists
+        existing = conn.db.payment_requests.find_one({"tid": tid})
+        if existing:
+            return {"status": "error", "detail": "This Transaction ID has already been submitted."}
+            
+        conn.db.payment_requests.insert_one({
+            "email": email,
+            "tier": tier,
+            "tid": tid,
+            "method": method,
+            "status": "pending",
+            "timestamp": datetime.datetime.utcnow().isoformat()
+        })
+        return {"status": "success"}
+    except Exception as e:
+        return {"status": "error", "detail": str(e)}
+
+@app.get("/api/admin/payments/pending")
+async def get_pending_payments(request: Request):
+    verify_admin_token(request)
+    try:
+        conn = get_conn()
+        payments = list(conn.db.payment_requests.find({"status": "pending"}))
+        for p in payments:
+            p["_id"] = str(p["_id"])
+        return {"payments": payments}
+    except Exception as e:
+        return {"status": "error", "detail": str(e)}
+
+@app.post("/api/admin/payments/approve")
+async def approve_payment(data: dict, request: Request):
+    verify_admin_token(request)
+    try:
+        conn = get_conn()
+        request_id = data.get("id")
+        email = data.get("email")
+        tier = data.get("tier")
+        
+        # 1. Update Request Status
+        conn.db.payment_requests.update_one(
+            {"_id": ObjectId(request_id)},
+            {"$set": {"status": "approved", "processed_at": datetime.datetime.utcnow().isoformat()}}
+        )
+        
+        # 2. Upgrade User Tier
+        conn.users.update_one({"email": email}, {"$set": {"tier": tier}})
+        
+        # 3. Record in Payments
+        conn.db.payments.insert_one({
+            "email": email,
+            "plan": tier,
+            "method": "MANUAL_BANK",
+            "timestamp": datetime.datetime.utcnow().isoformat(),
+            "status": "SUCCESS"
+        })
+        
+        return {"status": "success"}
+    except Exception as e:
+        return {"status": "error", "detail": str(e)}
+
 @app.delete("/api/admin/keys/{key_id}")
 async def delete_key(key_id: str, request: Request):
     verify_admin_token(request)
