@@ -591,45 +591,50 @@ async def create_safepay_session(request: Request):
             "PRO": "plan_xxx" # To be added
         }
         
-        # 3. Secure Backend Handshake with Mandatory Security Header
-        # We call Safepay's internal API with the Merchant Secret for authentication
+        # 3. Secure Backend Handshake with Full Payload
         pub_key = "sec_1938fc7a-d894-4c85-bb00-16b2d63ee7a3"
         secret_key = "b6125a345d51cefb89c52c1a1f7b16125201fe6d524cc5bac6e6e366b89e3616"
         import requests
         
+        # 1. Define Redirect and Order ID
+        order_id = f"{email}_{plan}"
+        redirect_url = f"https://zenith-hud.vercel.app/dashboard?payment=success"
+        
+        # 2. Build Initialization Payload
         payload = {
             "client": pub_key,
             "amount": float(amount),
             "currency": "PKR",
-            "environment": "sandbox"
+            "environment": "sandbox",
+            "order_id": order_id,
+            "redirect_url": redirect_url,
+            "source": "custom"
         }
         
-        headers = {
-            "Content-Type": "application/json",
-            "X-SFPY-MERCHANT-SECRET": secret_key
-        }
+        # Add subscription specific params if needed
+        if plan in ["BASIC", "PRO"]:
+            payload["mode"] = "subscription"
+            payload["plan_id"] = plan_ids.get(plan)
         
-        # Initialize the tracker
+        # 3. Initialize the tracker
         res = requests.post(
             "https://sandbox.api.getsafepay.com/order/v1/init",
             json=payload,
-            headers=headers
+            headers={
+                "Content-Type": "application/json",
+                "X-SFPY-MERCHANT-SECRET": secret_key
+            }
         )
         
         result = res.json()
         if res.status_code == 200 and result.get("data"):
             token = result["data"]["token"]
-            # Construct the final secure URL
+            # Use the most stable checkout URL structure
             checkout_url = f"https://sandbox.api.getsafepay.com/checkout/pay?token={token}&env=sandbox"
-            
-            # If it's a subscription, we append the plan_id to the tokenized URL
-            if plan in ["BASIC", "PRO"]:
-                plan_id = plan_ids.get(plan)
-                checkout_url += f"&plan_id={plan_id}"
-                
             return {"status": "success", "url": checkout_url}
         else:
-            return {"status": "error", "detail": "Safepay Handshake Failed: " + str(result.get("status", {}).get("errors", ["Unknown Error"]))}
+            err_msg = str(result.get("status", {}).get("errors", ["Handshake Rejected"]))
+            return {"status": "error", "detail": f"Safepay Error: {err_msg}"}
             
     except Exception as e:
         return {"status": "error", "detail": str(e)}
