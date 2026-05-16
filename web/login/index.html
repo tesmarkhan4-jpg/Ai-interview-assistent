@@ -210,22 +210,29 @@
             document.getElementById('signup-link').href = `/signup?plan=${planParam}`;
         }
 
-        async function initSafepay(email, plan) {
-            try {
-                const res = await fetch('/api/safepay/create-session', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, plan })
-                });
-                const data = await res.json();
-                if (data.status === 'success') {
-                    window.location.href = data.url;
-                } else {
-                    alert("Payment Error: " + data.detail);
+        async function initPaddle(email, tier) {
+            const prices = {
+                'basic': 'pri_01krqx6y16x6h152wvn2xs75wq',
+                'pro': 'pri_01krqx6y16x6h152wvn2xs75wq', // Fallback
+                'lifetime': 'pri_01krqx6y16x6h152wvn2xs75wq' // Fallback
+            };
+            
+            Paddle.Checkout.open({
+                settings: {
+                    displayMode: "overlay",
+                    theme: "dark",
+                    locale: "en"
+                },
+                items: [
+                    {
+                        priceId: prices[tier],
+                        quantity: 1
+                    }
+                ],
+                customer: {
+                    email: email
                 }
-            } catch (err) {
-                alert("Payment Connection Failed");
-            }
+            });
         }
 
         document.getElementById('login-form').addEventListener('submit', async (e) => {
@@ -251,12 +258,8 @@
                     const adminEmails = ['tesmarkhan4@gmail.com', 'faheemkhan101992@gmail.com'];
                     
                     // Prioritize upgrade flow if plan parameter is set
-                    if (planParam === 'basic') {
-                        initSafepay(data.user.email, 'BASIC');
-                    } else if (planParam === 'pro') {
-                        initSafepay(data.user.email, 'PRO');
-                    } else if (planParam === 'lifetime') {
-                        initSafepay(data.user.email, 'LIFETIME');
+                    if (planParam) {
+                        initPaddle(data.user.email, planParam);
                     } else if (adminEmails.includes(data.user.email) || data.user.role === 'OWNER') {
                         window.location.href = '/admin';
                     } else {
@@ -273,6 +276,11 @@
                 btn.innerText = "Login to System";
                 btn.disabled = false;
             }
+        });
+    <script src="https://cdn.paddle.com/paddle/v2/paddle.js"></script>
+    <script type="text/javascript">
+        Paddle.Initialize({ 
+            token: "live_90425a06e0e4d8e804bd29d92cd"
         });
     </script>
 </body>
