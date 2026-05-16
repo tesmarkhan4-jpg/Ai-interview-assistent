@@ -197,18 +197,18 @@
                 </div>
                 
                 <div id="upgrade-options" style="display: grid; gap: 16px;">
-                    <button class="btn-action" style="width: 100%; justify-content: center; background: #64748b;" onclick="initSafepay('BASIC')">
-                        <i data-lucide="shield"></i> Upgrade to BASIC Tier (Rs. 2,900 / mo)
+                    <button class="btn-action" style="width: 100%; justify-content: center; background: #64748b;" onclick="initPaddle('BASIC')">
+                        <i data-lucide="shield"></i> Upgrade to BASIC Tier ($29.00 / mo)
                     </button>
-                    <button class="btn-action" style="width: 100%; justify-content: center; background: #0ea5e9;" onclick="initSafepay('PRO')">
-                        <i data-lucide="shield-check"></i> Upgrade to PRO Intelligence (Rs. 4,900 / mo)
+                    <button class="btn-action" style="width: 100%; justify-content: center; background: #0ea5e9;" onclick="initPaddle('PRO')">
+                        <i data-lucide="shield-check"></i> Upgrade to PRO Intelligence ($49.00 / mo)
                     </button>
-                    <button class="btn-action" style="width: 100%; justify-content: center; background: #1e293b;" onclick="initSafepay('LIFETIME')">
-                        <i data-lucide="infinity"></i> Buy Lifetime Mastery (Rs. 19,900 / once)
+                    <button class="btn-action" style="width: 100%; justify-content: center; background: #1e293b;" onclick="initPaddle('LIFETIME')">
+                        <i data-lucide="infinity"></i> Buy Lifetime Mastery ($199.00 / once)
                     </button>
                     <div style="text-align: center; margin-top: 12px;">
                         <p style="font-size: 0.75rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; margin-bottom: 4px;">SECURED BY</p>
-                        <h3 style="color: #0ea5e9; font-weight: 900; font-size: 1.2rem; letter-spacing: -0.5px;">SAFEPAY <span style="font-size: 0.7rem; color: #f59e0b; background: #fef3c7; padding: 2px 6px; border-radius: 4px; vertical-align: middle;">SANDBOX</span></h3>
+                        <h3 style="color: #4f46e5; font-weight: 900; font-size: 1.2rem; letter-spacing: -0.5px;">PADDLE <span style="font-size: 0.7rem; color: #10b981; background: #ecfdf5; padding: 2px 6px; border-radius: 4px; vertical-align: middle;">LIVE</span></h3>
                     </div>
                 </div>
             </div>
@@ -271,31 +271,28 @@
             document.getElementById('billing-price').innerText = "PAID";
         }
 
-        async function initSafepay(plan) {
-            try {
-                const res = await fetch('/api/safepay/create-session', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email: user.email, plan: plan })
-                });
-                const data = await res.json();
-                if (data.status === 'success') {
-                    // Use Safepay SDK if available, otherwise fallback
-                    if (window.Safepay) {
-                        Safepay.checkout({
-                            token: data.token,
-                            client: 'sec_1938fc7a-d894-4c85-bb00-16b2d63ee7a3',
-                            env: 'sandbox'
-                        });
-                    } else {
-                        window.location.href = data.url;
+        async function initPaddle(tier) {
+            const prices = {
+                'BASIC': 'pri_01krqx6y16x6h152wvn2xs75wq',
+                'PRO': 'pri_01krqx6y16x6h152wvn2xs75wq' // Fallback to basic for now
+            };
+            
+            Paddle.Checkout.open({
+                settings: {
+                    displayMode: "overlay",
+                    theme: "dark",
+                    locale: "en"
+                },
+                items: [
+                    {
+                        priceId: prices[tier],
+                        quantity: 1
                     }
-                } else {
-                    alert("Payment Error: " + data.detail);
+                ],
+                customer: {
+                    email: user.email
                 }
-            } catch (err) {
-                alert("Payment Connection Failed");
-            }
+            });
         }
 
         // Check for Payment Success Return
@@ -384,6 +381,11 @@
             window.location.href = '/login';
         });
     </script>
-    <script src="https://sandbox.api.getsafepay.com/checkout/sdk.js"></script>
+    <script src="https://cdn.paddle.com/paddle/v2/paddle.js"></script>
+    <script type="text/javascript">
+        Paddle.Initialize({ 
+            token: "live_90425a06e0e4d8e804bd29d92cd"
+        });
+    </script>
 </body>
 </html>
