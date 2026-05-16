@@ -11,7 +11,7 @@
     <style>
         :root {
             --primary: #4f46e5;
-            --primary-glow: rgba(79, 70, 229, 0.4);
+            --primary-glow: rgba(79, 70, 229, 0.2);
             --text: #111827;
             --text-muted: #6b7280;
         }
@@ -25,62 +25,44 @@
             overflow: hidden;
         }
 
-        /* Left Side - Unique Premium Visual */
+        /* Left Side - Soft Light Premium Visual */
         .visual-side {
             flex: 1.2;
-            background: #020617; /* Very deep slate */
+            background: #f8fafc; /* Soft light background */
             position: relative;
             display: flex;
             align-items: center;
             justify-content: center;
             overflow: hidden;
             padding: 40px;
+            border-right: 1px solid rgba(0,0,0,0.05);
         }
 
-        /* Distinct Floating Blobs for Signup (Emerald/Teal/Indigo) */
+        /* Subtle Pastel Blobs */
         .blob-container {
             position: absolute;
             width: 100%;
             height: 100%;
             overflow: hidden;
-            filter: blur(80px);
+            filter: blur(90px);
             z-index: 1;
+            opacity: 0.25; /* Very subtle */
         }
 
         .blob {
             position: absolute;
             border-radius: 50%;
-            opacity: 0.5;
             animation: float 20s infinite alternate cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        .blob-1 {
-            width: 450px; height: 450px;
-            background: #059669; /* Emerald */
-            top: -100px; left: -100px;
-            animation-duration: 18s;
-        }
-
-        .blob-2 {
-            width: 550px; height: 550px;
-            background: #4f46e5; /* Indigo */
-            bottom: -150px; right: -100px;
-            animation-duration: 25s;
-            animation-delay: -5s;
-        }
-
-        .blob-3 {
-            width: 350px; height: 350px;
-            background: #0d9488; /* Teal */
-            top: 40%; left: 30%;
-            animation-duration: 22s;
-            animation-delay: -10s;
-        }
+        .blob-1 { width: 400px; height: 400px; background: #059669; top: -50px; left: -50px; animation-duration: 18s; }
+        .blob-2 { width: 450px; height: 450px; background: #4f46e5; bottom: -100px; right: -50px; animation-duration: 25s; animation-delay: -5s; }
+        .blob-3 { width: 300px; height: 300px; background: #0ea5e9; top: 40%; left: 30%; animation-duration: 22s; animation-delay: -10s; }
 
         @keyframes float {
             0% { transform: translate(0, 0) scale(1); }
-            33% { transform: translate(100px, 50px) scale(1.1); }
-            66% { transform: translate(-50px, 100px) scale(0.9); }
+            33% { transform: translate(60px, 40px) scale(1.05); }
+            66% { transform: translate(-40px, 80px) scale(0.95); }
             100% { transform: translate(0, 0) scale(1); }
         }
 
@@ -88,24 +70,25 @@
             position: relative;
             z-index: 10;
             width: 100%;
-            max-width: 500px;
-            animation: logoEnter 1.5s cubic-bezier(0.16, 1, 0.3, 1);
+            max-width: 420px; /* Scaled down for premium compact look */
+            animation: logoEnter 1s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         @keyframes logoEnter {
-            from { opacity: 0; transform: translateY(20px) scale(0.95); }
-            to { opacity: 1; transform: translateY(0) scale(1); }
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .trial-benefit { 
-            display: flex; gap: 20px; margin-bottom: 30px; padding: 24px; 
-            background: rgba(255,255,255,0.05); border-radius: 24px; 
-            border: 1px solid rgba(255,255,255,0.1); 
+            display: flex; gap: 16px; margin-bottom: 20px; padding: 20px; 
+            background: rgba(255, 255, 255, 0.9); border-radius: 20px; 
+            border: 1px solid rgba(0,0,0,0.04); 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.02);
             backdrop-filter: blur(10px);
             transition: 0.3s;
         }
-        .trial-benefit:hover { background: rgba(255,255,255,0.08); transform: translateY(-2px); }
-        .benefit-icon { font-size: 2.5rem; text-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+        .trial-benefit:hover { transform: translateY(-2px); box-shadow: 0 15px 35px rgba(0,0,0,0.04); }
+        .benefit-icon { font-size: 2rem; display: flex; align-items: center; justify-content: center; }
 
         /* Right Side - Form section */
         .form-side {
@@ -113,57 +96,57 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 60px;
+            padding: 40px;
             background: white;
-            overflow-y: auto; /* Allow scrolling if screen is small */
+            overflow-y: auto;
         }
 
         .login-container {
             width: 100%;
-            max-width: 440px;
-            animation: fadeIn 1s cubic-bezier(0.16, 1, 0.3, 1);
+            max-width: 380px; /* Compact, aligned form */
+            animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateX(40px); }
+            from { opacity: 0; transform: translateX(20px); }
             to { opacity: 1; transform: translateX(0); }
         }
 
-        .form-group { margin-bottom: 24px; }
-        label { display: block; font-size: 0.75rem; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 10px; letter-spacing: 1px; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; font-size: 0.7rem; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px; }
         
         input { 
             width: 100%; background: #f8fafc; border: 1px solid #e2e8f0; 
-            border-radius: 16px; padding: 18px; color: #000; font-size: 1rem;
-            transition: all 0.3s ease; outline: none;
+            border-radius: 14px; padding: 14px 16px; color: #1e293b; font-size: 0.95rem; font-weight: 500;
+            transition: all 0.2s ease; outline: none;
         }
-        input:focus { background: white; border-color: var(--primary); box-shadow: 0 0 0 5px rgba(79, 70, 229, 0.08); }
+        input:focus { background: white; border-color: var(--primary); box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.08); }
         
-        .otp-row { display: flex; gap: 12px; align-items: flex-end; }
-        .btn-send { background: #f1f5f9; border: 1px solid #e2e8f0; padding: 18px 24px; border-radius: 14px; font-weight: 700; cursor: pointer; white-space: nowrap; transition: 0.2s; }
-        .btn-send:hover { background: #e2e8f0; }
+        .otp-row { display: flex; gap: 10px; align-items: stretch; }
+        .btn-send { background: #f1f5f9; border: 1px solid #e2e8f0; padding: 0 16px; border-radius: 12px; font-weight: 700; color: #475569; cursor: pointer; white-space: nowrap; transition: 0.2s; font-size: 0.85rem; }
+        .btn-send:hover { background: #e2e8f0; color: #1e293b; }
         .btn-send:disabled { opacity: 0.5; cursor: not-allowed; }
 
         .btn-auth {
-            width: 100%; background: var(--primary); color: white; border: none;
-            border-radius: 16px; padding: 20px; font-size: 1rem; font-weight: 800;
-            cursor: pointer; transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-            margin-top: 12px; box-shadow: 0 10px 20px -5px var(--primary-glow);
+            width: 100%; background: #0f172a; color: white; border: none;
+            border-radius: 14px; padding: 16px; font-size: 0.95rem; font-weight: 700;
+            cursor: pointer; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            margin-top: 8px; box-shadow: 0 8px 16px -4px rgba(0,0,0,0.1);
         }
-        .btn-auth:hover { background: #3730a3; transform: translateY(-3px); box-shadow: 0 20px 30px -10px var(--primary-glow); }
+        .btn-auth:hover { background: #000; transform: translateY(-2px); box-shadow: 0 12px 20px -6px rgba(0,0,0,0.15); }
 
-        .error-msg { background: #fff1f2; border: 1px solid #fee2e2; color: #e11d48; padding: 14px; border-radius: 12px; font-size: 0.9rem; margin-bottom: 24px; display: none; text-align: center; font-weight: 600; }
-        .success-msg { background: #ecfdf5; border: 1px solid #d1fae5; color: #059669; padding: 14px; border-radius: 12px; font-size: 0.9rem; margin-bottom: 24px; display: none; text-align: center; font-weight: 600; }
+        .error-msg { background: #fff1f2; border: 1px solid #fee2e2; color: #e11d48; padding: 12px; border-radius: 12px; font-size: 0.85rem; margin-bottom: 20px; display: none; text-align: center; font-weight: 600; }
+        .success-msg { background: #ecfdf5; border: 1px solid #d1fae5; color: #059669; padding: 12px; border-radius: 12px; font-size: 0.85rem; margin-bottom: 20px; display: none; text-align: center; font-weight: 600; }
 
         .trial-notice {
-            background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 20px;
-            padding: 24px; margin-bottom: 32px; display: none;
+            background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 16px;
+            padding: 16px; margin-bottom: 24px; display: none;
             animation: fadeIn 0.5s ease;
         }
 
-        @media (max-width: 1100px) {
+        @media (max-width: 900px) {
             .visual-side { display: none; }
-            .form-side { padding: 40px; }
+            .form-side { padding: 30px; }
         }
     </style>
 </head>
@@ -175,53 +158,53 @@
             <div class="blob blob-3"></div>
         </div>
         <div class="brand-content">
-            <h3 style="font-size: 2.5rem; font-weight: 900; margin-bottom: 40px; color: white; letter-spacing: -1.5px; text-shadow: 0 4px 20px rgba(0,0,0,0.5);">Trial Deployment Status</h3>
+            <h3 style="font-size: 2rem; font-weight: 900; margin-bottom: 32px; color: #0f172a; letter-spacing: -1px;">Trial Deployment Status</h3>
             
             <div class="trial-benefit">
                 <div class="benefit-icon">🎁</div>
                 <div>
-                    <h4 style="color: white; margin-bottom: 6px; font-size: 1.1rem; font-weight: 800;">7 Days of Full Access</h4>
-                    <p style="font-size: 0.95rem; color: rgba(255,255,255,0.7); line-height: 1.5;">Unlock every feature of the Zenith engine, including all model providers.</p>
+                    <h4 style="color: #0f172a; margin-bottom: 4px; font-size: 0.95rem; font-weight: 800;">7 Days of Full Access</h4>
+                    <p style="font-size: 0.85rem; color: #64748b; line-height: 1.4; font-weight: 500;">Unlock every feature of the Zenith engine, including all model providers.</p>
                 </div>
             </div>
 
             <div class="trial-benefit">
                 <div class="benefit-icon">🛰️</div>
                 <div>
-                    <h4 style="color: white; margin-bottom: 6px; font-size: 1.1rem; font-weight: 800;">Verified Infrastructure</h4>
-                    <p style="font-size: 0.95rem; color: rgba(255,255,255,0.7); line-height: 1.5;">Access the same high-speed Key Pool used by PRO members.</p>
+                    <h4 style="color: #0f172a; margin-bottom: 4px; font-size: 0.95rem; font-weight: 800;">Verified Infrastructure</h4>
+                    <p style="font-size: 0.85rem; color: #64748b; line-height: 1.4; font-weight: 500;">Access the same high-speed Key Pool used by PRO members.</p>
                 </div>
             </div>
 
             <div class="trial-benefit">
                 <div class="benefit-icon">🤖</div>
                 <div>
-                    <h4 style="color: white; margin-bottom: 6px; font-size: 1.1rem; font-weight: 800;">Unlimited Potential</h4>
-                    <p style="font-size: 0.95rem; color: rgba(255,255,255,0.7); line-height: 1.5;">Ground your AI with your specific career history for unique answers.</p>
+                    <h4 style="color: #0f172a; margin-bottom: 4px; font-size: 0.95rem; font-weight: 800;">Unlimited Potential</h4>
+                    <p style="font-size: 0.85rem; color: #64748b; line-height: 1.4; font-weight: 500;">Ground your AI with your specific career history for unique answers.</p>
                 </div>
             </div>
 
-            <div style="margin-top: 40px; padding: 20px; background: rgba(0,0,0,0.2); border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); font-size: 0.9rem; color: rgba(255,255,255,0.6); font-weight: 600; text-align: center; letter-spacing: 0.5px;">
-                NO CREDIT CARD REQUIRED FOR TRIAL DEPLOYMENT
+            <div style="margin-top: 24px; padding: 16px; background: rgba(79, 70, 229, 0.05); border-radius: 14px; font-size: 0.8rem; color: #4f46e5; font-weight: 700; text-align: center; letter-spacing: 0.5px;">
+                NO CREDIT CARD REQUIRED FOR TRIAL
             </div>
         </div>
     </div>
 
     <div class="form-side">
         <div class="login-container">
-            <div style="margin-bottom: 40px; display: flex; align-items: center; gap: 12px; font-size: 1.5rem; font-weight: 900; letter-spacing: -1px; color: #1e293b;">
-                <img src="/icon.png" alt="Z" style="height: 36px; width: 36px; border-radius: 8px;">
+            <div style="margin-bottom: 32px; display: flex; align-items: center; gap: 10px; font-size: 1.3rem; font-weight: 900; letter-spacing: -0.5px; color: #0f172a;">
+                <img src="/icon.png" alt="Z" style="height: 30px; width: 30px; border-radius: 6px;">
                 <div>Zenith<span style="color: #4f46e5;">HUD</span> PRO</div>
             </div>
-            <h2 style="margin-bottom: 10px; font-weight: 900; letter-spacing: -1.5px; color: #000; font-size: 2.2rem;">Join the Elite</h2>
-            <p style="color: var(--text-muted); font-size: 1rem; margin-bottom: 32px; font-weight: 500;">Join the elite tier of verified agents.</p>
+            <h2 style="margin-bottom: 6px; font-weight: 900; letter-spacing: -1px; color: #0f172a; font-size: 1.8rem;">Join the Elite</h2>
+            <p style="color: #64748b; font-size: 0.9rem; margin-bottom: 24px; font-weight: 500;">Join the elite tier of verified agents.</p>
             
             <div id="trial-notice" class="trial-notice">
-                <div style="display: flex; gap: 16px; align-items: flex-start;">
-                    <div style="font-size: 1.5rem;">🎁</div>
+                <div style="display: flex; gap: 12px; align-items: flex-start;">
+                    <div style="font-size: 1.2rem;">🎁</div>
                     <div>
-                        <h4 style="color: #166534; margin-bottom: 4px; font-weight: 800;">7-Day Trial Mission Active</h4>
-                        <p style="font-size: 0.85rem; color: #15803d; line-height: 1.5; font-weight: 500;">Register your account below, then download the app. Your free 7-day tactical access will start instantly upon your first login.</p>
+                        <h4 style="color: #166534; margin-bottom: 2px; font-weight: 800; font-size: 0.85rem;">7-Day Trial Mission Active</h4>
+                        <p style="font-size: 0.75rem; color: #15803d; line-height: 1.4; font-weight: 500;">Register your account below, then download the app. Your free 7-day tactical access will start instantly upon your first login.</p>
                     </div>
                 </div>
             </div>

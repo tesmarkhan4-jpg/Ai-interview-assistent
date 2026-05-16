@@ -9,76 +9,186 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
-        body { background: #f8fafc; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
-        .split-card {
-            background: white; width: 100%; max-width: 1000px; 
-            display: grid; grid-template-columns: 1.2fr 1fr;
-            border-radius: 40px; overflow: hidden;
-            border: 1px solid rgba(0,0,0,0.06);
-            box-shadow: 0 40px 80px rgba(0,0,0,0.08);
-            animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
-
-        .form-side { padding: 60px; }
-        .info-side { 
-            background: linear-gradient(135deg, #4f46e5, #0ea5e9); 
-            padding: 60px; color: white; display: flex; flex-direction: column; justify-content: center;
+        :root {
+            --primary: #4f46e5;
+            --primary-glow: rgba(79, 70, 229, 0.2);
+            --text: #111827;
+            --text-muted: #6b7280;
         }
 
-        .form-group { margin-bottom: 24px; }
-        label { display: block; font-size: 0.75rem; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 1px; }
-        input { 
-            width: 100%; padding: 16px 20px; border-radius: 16px; 
-            border: 1px solid #e2e8f0; outline: none; font-size: 1rem;
-            transition: 0.2s; background: #fcfdfe;
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+
+        body {
+            background: #ffffff;
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
         }
-        input:focus { border-color: #4f46e5; box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1); background: white; }
-        .error-msg { color: #f43f5e; font-size: 0.85rem; font-weight: 600; margin-bottom: 20px; display: none; }
+
+        /* Left Side - Soft Light Premium Visual */
+        .visual-side {
+            flex: 1.2;
+            background: #f8fafc; /* Soft light background */
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            padding: 40px;
+            border-right: 1px solid rgba(0,0,0,0.05);
+        }
+
+        /* Subtle Pastel Blobs */
+        .blob-container {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            filter: blur(90px);
+            z-index: 1;
+            opacity: 0.25; /* Very subtle */
+        }
+
+        .blob {
+            position: absolute;
+            border-radius: 50%;
+            animation: float 20s infinite alternate cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .blob-1 { width: 400px; height: 400px; background: #059669; top: -50px; left: -50px; animation-duration: 18s; }
+        .blob-2 { width: 450px; height: 450px; background: #4f46e5; bottom: -100px; right: -50px; animation-duration: 25s; animation-delay: -5s; }
+        .blob-3 { width: 300px; height: 300px; background: #0ea5e9; top: 40%; left: 30%; animation-duration: 22s; animation-delay: -10s; }
+
+        @keyframes float {
+            0% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(60px, 40px) scale(1.05); }
+            66% { transform: translate(-40px, 80px) scale(0.95); }
+            100% { transform: translate(0, 0) scale(1); }
+        }
+
+        .brand-content {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            max-width: 420px; /* Scaled down for premium compact look */
+            animation: logoEnter 1s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes logoEnter {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .trial-benefit { 
+            display: flex; gap: 16px; margin-bottom: 20px; padding: 20px; 
+            background: rgba(255, 255, 255, 0.9); border-radius: 20px; 
+            border: 1px solid rgba(0,0,0,0.04); 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.02);
+            backdrop-filter: blur(10px);
+            transition: 0.3s;
+        }
+        .trial-benefit:hover { transform: translateY(-2px); box-shadow: 0 15px 35px rgba(0,0,0,0.04); }
+        .benefit-icon { font-size: 2rem; display: flex; align-items: center; justify-content: center; width: 48px; height: 48px; background: rgba(0,0,0,0.03); border-radius: 12px; }
+
+        /* Right Side - Form section */
+        .form-side {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            background: white;
+            overflow-y: auto;
+        }
+
+        .login-container {
+            width: 100%;
+            max-width: 380px; /* Compact, aligned form */
+            animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateX(20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .form-group { margin-bottom: 20px; }
+        label { display: block; font-size: 0.7rem; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px; }
         
+        input { 
+            width: 100%; background: #f8fafc; border: 1px solid #e2e8f0; 
+            border-radius: 14px; padding: 14px 16px; color: #1e293b; font-size: 0.95rem; font-weight: 500;
+            transition: all 0.2s ease; outline: none;
+        }
+        input:focus { background: white; border-color: var(--primary); box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.08); }
+
         .btn-auth {
-            width: 100%; justify-content: center; margin-top: 10px;
-            display: inline-flex; align-items: center; gap: 10px;
-            background: var(--primary); color: white;
-            padding: 16px 32px; border-radius: 14px;
-            font-weight: 700; text-decoration: none; border: none; cursor: pointer;
-            transition: 0.3s; box-shadow: 0 10px 25px var(--primary-glow);
-            font-size: 1rem;
+            width: 100%; background: #0f172a; color: white; border: none;
+            border-radius: 14px; padding: 16px; font-size: 0.95rem; font-weight: 700;
+            cursor: pointer; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            margin-top: 8px; box-shadow: 0 8px 16px -4px rgba(0,0,0,0.1);
         }
-        .btn-auth:hover { transform: translateY(-2px); box-shadow: 0 15px 35px var(--primary-glow); }
+        .btn-auth:hover { background: #000; transform: translateY(-2px); box-shadow: 0 12px 20px -6px rgba(0,0,0,0.15); }
 
-        .feature-item { display: flex; gap: 16px; margin-bottom: 32px; }
-        .icon-circle { 
-            width: 48px; height: 48px; background: rgba(255,255,255,0.1); 
-            border-radius: 16px; display: flex; align-items: center; justify-content: center;
-            flex-shrink: 0; font-size: 1.2rem;
-        }
-
+        .error-msg { background: #fff1f2; border: 1px solid #fee2e2; color: #e11d48; padding: 12px; border-radius: 12px; font-size: 0.85rem; margin-bottom: 20px; display: none; text-align: center; font-weight: 600; }
+        
         @media (max-width: 900px) {
-            .split-card { grid-template-columns: 1fr; max-width: 500px; }
-            .info-side { display: none; }
-            .form-side { padding: 40px; }
+            .visual-side { display: none; }
+            .form-side { padding: 30px; }
         }
     </style>
 </head>
 <body>
-    <div class="aurora"></div>
-    <div class="split-card">
-        <!-- FORM SIDE -->
-        <div class="form-side">
-            <div style="margin-bottom: 40px; display: flex; align-items: center; gap: 12px; font-size: 1.5rem; font-weight: 900; letter-spacing: -1px; color: #1e293b;">
-                <img src="/icon.png" alt="Z" style="height: 36px; width: 36px; border-radius: 8px;">
+    <div class="visual-side">
+        <div class="blob-container">
+            <div class="blob blob-1"></div>
+            <div class="blob blob-2"></div>
+            <div class="blob blob-3"></div>
+        </div>
+        <div class="brand-content">
+            <h3 style="font-size: 2rem; font-weight: 900; margin-bottom: 32px; color: #0f172a; letter-spacing: -1px; line-height: 1.2;">The ultimate edge for your next <span style="color: #4f46e5;">career move</span>.</h3>
+            
+            <div class="trial-benefit">
+                <div class="benefit-icon">👻</div>
+                <div>
+                    <h4 style="color: #0f172a; margin-bottom: 4px; font-size: 0.95rem; font-weight: 800;">Ghost Mode Activated</h4>
+                    <p style="font-size: 0.85rem; color: #64748b; line-height: 1.4; font-weight: 500;">Our overlay is completely invisible to Zoom, Teams, and Google Meet.</p>
+                </div>
+            </div>
+
+            <div class="trial-benefit">
+                <div class="benefit-icon">⚡</div>
+                <div>
+                    <h4 style="color: #0f172a; margin-bottom: 4px; font-size: 0.95rem; font-weight: 800;">Real-Time Strategy</h4>
+                    <p style="font-size: 0.85rem; color: #64748b; line-height: 1.4; font-weight: 500;">Get world-class intelligence delivered in under 400ms.</p>
+                </div>
+            </div>
+
+            <div class="trial-benefit">
+                <div class="benefit-icon">🔒</div>
+                <div>
+                    <h4 style="color: #0f172a; margin-bottom: 4px; font-size: 0.95rem; font-weight: 800;">Secure & Bound</h4>
+                    <p style="font-size: 0.85rem; color: #64748b; line-height: 1.4; font-weight: 500;">Your account is protected by hardware-level binding encryption.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-side">
+        <div class="login-container">
+            <div style="margin-bottom: 32px; display: flex; align-items: center; gap: 10px; font-size: 1.3rem; font-weight: 900; letter-spacing: -0.5px; color: #0f172a;">
+                <img src="/icon.png" alt="Z" style="height: 30px; width: 30px; border-radius: 6px;">
                 <div>Zenith<span style="color: #4f46e5;">HUD</span> PRO</div>
             </div>
-            <h2 style="margin-bottom: 8px; font-weight: 900; letter-spacing: -1.5px; color: #1e293b; font-size: 2rem;">Welcome Back</h2>
-            <p style="color: #64748b; font-size: 1rem; margin-bottom: 40px;">Log in to resume your missions.</p>
+            <h2 style="margin-bottom: 6px; font-weight: 900; letter-spacing: -1px; color: #0f172a; font-size: 1.8rem;">Welcome Back</h2>
+            <p style="color: #64748b; font-size: 0.9rem; margin-bottom: 24px; font-weight: 500;">Log in to resume your missions.</p>
             
             <div id="error" class="error-msg">Incorrect email or password.</div>
             
             <form id="login-form">
                 <div class="form-group">
                     <label>Email Address</label>
-                    <input type="email" id="email" placeholder="name@example.com" required>
+                    <input type="email" id="email" placeholder="name@company.com" required>
                 </div>
                 <div class="form-group">
                     <label>Password</label>
@@ -87,37 +197,8 @@
                 <button type="submit" class="btn-auth">Login to System</button>
             </form>
             
-            <div style="margin-top: 40px; font-size: 0.95rem; color: #64748b;">
-                Need an account? <a href="/signup" style="color: #4f46e5; font-weight: 700; text-decoration: none;">Start Free Trial</a>
-            </div>
-        </div>
-
-        <!-- INFO SIDE -->
-        <div class="info-side">
-            <h3 style="font-size: 2rem; font-weight: 900; line-height: 1.2; margin-bottom: 48px;">The ultimate edge for your next <span style="text-decoration: underline; text-decoration-color: rgba(255,255,255,0.4);">career move</span>.</h3>
-            
-            <div class="feature-item">
-                <div class="icon-circle">👻</div>
-                <div>
-                    <h4 style="margin-bottom: 4px;">Ghost Mode Activated</h4>
-                    <p style="font-size: 0.9rem; opacity: 0.8;">Our overlay is completely invisible to Zoom, Teams, and Google Meet.</p>
-                </div>
-            </div>
-
-            <div class="feature-item">
-                <div class="icon-circle">⚡</div>
-                <div>
-                    <h4 style="margin-bottom: 4px;">Real-Time Strategy</h4>
-                    <p style="font-size: 0.9rem; opacity: 0.8;">Get world-class intelligence delivered in under 400ms.</p>
-                </div>
-            </div>
-
-            <div class="feature-item">
-                <div class="icon-circle">🔒</div>
-                <div>
-                    <h4 style="margin-bottom: 4px;">Secure & Bound</h4>
-                    <p style="font-size: 0.9rem; opacity: 0.8;">Your account is protected by hardware-level binding encryption.</p>
-                </div>
+            <div style="margin-top: 32px; text-align: center; font-size: 0.95rem; color: var(--text-muted); font-weight: 500;">
+                Need an account? <a href="/signup" style="color: #000; font-weight: 800; text-decoration: none;">Start Free Trial</a>
             </div>
         </div>
     </div>
