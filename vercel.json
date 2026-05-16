@@ -33,7 +33,11 @@
     },
     {
       "source": "/signup",
-      "destination": "/web/login/signup.html"
+      "destination": "/web/signup/index.html"
+    },
+    {
+      "source": "/checkout",
+      "destination": "/web/checkout/index.html"
     },
     {
       "source": "/login",
@@ -48,7 +52,7 @@
       "destination": "/web/landing/index.html"
     },
     {
-      "source": "/((?!web|admin|api).*)",
+      "source": "/((?!web|admin|api|checkout|signup).*)",
       "destination": "/web/landing/$1"
     }
   ]
