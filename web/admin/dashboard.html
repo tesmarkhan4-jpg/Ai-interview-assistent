@@ -313,43 +313,42 @@
             document.getElementById('new-key-value').value = ''; fetchKeys();
         }
 
+        const getVal = (id) => { const el = document.getElementById(id); return el ? el.value : ''; };
+        const setVal = (id, val) => { const el = document.getElementById(id); if(el) el.value = val || ''; };
+
         async function fetchConfig() { 
             const res = await adminFetch(`${API_BASE}/admin/config`); 
             const data = await res.json(); 
-            document.getElementById('cfg-app-version').value = data.app_version || ''; 
-            document.getElementById('cfg-download-url').value = data.download_url || ''; 
-            document.getElementById('cfg-release-notes').value = data.release_notes || ''; 
-            // New Config Fields
-            document.getElementById('cfg-smtp-host').value = data.smtp_host || '';
-            document.getElementById('cfg-smtp-port').value = data.smtp_port || '';
-            document.getElementById('cfg-smtp-user').value = data.smtp_user || '';
-            document.getElementById('cfg-smtp-pass').value = data.smtp_pass || '';
-            document.getElementById('cfg-smtp-name').value = data.smtp_name || '';
-            document.getElementById('cfg-stripe-key').value = data.stripe_key || '';
-            document.getElementById('cfg-paypal-id').value = data.paypal_id || '';
-            document.getElementById('cfg-safepay-public').value = data.safepay_public || 'sec_1938fc7a-d894-4c85-bb00-16b2d63ee7a3';
-            document.getElementById('cfg-safepay-secret').value = data.safepay_secret || 'b6125a345d51cefb89c52c1a1f7b16125201fe6d524cc5bac6e6e366b89e3616';
-            document.getElementById('cfg-payment-instructions').value = data.payment_instructions || '';
+            setVal('cfg-app-version', data.app_version);
+            setVal('cfg-download-url', data.download_url);
+            setVal('cfg-release-notes', data.release_notes);
+            setVal('cfg-smtp-host', data.smtp_host);
+            setVal('cfg-smtp-port', data.smtp_port);
+            setVal('cfg-smtp-user', data.smtp_user);
+            setVal('cfg-smtp-pass', data.smtp_pass);
+            setVal('cfg-smtp-name', data.smtp_name);
+            setVal('cfg-safepay-public', data.safepay_public);
+            setVal('cfg-safepay-secret', data.safepay_secret);
+            setVal('cfg-payment-instructions', data.payment_instructions);
         }
 
         async function updateConfig() { 
             const cfg = { 
-                app_version: document.getElementById('cfg-app-version').value, 
-                download_url: document.getElementById('cfg-download-url').value, 
-                release_notes: document.getElementById('cfg-release-notes').value,
-                smtp_host: document.getElementById('cfg-smtp-host').value,
-                smtp_port: document.getElementById('cfg-smtp-port').value,
-                smtp_user: document.getElementById('cfg-smtp-user').value,
-                smtp_pass: document.getElementById('cfg-smtp-pass').value,
-                smtp_name: document.getElementById('cfg-smtp-name').value,
-                stripe_key: document.getElementById('cfg-stripe-key').value,
-                paypal_id: document.getElementById('cfg-paypal-id').value,
-                safepay_public: document.getElementById('cfg-safepay-public').value,
-                safepay_secret: document.getElementById('cfg-safepay-secret').value,
-                payment_instructions: document.getElementById('cfg-payment-instructions').value
+                app_version: getVal('cfg-app-version'), 
+                download_url: getVal('cfg-download-url'), 
+                release_notes: getVal('cfg-release-notes'),
+                smtp_host: getVal('cfg-smtp-host'),
+                smtp_port: getVal('cfg-smtp-port'),
+                smtp_user: getVal('cfg-smtp-user'),
+                smtp_pass: getVal('cfg-smtp-pass'),
+                smtp_name: getVal('cfg-smtp-name'),
+                safepay_public: getVal('cfg-safepay-public'),
+                safepay_secret: getVal('cfg-safepay-secret'),
+                payment_instructions: getVal('cfg-payment-instructions')
             }; 
-            await adminFetch(`${API_BASE}/admin/config`, {method:'POST', body:JSON.stringify(cfg)}); 
-            alert("Infrastructure Configuration Updated."); 
+            const res = await adminFetch(`${API_BASE}/admin/config`, {method:'POST', body:JSON.stringify(cfg)}); 
+            if(res && res.ok) alert("System Configuration Synchronized."); 
+            else alert("Configuration Update Failed.");
         }
         async function toggleMaintenance() { const active = document.getElementById('maintenance-toggle').checked; await adminFetch(`${API_BASE}/admin/maintenance?active=${active}`, {method:'POST'}); }
 
