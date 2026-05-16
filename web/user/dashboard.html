@@ -197,13 +197,13 @@
                 </div>
                 
                 <div id="upgrade-options" style="display: grid; gap: 16px;">
-                    <button class="btn-action" style="width: 100%; justify-content: center; background: #64748b;" onclick="initSafepay('BASIC', 2900)">
+                    <button class="btn-action" style="width: 100%; justify-content: center; background: #64748b;" onclick="initSafepay('BASIC')">
                         <i data-lucide="shield"></i> Upgrade to BASIC Tier (Rs. 2,900 / mo)
                     </button>
-                    <button class="btn-action" style="width: 100%; justify-content: center; background: #0ea5e9;" onclick="initSafepay('PRO', 4900)">
+                    <button class="btn-action" style="width: 100%; justify-content: center; background: #0ea5e9;" onclick="initSafepay('PRO')">
                         <i data-lucide="shield-check"></i> Upgrade to PRO Intelligence (Rs. 4,900 / mo)
                     </button>
-                    <button class="btn-action" style="width: 100%; justify-content: center; background: #1e293b;" onclick="initSafepay('LIFETIME', 19900)">
+                    <button class="btn-action" style="width: 100%; justify-content: center; background: #1e293b;" onclick="initSafepay('LIFETIME')">
                         <i data-lucide="infinity"></i> Buy Lifetime Mastery (Rs. 19,900 / once)
                     </button>
                     <div style="text-align: center; margin-top: 12px;">
@@ -272,13 +272,22 @@
         }
 
         // Safepay Checkout Logic
-        function initSafepay(plan, amount) {
-            const pubKey = "sec_1938fc7a-d894-4c85-bb00-16b2d63ee7a3";
-            const orderId = encodeURIComponent(`${user.email}_${plan}`);
-            const baseUrl = window.location.href.split('?')[0];
-            const redirectUrl = encodeURIComponent(`${baseUrl}?payment=success`);
-            const url = `https://sandbox.api.getsafepay.com/checkout/pay?env=sandbox&api_key=${pubKey}&amount=${amount.toFixed(2)}&currency=PKR&source=custom&order_id=${orderId}&redirect_url=${redirectUrl}`;
-            window.location.href = url;
+        async function initSafepay(plan) {
+            try {
+                const res = await fetch('/api/safepay/create-session', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: user.email, plan: plan })
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    window.location.href = data.url;
+                } else {
+                    alert("Payment Error: " + data.detail);
+                }
+            } catch (err) {
+                alert("Payment Connection Failed");
+            }
         }
 
         // Check for Payment Success Return

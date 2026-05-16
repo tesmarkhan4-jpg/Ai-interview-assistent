@@ -568,6 +568,69 @@ async def get_payments(request: Request):
     except Exception as e:
         return {"status": "error", "detail": str(e)}
 
+# --- SAFEPAY SESSION GENERATOR ---
+@app.post("/api/safepay/create-session")
+async def create_safepay_session(request: Request):
+    try:
+        data = await request.json()
+        email = data.get("email")
+        plan = data.get("plan", "BASIC").upper()
+        
+        # 1. Resolve Pricing and Mode
+        # For Sandbox/Testing we use fixed amounts
+        prices = {
+            "BASIC": 2900,
+            "PRO": 4900,
+            "LIFETIME": 19900
+        }
+        amount = prices.get(plan, 2900)
+        
+        # 2. Plan IDs for Subscriptions
+        plan_ids = {
+            "BASIC": "plan_2a508be9-b576-43c8-b0b2-cf5b9462eeea",
+            "PRO": "plan_xxx" # To be added
+        }
+        
+        # 3. Call Safepay Order Init
+        # In Safepay V1, we init an order to get a token
+        # For subscriptions, the mode is 'subscription'
+        import requests
+        
+        mode = "payment"
+        if plan in ["BASIC", "PRO"]:
+            mode = "subscription"
+            
+        payload = {
+            "client": "sec_1938fc7a-d894-4c85-bb00-16b2d63ee7a3",
+            "amount": float(amount),
+            "currency": "PKR",
+            "environment": "sandbox",
+            "mode": mode,
+            "reference": f"{email}_{plan}"
+        }
+        
+        if mode == "subscription":
+            payload["plan_id"] = plan_ids.get(plan)
+            
+        # Safepay Init Endpoint
+        res = requests.post(
+            "https://sandbox.api.getsafepay.com/order/v1/init",
+            json=payload
+        )
+        
+        result = res.json()
+        if res.status_code == 200:
+            token = result.get("data", {}).get("token")
+            # Construct the secure checkout URL
+            checkout_url = f"https://sandbox.api.getsafepay.com/checkout/pay?token={token}&env=sandbox"
+            return {"status": "success", "url": checkout_url}
+        else:
+            return {"status": "error", "detail": result.get("message", "Failed to init Safepay")}
+            
+    except Exception as e:
+        return {"status": "error", "detail": str(e)}
+
+
 # --- SAFEPAY AUTONOMOUS BRIDGE ---
 @app.post("/api/callback/safepay")
 async def safepay_callback(request: Request):

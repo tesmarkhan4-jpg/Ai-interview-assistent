@@ -210,13 +210,22 @@
             document.getElementById('signup-link').href = `/signup?plan=${planParam}`;
         }
 
-        function initSafepay(email, plan, amount) {
-            const pubKey = "sec_1938fc7a-d894-4c85-bb00-16b2d63ee7a3";
-            const orderId = encodeURIComponent(`${email}_${plan}`);
-            const baseUrl = window.location.origin + '/dashboard';
-            const redirectUrl = encodeURIComponent(`${baseUrl}?payment=success`);
-            const url = `https://sandbox.api.getsafepay.com/checkout/pay?env=sandbox&api_key=${pubKey}&amount=${amount.toFixed(2)}&currency=PKR&source=custom&order_id=${orderId}&redirect_url=${redirectUrl}`;
-            window.location.href = url;
+        async function initSafepay(email, plan) {
+            try {
+                const res = await fetch('/api/safepay/create-session', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, plan })
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    window.location.href = data.url;
+                } else {
+                    alert("Payment Error: " + data.detail);
+                }
+            } catch (err) {
+                alert("Payment Connection Failed");
+            }
         }
 
         document.getElementById('login-form').addEventListener('submit', async (e) => {
@@ -243,11 +252,11 @@
                     
                     // Prioritize upgrade flow if plan parameter is set
                     if (planParam === 'basic') {
-                        initSafepay(data.user.email, 'BASIC', 2900);
+                        initSafepay(data.user.email, 'BASIC');
                     } else if (planParam === 'pro') {
-                        initSafepay(data.user.email, 'PRO', 4900);
+                        initSafepay(data.user.email, 'PRO');
                     } else if (planParam === 'lifetime') {
-                        initSafepay(data.user.email, 'LIFETIME', 19900);
+                        initSafepay(data.user.email, 'LIFETIME');
                     } else if (adminEmails.includes(data.user.email) || data.user.role === 'OWNER') {
                         window.location.href = '/admin';
                     } else {
