@@ -25,7 +25,10 @@
         <div class="nav-links">
             <a href="#why">How it Works</a>
             <a href="#pricing">Pricing</a>
-            <a href="#" class="dynamic-download">Download</a>
+            <a href="#" class="dynamic-download">
+                <span class="loader-spinner" style="width:14px; height:14px; border-width:2px; margin-right:6px;"></span>
+                <span class="btn-text">Download</span>
+            </a>
             <a href="/login">Login</a>
         </div>
         <a href="#pricing" class="btn-primary" style="padding: 10px 24px; font-size: 0.85rem;">Get Started</a>
@@ -41,8 +44,9 @@
             
             <div class="cta-group">
                 <a href="#" class="btn-primary dynamic-download">
+                    <span class="loader-spinner"></span>
                     <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                    Download for Windows
+                    <span class="btn-text">Download for Windows</span>
                 </a>
                 <a href="#pricing" class="btn-secondary">View Pricing</a>
             </div>
@@ -254,6 +258,16 @@
         }
         
         fetchConfig();
+        
+        // Download Loader Logic
+        document.querySelectorAll('.dynamic-download').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                if(this.href && this.href !== window.location.href + '#') {
+                    this.classList.add('btn-loading');
+                    setTimeout(() => this.classList.remove('btn-loading'), 4000);
+                }
+            });
+        });
 
         // Smooth scroll (Exclude dynamic-download links)
         document.querySelectorAll('a[href^="#"]:not(.dynamic-download)').forEach(anchor => {

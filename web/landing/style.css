@@ -153,3 +153,14 @@ footer { padding: 100px 8% 60px; border-top: 1px solid var(--border); text-align
     .cta-group { justify-content: center; }
     .pain-grid, .pricing-grid { grid-template-columns: 1fr; }
 }
+
+/* BUTTON LOADER */
+.btn-loading { pointer-events: none; opacity: 0.8; }
+.btn-loading .loader-spinner { display: inline-block !important; }
+.btn-loading .btn-text, .btn-loading svg { display: none; }
+.loader-spinner {
+    width: 20px; height: 20px; border: 3px solid rgba(255,255,255,0.3);
+    border-radius: 50%; border-top-color: white; animation: spin 0.8s linear infinite;
+    display: none; vertical-align: middle; margin-right: 12px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
