@@ -591,37 +591,34 @@ async def create_safepay_session(request: Request):
             "PRO": "plan_xxx" # To be added
         }
         
-        # 3. Secure Backend Handshake with Full Payload
-        # 3. Secure Backend Handshake with Full Payload
+        # 3. Payments 2.0 Backend Handshake
         pub_key = "sec_1938fc7a-d894-4c85-bb00-16b2d63ee7a3"
         secret_key = "b6125a345d51cefb89c52c1a1f7b16125201fe6d524cc5bac6e6e366b89e3616"
         import requests
-        import urllib.parse
         
-        # 1. Define Redirect and Order ID
-        order_id = f"{email}_{plan}"
-        encoded_order_id = urllib.parse.quote(order_id)
-        redirect_url = urllib.parse.quote(f"https://zenith-hud.vercel.app/dashboard?payment=success")
+        # 1. Define Order Details
+        order_id = f"ZENITH_{int(time.time())}" # Payments 2.0 likes unique IDs
         
-        # If it's NOT a subscription, let's try the Quick Checkout Direct URL first
-        # This is the most reliable way to test if the API Keys are working
-        if plan not in ["BASIC", "PRO"]:
-            checkout_url = f"https://sandbox.api.getsafepay.com/checkout/pay?env=sandbox&api_key={pub_key}&amount={float(amount):.2f}&currency=PKR&source=custom&order_id={encoded_order_id}&redirect_url={redirect_url}"
-            return {"status": "success", "url": checkout_url}
-
-        # For Subscriptions, we continue with the Tracker Handshake
+        # 2. Build Initialization Payload (V2 Style)
         payload = {
-            "client": pub_key,
+            "merchant_api_key": pub_key,
             "amount": float(amount),
             "currency": "PKR",
             "environment": "sandbox",
             "order_id": order_id,
-            "redirect_url": f"https://zenith-hud.vercel.app/dashboard?payment=success",
             "source": "custom",
-            "mode": "subscription",
-            "plan_id": plan_ids.get(plan)
+            "user": {
+                "email": email,
+                "first_name": email.split('@')[0],
+                "last_name": "ZenithUser"
+            }
         }
         
+        if plan in ["BASIC", "PRO"]:
+            payload["mode"] = "subscription"
+            payload["plan_id"] = plan_ids.get(plan)
+        
+        # 3. Initialize the tracker
         res = requests.post(
             "https://sandbox.api.getsafepay.com/order/v1/init",
             json=payload,
