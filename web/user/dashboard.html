@@ -274,10 +274,10 @@
         // Safepay Checkout Logic
         function initSafepay(plan, amount) {
             const pubKey = "sec_1938fc7a-d894-4c85-bb00-16b2d63ee7a3";
-            const orderId = `${user.email}_${plan}`;
+            const orderId = encodeURIComponent(`${user.email}_${plan}`);
             const baseUrl = window.location.href.split('?')[0];
             const redirectUrl = encodeURIComponent(`${baseUrl}?payment=success`);
-            const url = `https://sandbox.api.getsafepay.com/checkout/pay?env=sandbox&api_key=${pubKey}&amount=${amount * 100}&currency=PKR&source=custom&order_id=${orderId}&redirect_url=${redirectUrl}`;
+            const url = `https://sandbox.api.getsafepay.com/checkout/pay?env=sandbox&api_key=${pubKey}&amount=${amount.toFixed(2)}&currency=PKR&source=custom&order_id=${orderId}&redirect_url=${redirectUrl}`;
             window.location.href = url;
         }
 
