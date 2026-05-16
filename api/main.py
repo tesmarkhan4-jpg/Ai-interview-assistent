@@ -591,41 +591,21 @@ async def create_safepay_session(request: Request):
             "PRO": "plan_xxx" # To be added
         }
         
-        # 3. Call Safepay Order Init
-        # In Safepay V1, we init an order to get a token
-        # For subscriptions, the mode is 'subscription'
-        import requests
+        # 3. Construct Checkout URL
+        # For Sandbox, we can use the Direct Quick Checkout URL
+        pub_key = "sec_1938fc7a-d894-4c85-bb00-16b2d63ee7a3"
+        order_id = f"{email}_{plan}"
+        redirect_url = f"https://zenith-hud.vercel.app/dashboard?payment=success"
         
-        mode = "payment"
         if plan in ["BASIC", "PRO"]:
-            mode = "subscription"
-            
-        payload = {
-            "client": "sec_1938fc7a-d894-4c85-bb00-16b2d63ee7a3",
-            "amount": float(amount),
-            "currency": "PKR",
-            "environment": "sandbox",
-            "mode": mode,
-            "reference": f"{email}_{plan}"
-        }
-        
-        if mode == "subscription":
-            payload["plan_id"] = plan_ids.get(plan)
-            
-        # Safepay Init Endpoint
-        res = requests.post(
-            "https://sandbox.api.getsafepay.com/order/v1/init",
-            json=payload
-        )
-        
-        result = res.json()
-        if res.status_code == 200:
-            token = result.get("data", {}).get("token")
-            # Construct the secure checkout URL
-            checkout_url = f"https://sandbox.api.getsafepay.com/checkout/pay?token={token}&env=sandbox"
-            return {"status": "success", "url": checkout_url}
+            plan_id = plan_ids.get(plan)
+            # Subscription Redirect URL
+            checkout_url = f"https://sandbox.api.getsafepay.com/components/subscribe?env=sandbox&api_key={pub_key}&plan_id={plan_id}&reference={order_id}&redirect_url={redirect_url}"
         else:
-            return {"status": "error", "detail": result.get("message", "Failed to init Safepay")}
+            # Standard One-time Checkout URL
+            checkout_url = f"https://sandbox.api.getsafepay.com/checkout/pay?env=sandbox&api_key={pub_key}&amount={float(amount):.2f}&currency=PKR&source=custom&order_id={order_id}&redirect_url={redirect_url}"
+            
+        return {"status": "success", "url": checkout_url}
             
     except Exception as e:
         return {"status": "error", "detail": str(e)}
