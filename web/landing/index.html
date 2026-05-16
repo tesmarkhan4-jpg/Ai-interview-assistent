@@ -22,17 +22,35 @@
                 <img src="/icon.png" alt="Z" style="height: 32px; width: 32px; border-radius: 8px;">
                 <div>Zenith<span style="color: #4f46e5;">HUD</span> PRO</div>
             </div>
-        <div class="nav-links">
+        <div class="nav-links" id="auth-links">
             <a href="#why">How it Works</a>
             <a href="#pricing">Pricing</a>
             <a href="#" class="dynamic-download">
                 <span class="loader-spinner" style="width:14px; height:14px; border-width:2px; margin-right:6px;"></span>
                 <span class="btn-text">Download</span>
             </a>
-            <a href="/login">Login</a>
+            <a href="/login" class="login-link">Login</a>
+            <a href="#pricing" class="btn-primary get-started-btn" style="padding: 10px 24px; font-size: 0.85rem; margin-left: 10px;">Get Started</a>
         </div>
-        <a href="#pricing" class="btn-primary" style="padding: 10px 24px; font-size: 0.85rem;">Get Started</a>
     </nav>
+
+    <script>
+        // Dynamic Auth Check
+        document.addEventListener('DOMContentLoaded', () => {
+            const user = JSON.parse(localStorage.getItem('zenith_user'));
+            const authContainer = document.getElementById('auth-links');
+            if (user) {
+                // User is logged in - show Dashboard button
+                const loginLink = authContainer.querySelector('.login-link');
+                const getStartedBtn = authContainer.querySelector('.get-started-btn');
+                if(loginLink) loginLink.remove();
+                if(getStartedBtn) {
+                    getStartedBtn.innerText = 'Dashboard';
+                    getStartedBtn.href = '/dashboard';
+                }
+            }
+        });
+    </script>
 
     <header class="hero">
         <div class="hero-content">
