@@ -125,13 +125,22 @@
         </div>
     </aside>
 
-    <main style="padding: 40px;">
-        <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px;">
+    <main style="padding: 32px 48px; height: 100vh; overflow-y: auto;">
+        <!-- UNIFIED GLOBAL HEADER -->
+        <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid #f1f5f9;">
             <div>
-                <h1 id="user-name" style="font-size: 1.8rem; font-weight: 900; letter-spacing: -1px; color: #1e293b;">Welcome, Agent</h1>
-                <p style="color: #64748b; margin-top: 2px; font-weight: 500; font-size: 0.9rem;" id="user-email-header">Secure session active</p>
+                <h1 id="user-name" style="font-size: 1.5rem; font-weight: 900; color: #0f172a; letter-spacing: -0.8px; margin-bottom: 2px;">Welcome, Agent</h1>
+                <p id="user-email-header" style="color: #64748b; font-size: 0.85rem; font-weight: 600;">Secure session active</p>
             </div>
-            <span class="pill pill-trial" id="tier-pill" style="padding: 6px 16px; font-size: 0.75rem;">Trial Plan</span>
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <div style="text-align: right;">
+                    <span id="tier-pill" class="pill pill-trial" style="font-size: 0.65rem; padding: 4px 12px; margin-bottom: 2px; display: inline-block;">Trial Plan</span>
+                    <div id="days-left-val" style="font-size: 0.65rem; font-weight: 800; color: #94a3b8; text-transform: uppercase;">Active Session</div>
+                </div>
+                <div style="width: 40px; height: 40px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #4f46e5;">
+                    <i data-lucide="user" style="width:18px;"></i>
+                </div>
+            </div>
         </header>
 
         <!-- OVERVIEW -->
@@ -218,21 +227,6 @@
 
         <!-- BILLING -->
         <div id="tab-billing" class="tab-content">
-            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 40px; border-bottom: 1px solid #f1f5f9; padding-bottom: 24px;">
-                <div>
-                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
-                        <span class="pill pill-trial" id="billing-pill">Trial Status</span>
-                        <span style="font-size: 0.75rem; color: #94a3b8; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">Subscription Active</span>
-                    </div>
-                    <h2 id="billing-title" style="font-size: 2.5rem; font-weight: 900; color: #0f172a; letter-spacing: -2px;">Zenith Trial</h2>
-                    <p style="color: #64748b; font-weight: 600; font-size: 0.9rem;">Elevate your intelligence by selecting a premium deployment tier.</p>
-                </div>
-                <div style="text-align: right;">
-                    <div id="billing-price" style="font-size: 2rem; font-weight: 900; color: #4f46e5; letter-spacing: -1px;">$0.00</div>
-                    <div style="font-size: 0.7rem; font-weight: 800; color: #94a3b8; text-transform: uppercase;">Current Tier Value</div>
-                </div>
-            </div>
-
             <div id="upgrade-options">
                 <style>
                     .p-card {
@@ -487,15 +481,10 @@
             const exp = new Date(user.trial_expiry);
             const now = new Date();
             const diff = Math.ceil((exp - now) / (1000 * 60 * 60 * 24));
-            document.getElementById('days-left').innerText = `${diff > 0 ? diff : 0} Days`;
-        }
-
-        // Update Billing Tab info
-        document.getElementById('billing-pill').innerText = `${user.tier} TIER`;
-        document.getElementById('billing-title').innerText = `Zenith ${user.tier.charAt(0).toUpperCase() + user.tier.slice(1).toLowerCase()}`;
-        if(user.tier === 'PRO' || user.tier === 'LIFETIME') {
-            document.getElementById('upgrade-options').style.display = 'none';
-            document.getElementById('billing-price').innerText = "PAID";
+            const daysTxt = document.getElementById('days-left-val');
+            if(daysTxt) daysTxt.innerText = `${diff > 0 ? diff : 0} Days Remaining`;
+            const daysHero = document.getElementById('days-left');
+            if(daysHero) daysHero.innerText = `${diff > 0 ? diff : 0} Days`;
         }
 
         function showToast(msg, type='success') {
