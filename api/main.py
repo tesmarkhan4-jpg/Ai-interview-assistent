@@ -592,21 +592,20 @@ async def create_safepay_session(request: Request):
         }
         
         # 3. Construct Checkout URL
-        # We use sandbox.getsafepay.com for the hosted UI
+        # We use sandbox.api.getsafepay.com as verified by the dashboard links
         pub_key = "sec_1938fc7a-d894-4c85-bb00-16b2d63ee7a3"
         order_id = f"{email}_{plan}"
-        # URL encode the order_id for safety
         import urllib.parse
         encoded_order_id = urllib.parse.quote(order_id)
         redirect_url = urllib.parse.quote(f"https://zenith-hud.vercel.app/dashboard?payment=success")
         
         if plan in ["BASIC", "PRO"]:
             plan_id = plan_ids.get(plan)
-            # For Subscriptions, we use the same checkout/pay but with plan_id
-            checkout_url = f"https://sandbox.getsafepay.com/checkout/pay?env=sandbox&api_key={pub_key}&plan_id={plan_id}&source=custom&order_id={encoded_order_id}&redirect_url={redirect_url}"
+            # Use the /checkout/auth/login route which is what the dashboard uses for plans
+            checkout_url = f"https://sandbox.api.getsafepay.com/checkout/auth/login?env=sandbox&api_key={pub_key}&plan_id={plan_id}&source=custom&order_id={encoded_order_id}&redirect_url={redirect_url}"
         else:
             # Standard One-time Checkout URL
-            checkout_url = f"https://sandbox.getsafepay.com/checkout/pay?env=sandbox&api_key={pub_key}&amount={float(amount):.2f}&currency=PKR&source=custom&order_id={encoded_order_id}&redirect_url={redirect_url}"
+            checkout_url = f"https://sandbox.api.getsafepay.com/checkout/pay?env=sandbox&api_key={pub_key}&amount={float(amount):.2f}&currency=PKR&source=custom&order_id={encoded_order_id}&redirect_url={redirect_url}"
             
         return {"status": "success", "url": checkout_url}
             
