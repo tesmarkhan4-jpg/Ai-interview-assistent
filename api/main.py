@@ -468,7 +468,8 @@ async def admin_login(data: AdminLogin):
         # --- DYNAMIC SMTP RELAY LOOKUP ---
         cfg = conn.get_config()
         smtp_host = cfg.get("smtp_host", "smtp.gmail.com")
-        
+        if not smtp_host or str(smtp_host).strip() == "": smtp_host = "smtp.gmail.com"
+
         # Safe Port Conversion
         raw_port = cfg.get("smtp_port", 587)
         try:
@@ -498,11 +499,11 @@ async def admin_login(data: AdminLogin):
         """
         msg.attach(MIMEText(body_html, 'html'))
         
-        server = smtplib.SMTP(smtp_host, smtp_port)
-        server.starttls()
-        server.login(smtp_user, smtp_pass)
-        server.send_message(msg)
-        server.quit()
+        # Robust SMTP Dispatch
+        with smtplib.SMTP(smtp_host, smtp_port, timeout=15) as server:
+            server.starttls()
+            server.login(smtp_user, smtp_pass)
+            server.send_message(msg)
         
         return {"status": "success", "msg": "Strategic OTP dispatched."}
     except Exception as e:
