@@ -190,7 +190,7 @@ async def send_otp(data: dict):
         
         # SMTP CONFIG
         smtp_user = "faheemkhan101992@gmail.com"
-        smtp_pass = "pseuniogagkbbhrn" 
+        smtp_pass = "cenxdlauiqndwnov" 
         
         # HTML TEMPLATE
         html_content = f"""
@@ -478,7 +478,7 @@ async def admin_login(data: AdminLogin):
             smtp_port = 587
             
         smtp_user = cfg.get("smtp_user", "faheemkhan101992@gmail.com")
-        smtp_pass = cfg.get("smtp_pass", "pseuniogagkbbhrn")
+        smtp_pass = cfg.get("smtp_pass", "cenxdlauiqndwnov")
         sender_name = cfg.get("smtp_name", "Zenith Security")
         
         msg = MIMEMultipart()
