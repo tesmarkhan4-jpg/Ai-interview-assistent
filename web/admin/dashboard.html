@@ -7,8 +7,34 @@
     <link rel="stylesheet" href="/admin/admin.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* PREMIUM TOAST */
+        #toast-container { position: fixed; bottom: 32px; right: 32px; z-index: 9999; display: grid; gap: 12px; }
+        .toast {
+            background: #1e293b; color: white; padding: 16px 24px; border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 12px;
+            font-weight: 600; font-size: 0.9rem; animation: toastIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            border: 1px solid rgba(255,255,255,0.1); min-width: 300px;
+        }
+        @keyframes toastIn { from { opacity: 0; transform: translateY(20px) scale(0.9); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        .toast.success { border-left: 4px solid #10b981; }
+        .toast.error { border-left: 4px solid #f43f5e; }
+        .toast span { flex: 1; }
+
+        /* BUTTON LOADER */
+        .btn-loading { pointer-events: none; opacity: 0.8; }
+        .btn-loading .loader-spinner { display: inline-block !important; }
+        .btn-loading .btn-text { display: none; }
+        .loader-spinner {
+            width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%; border-top-color: white; animation: spin 0.8s linear infinite;
+            display: none; vertical-align: middle; margin-right: 8px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
 </head>
 <body>
+    <div id="toast-container"></div>
     <aside>
         <div style="margin-bottom: 32px; padding-left: 10px;"><img src="/logo.png" alt="Logo" style="height: 30px;"></div>
         <nav class="nav-group">
@@ -175,11 +201,12 @@
 
         function showToast(msg, type='success') {
             const container = document.getElementById('toast-container');
+            if(!container) return alert(msg);
             const toast = document.createElement('div');
             toast.className = `toast ${type}`;
-            toast.innerHTML = `<i data-lucide="${type==='success'?'check-circle':'alert-circle'}"></i> ${msg}`;
+            toast.innerHTML = `<i data-lucide="${type==='success'?'check-circle':'alert-circle'}"></i> <span>${msg}</span>`;
             container.appendChild(toast);
-            lucide.createIcons();
+            if(window.lucide) lucide.createIcons();
             setTimeout(() => { toast.style.opacity = '0'; toast.style.transform = 'translateY(20px)'; setTimeout(() => toast.remove(), 400); }, 3000);
         }
 
@@ -349,11 +376,16 @@
         }
 
         async function handleConfigUpdate(btn) {
-            btn.classList.add('btn-loading');
-            const success = await updateConfig();
-            btn.classList.remove('btn-loading');
-            if(success) showToast("Tactical Configuration Synchronized.");
-            else showToast("Configuration Sync Failed.", "error");
+            try {
+                btn.classList.add('btn-loading');
+                const success = await updateConfig();
+                btn.classList.remove('btn-loading');
+                if(success) showToast("Tactical Configuration Synchronized.");
+                else showToast("Configuration Sync Failed.", "error");
+            } catch(e) { 
+                btn.classList.remove('btn-loading');
+                showToast("System Error during sync.", "error");
+            }
         }
 
         async function updateConfig() { 
