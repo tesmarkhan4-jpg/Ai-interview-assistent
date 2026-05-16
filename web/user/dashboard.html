@@ -674,6 +674,7 @@
         });
     </script>
     <script src="https://cdn.paddle.com/paddle/v2/paddle.js"></script>
+    <script>
         Paddle.Initialize({ 
             token: "live_90425a06e0e4d8e804bd29d92cd"
         });
@@ -684,8 +685,12 @@
         const urlParams = new URLSearchParams(window.location.search);
         const autoPlan = urlParams.get('plan');
         if (autoPlan) {
-            document.getElementById('pay-tier').value = autoPlan.toUpperCase();
-            openBankModal();
+            setTimeout(() => {
+                const tierEl = document.getElementById('pay-tier');
+                if(tierEl) tierEl.value = autoPlan.toUpperCase();
+                openBankModal();
+            }, 500);
         }
+    </script>
 </body>
 </html>
