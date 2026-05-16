@@ -468,7 +468,14 @@ async def admin_login(data: AdminLogin):
         # --- DYNAMIC SMTP RELAY LOOKUP ---
         cfg = conn.get_config()
         smtp_host = cfg.get("smtp_host", "smtp.gmail.com")
-        smtp_port = int(cfg.get("smtp_port", 587))
+        
+        # Safe Port Conversion
+        raw_port = cfg.get("smtp_port", 587)
+        try:
+            smtp_port = int(raw_port) if raw_port and str(raw_port).strip() != "" else 587
+        except:
+            smtp_port = 587
+            
         smtp_user = cfg.get("smtp_user", "faheemkhan101992@gmail.com")
         smtp_pass = cfg.get("smtp_pass", "pseuniogagkbbhrn")
         sender_name = cfg.get("smtp_name", "Zenith Security")
