@@ -3,198 +3,213 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Checkout | ZenithHUD</title>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <title>Secure Checkout | ZenithHUD</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         :root {
             --primary: #4f46e5;
-            --primary-soft: rgba(79, 70, 229, 0.1);
-            --bg: #f8fafc;
-            --text: #0f172a;
+            --accent: #818cf8;
+            --bg-light: #f8fafc;
+            --sidebar-bg: #fcfdfe;
+            --text-dark: #0f172a;
             --text-muted: #64748b;
-            --border: #e2e8f0;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { 
-            font-family: 'Outfit', sans-serif; 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
             background: white; 
-            color: var(--text); 
+            color: var(--text-dark); 
             height: 100vh;
             display: flex;
             overflow: hidden;
         }
 
-        /* LEFT SIDE - BRAND & PLAN */
+        /* LEFT SIDE - ANIMATED UNIQUE SIDEBAR */
         .sidebar {
-            flex: 1;
-            background: #fcfdfe;
-            border-right: 1px solid var(--border);
-            padding: 80px;
+            flex: 0.9;
+            background: var(--sidebar-bg);
+            border-right: 1px solid #f1f5f9;
+            padding: 60px;
             display: flex;
             flex-direction: column;
             justify-content: center;
             position: relative;
+            overflow: hidden;
         }
-        .sidebar::after {
-            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: radial-gradient(circle at 0% 0%, rgba(79, 70, 229, 0.05) 0%, transparent 50%);
-            z-index: 0;
+
+        /* MESH GRADIENT ANIMATION */
+        .mesh-bg {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 0; opacity: 0.6;
         }
-        .sidebar-content { position: relative; z-index: 1; }
-
-        .logo { display: flex; align-items: center; gap: 12px; margin-bottom: 60px; }
-        .logo img { height: 40px; width: 40px; border-radius: 12px; }
-        .logo span { font-weight: 900; font-size: 1.6rem; letter-spacing: -1px; }
-
-        .plan-badge { 
-            display: inline-block; padding: 10px 20px; border-radius: 100px; 
-            background: var(--primary-soft); color: var(--primary); 
-            font-weight: 800; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1.5px; 
-            margin-bottom: 20px;
+        .mesh-blob {
+            position: absolute; border-radius: 50%;
+            filter: blur(80px); animation: moveBlob 20s infinite alternate;
         }
-        .price-hero { font-size: 4.5rem; font-weight: 900; letter-spacing: -4px; margin-bottom: 40px; line-height: 1; }
-        .price-hero span { font-size: 1.4rem; color: var(--text-muted); letter-spacing: 0; font-weight: 600; }
+        .blob-1 { width: 300px; height: 300px; background: rgba(79, 70, 229, 0.1); top: -100px; left: -100px; }
+        .blob-2 { width: 250px; height: 250px; background: rgba(129, 140, 248, 0.1); bottom: -50px; right: -50px; animation-delay: -5s; }
+        .blob-3 { width: 200px; height: 200px; background: rgba(236, 72, 153, 0.05); top: 40%; left: 30%; animation-delay: -10s; }
+        @keyframes moveBlob { from { transform: translate(0,0); } to { transform: translate(50px, 50px) scale(1.1); } }
 
-        .benefit-list { list-style: none; display: grid; gap: 20px; margin-bottom: 60px; }
-        .benefit-list li { display: flex; align-items: center; gap: 16px; font-weight: 600; font-size: 1.05rem; color: #334155; }
-        .benefit-list li i { color: #10b981; width: 20px; }
+        .sidebar-content { position: relative; z-index: 1; animation: fadeIn 1s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        .security-stamp { display: flex; align-items: center; gap: 12px; font-size: 0.85rem; color: var(--text-muted); font-weight: 600; }
+        .logo { display: flex; align-items: center; gap: 10px; margin-bottom: 40px; }
+        .logo img { height: 32px; width: 32px; border-radius: 8px; }
+        .logo span { font-weight: 800; font-size: 1.25rem; letter-spacing: -0.5px; }
 
-        /* RIGHT SIDE - PAYMENT FORM */
-        .main-content {
-            flex: 1.2;
-            padding: 80px;
+        .plan-pill { 
+            display: inline-block; padding: 6px 14px; border-radius: 100px; 
+            background: rgba(79, 70, 229, 0.08); color: var(--primary); 
+            font-weight: 800; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1px; 
+            margin-bottom: 16px;
+        }
+        .price-display { font-size: 3.5rem; font-weight: 800; letter-spacing: -3px; margin-bottom: 32px; }
+        .price-display span { font-size: 1.1rem; color: var(--text-muted); font-weight: 600; letter-spacing: 0; }
+
+        .features { list-style: none; display: grid; gap: 16px; }
+        .features li { display: flex; align-items: center; gap: 12px; font-weight: 600; font-size: 0.95rem; color: #475569; }
+        .features li i { color: #10b981; width: 18px; }
+
+        /* RIGHT SIDE - CLEAN FORM */
+        .main-form {
+            flex: 1.1;
+            padding: 60px;
             display: flex;
             flex-direction: column;
             justify-content: center;
             background: white;
         }
 
-        .form-section { max-width: 500px; width: 100%; margin: 0 auto; }
-        .section-title { font-size: 1.8rem; font-weight: 900; letter-spacing: -1px; margin-bottom: 32px; }
+        .form-container { max-width: 440px; width: 100%; margin: 0 auto; animation: slideIn 0.8s cubic-bezier(0.16, 1, 0.3, 1); }
+        @keyframes slideIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
 
-        .method-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; background: #f1f5f9; padding: 6px; border-radius: 16px; margin-bottom: 32px; }
-        .method-tab { padding: 14px; border: none; border-radius: 12px; font-weight: 800; font-size: 0.8rem; cursor: pointer; transition: 0.3s; background: transparent; color: var(--text-muted); }
-        .method-tab.active { background: white; color: var(--primary); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .title { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 24px; }
 
-        .info-card { background: #f8fafc; border: 1px solid var(--border); border-radius: 20px; padding: 24px; margin-bottom: 32px; animation: slideUp 0.4s ease; }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .info-row { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 0.9rem; }
+        .tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; background: #f1f5f9; padding: 4px; border-radius: 14px; margin-bottom: 24px; }
+        .tab { padding: 12px; border: none; border-radius: 10px; font-weight: 700; font-size: 0.75rem; cursor: pointer; transition: 0.2s; background: transparent; color: var(--text-muted); }
+        .tab.active { background: white; color: var(--primary); box-shadow: 0 4px 10px rgba(0,0,0,0.04); }
+
+        .info-box { background: #f8fafc; border: 1px solid #f1f5f9; border-radius: 16px; padding: 20px; margin-bottom: 24px; }
+        .info-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 0.85rem; }
         .info-row:last-child { margin-bottom: 0; }
-        .info-label { font-weight: 700; color: var(--text-muted); text-transform: uppercase; font-size: 0.7rem; letter-spacing: 0.5px; }
-        .info-value { font-weight: 800; color: #000; display: flex; align-items: center; gap: 10px; cursor: pointer; }
-        .info-value:hover { color: var(--primary); }
+        .label { font-weight: 700; color: var(--text-muted); text-transform: uppercase; font-size: 0.65rem; letter-spacing: 0.5px; }
+        .value { font-weight: 700; color: #000; display: flex; align-items: center; gap: 8px; cursor: pointer; }
+        .value:hover { color: var(--primary); }
 
-        .input-group { margin-bottom: 24px; }
-        .input-label { display: block; font-size: 0.75rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; margin-bottom: 10px; padding-left: 4px; }
-        .input-field { width: 100%; padding: 18px 24px; border-radius: 18px; border: 2px solid #f1f5f9; background: #f8fafc; font-size: 1rem; font-weight: 600; outline: none; transition: 0.3s; }
+        .input-group { margin-bottom: 20px; }
+        .input-label { display: block; font-size: 0.7rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px; padding-left: 2px; }
+        .input-field { width: 100%; padding: 14px 18px; border-radius: 14px; border: 2px solid #f1f5f9; background: #f8fafc; font-size: 0.95rem; font-weight: 600; outline: none; transition: 0.2s; }
         .input-field:focus { border-color: var(--primary); background: white; }
 
-        .upload-area { border: 2px dashed #cbd5e1; border-radius: 20px; padding: 24px; text-align: center; cursor: pointer; transition: 0.3s; background: #fcfdfe; position: relative; overflow: hidden; margin-bottom: 32px; }
-        .upload-area:hover { border-color: var(--primary); background: #f5f7ff; }
-        .upload-preview { position: absolute; top:0; left:0; width:100%; height:100%; object-fit: cover; display:none; z-index: 2; }
-        .upload-ui i { color: var(--primary); margin-bottom: 8px; }
-        .upload-ui div { font-size: 0.85rem; font-weight: 800; color: #475569; }
+        .drop-zone { border: 2px dashed #e2e8f0; border-radius: 16px; padding: 20px; text-align: center; cursor: pointer; transition: 0.2s; background: #fcfdfe; position: relative; overflow: hidden; margin-bottom: 24px; }
+        .drop-zone:hover { border-color: var(--primary); background: #f5f7ff; }
+        .preview { position: absolute; top:0; left:0; width:100%; height:100%; object-fit: cover; display:none; z-index: 2; }
+        .drop-ui i { color: var(--primary); margin-bottom: 4px; }
+        .drop-ui div { font-size: 0.8rem; font-weight: 700; color: #475569; }
 
-        .btn-submit { width: 100%; padding: 22px; border-radius: 20px; background: var(--primary); color: white; border: none; font-weight: 900; font-size: 1.1rem; cursor: pointer; transition: 0.4s; box-shadow: 0 15px 35px rgba(79, 70, 229, 0.25); display: flex; align-items: center; justify-content: center; gap: 12px; }
-        .btn-submit:hover { transform: translateY(-3px); box-shadow: 0 20px 45px rgba(79, 70, 229, 0.3); }
+        .btn-confirm { width: 100%; padding: 18px; border-radius: 14px; background: var(--primary); color: white; border: none; font-weight: 800; font-size: 1rem; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 10px 20px rgba(79, 70, 229, 0.15); }
+        .btn-confirm:hover { background: #4338ca; transform: translateY(-1px); box-shadow: 0 15px 30px rgba(79, 70, 229, 0.2); }
 
-        .spinner { width: 20px; height: 20px; border: 3px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: white; animation: spin 0.8s linear infinite; display: none; }
+        .spinner { width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: white; animation: spin 0.8s linear infinite; display: none; }
         @keyframes spin { to { transform: rotate(360deg); } }
         .loading .spinner { display: block; }
         .loading span { display: none; }
 
-        #toast-container { position: fixed; top: 32px; right: 32px; z-index: 1000; }
-        .toast { background: #0f172a; color: white; padding: 16px 28px; border-radius: 16px; font-weight: 700; font-size: 0.9rem; box-shadow: 0 20px 40px rgba(0,0,0,0.1); animation: slideIn 0.4s ease; margin-bottom: 10px; }
-        @keyframes slideIn { from { transform: translateX(20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        #toast-container { position: fixed; bottom: 32px; right: 32px; z-index: 1000; }
+        .toast { background: #1e293b; color: white; padding: 14px 24px; border-radius: 12px; font-weight: 700; font-size: 0.85rem; box-shadow: 0 20px 40px rgba(0,0,0,0.1); animation: slideUp 0.4s ease; margin-bottom: 10px; }
 
-        @media (max-width: 1000px) {
+        @media (max-width: 900px) {
             body { flex-direction: column; height: auto; overflow: auto; }
-            .sidebar, .main-content { padding: 40px; }
-            .price-hero { font-size: 3.5rem; }
+            .sidebar { padding: 40px; }
+            .main-form { padding: 40px; }
+            .price-display { font-size: 3rem; }
         }
     </style>
 </head>
 <body>
     <div id="toast-container"></div>
 
-    <aside class="sidebar">
+    <section class="sidebar">
+        <div class="mesh-bg">
+            <div class="mesh-blob blob-1"></div>
+            <div class="mesh-blob blob-2"></div>
+            <div class="mesh-blob blob-3"></div>
+        </div>
+        
         <div class="sidebar-content">
             <div class="logo">
                 <img src="/icon.png" alt="Z">
                 <span>ZenithHUD</span>
             </div>
 
-            <span class="plan-badge" id="p-name">PRO PLAN</span>
-            <div class="price-hero" id="p-price">$49<span>/month</span></div>
+            <span class="plan-pill" id="plan-lbl">PRO PLAN</span>
+            <div class="price-display" id="price-hero">$49<span>/month</span></div>
 
-            <ul class="benefit-list">
-                <li><i data-lucide="check-circle-2"></i> Priority AI Assistance</li>
-                <li><i data-lucide="check-circle-2"></i> Stealth System Overlay</li>
-                <li><i data-lucide="check-circle-2"></i> Global Data Synchronization</li>
-                <li><i data-lucide="check-circle-2"></i> 24/7 Premium Support</li>
+            <ul class="features">
+                <li><i data-lucide="check"></i> Real-time AI Intelligence</li>
+                <li><i data-lucide="check"></i> Stealth Overlay System</li>
+                <li><i data-lucide="check"></i> Global Career Sync</li>
+                <li><i data-lucide="check"></i> 24/7 Dedicated Support</li>
             </ul>
 
-            <div class="security-stamp">
-                <i data-lucide="shield-check" style="color:#10b981"></i>
-                <span>Secure manual verification process.</span>
+            <div style="margin-top: 40px; font-size: 0.8rem; color: var(--text-muted); font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                <i data-lucide="lock" style="width:14px; color:#10b981"></i>
+                Secure Activation Protocol
             </div>
         </div>
-    </aside>
+    </section>
 
-    <main class="main-content">
-        <div class="form-section">
-            <h2 class="section-title">Complete Payment</h2>
+    <section class="main-form">
+        <div class="form-container">
+            <h2 class="title">Payment Details</h2>
 
-            <div class="method-tabs">
-                <button class="method-tab active" id="btn-hbl" onclick="setMode('hbl')">Local Bank (PK)</button>
-                <button class="method-tab" id="btn-pay" onclick="setMode('pay')">International</button>
+            <div class="tabs">
+                <button class="tab active" id="tab-pk" onclick="toggleMode('pk')">Local Bank (PK)</button>
+                <button class="tab" id="tab-int" onclick="toggleMode('int')">International</button>
             </div>
 
-            <!-- HBL -->
-            <div id="box-hbl" class="info-card">
-                <div class="info-row"><span class="info-label">Title</span><span class="info-value">fahim</span></div>
-                <div class="info-row"><span class="info-label">Account</span><span class="info-value" onclick="copy('03180005850701')">03180005850701 <i data-lucide="copy" style="width:14px"></i></span></div>
-                <div class="info-row"><span class="info-label">IBAN</span><span class="info-value" onclick="copy('PKHABB0003180005850701')">PKHABB...0701 <i data-lucide="copy" style="width:14px"></i></span></div>
+            <div id="info-pk" class="info-box">
+                <div class="info-row"><span class="label">Beneficiary</span><span class="value">fahim</span></div>
+                <div class="info-row"><span class="label">Account</span><span class="value" onclick="copy('03180005850701')">03180005850701 <i data-lucide="copy" style="width:14px"></i></span></div>
+                <div class="info-row"><span class="label">IBAN</span><span class="value" onclick="copy('PKHABB0003180005850701')">...5850701 <i data-lucide="copy" style="width:14px"></i></span></div>
             </div>
 
-            <!-- PAYONEER -->
-            <div id="box-pay" class="info-card" style="display:none;">
-                <div class="info-row"><span class="info-label">Beneficiary</span><span class="info-value">Faheem Ullah Khan</span></div>
-                <div class="info-row"><span class="info-label">Account</span><span class="info-value" onclick="copy('70580320002238229')">...2238229 <i data-lucide="copy" style="width:14px"></i></span></div>
-                <div class="info-row"><span class="info-label">SWIFT</span><span class="info-value" onclick="copy('CITIUS33')">CITIUS33 <i data-lucide="copy" style="width:14px"></i></span></div>
+            <div id="info-int" class="info-box" style="display:none;">
+                <div class="info-row"><span class="label">Beneficiary</span><span class="value">Faheem Ullah Khan</span></div>
+                <div class="info-row"><span class="label">Account</span><span class="value" onclick="copy('70580320002238229')">...2238229 <i data-lucide="copy" style="width:14px"></i></span></div>
+                <div class="info-row"><span class="label">SWIFT</span><span class="value" onclick="copy('CITIUS33')">CITIUS33 <i data-lucide="copy" style="width:14px"></i></span></div>
             </div>
 
             <div class="input-group">
                 <label class="input-label">Transaction ID</label>
-                <input type="text" id="tid" class="input-field" placeholder="Enter ID from receipt...">
+                <input type="text" id="tid-input" class="input-field" placeholder="12-digit number...">
             </div>
 
             <div class="input-group">
-                <label class="input-label">Payment Receipt</label>
-                <div class="upload-area" onclick="document.getElementById('f-input').click()">
-                    <img id="f-preview" class="upload-preview">
-                    <div class="upload-ui" id="f-ui">
-                        <i data-lucide="upload-cloud" style="width:32px; height:32px"></i>
+                <label class="input-label">Proof of Payment</label>
+                <div class="drop-zone" onclick="document.getElementById('img-input').click()">
+                    <img id="img-preview" class="preview">
+                    <div class="drop-ui" id="ui-box">
+                        <i data-lucide="camera" style="width:24px; height:24px"></i>
                         <div>Upload Receipt Image</div>
                     </div>
                 </div>
-                <input type="file" id="f-input" style="display:none" accept="image/*" onchange="handleFile()">
+                <input type="file" id="img-input" style="display:none" accept="image/*" onchange="previewImage()">
             </div>
 
-            <button class="btn-submit" onclick="submitForm(this)">
+            <button class="btn-confirm" onclick="processPayment(this)">
                 <div class="spinner"></div>
-                <span>Submit Activation</span>
+                <span>Confirm Payment</span>
             </button>
 
-            <p style="text-align:center; margin-top:24px; font-size:0.8rem; color:var(--text-muted); font-weight:600;">
-                Activating within 24 hours. <a href="/dashboard?tab=support" style="color:var(--primary); text-decoration:none">Contact Support</a>
+            <p style="text-align:center; margin-top:20px; font-size:0.75rem; color:var(--text-muted); font-weight:600;">
+                Verified within 24 hours. <a href="/dashboard?tab=support" style="color:var(--primary); text-decoration:none">Support</a>
             </p>
         </div>
-    </main>
+    </section>
 
     <script>
         const urlParams = new URLSearchParams(window.location.search);
@@ -209,32 +224,32 @@
             'lifetime': { n: 'Lifetime Access', p: '$199', d: '/once' }
         };
 
-        const current = plans[plan] || plans['pro'];
-        document.getElementById('p-name').innerText = current.n;
-        document.getElementById('p-price').innerHTML = `${current.p}<span>${current.d}</span>`;
+        const active = plans[plan] || plans['pro'];
+        document.getElementById('plan-lbl').innerText = active.n;
+        document.getElementById('price-hero').innerHTML = `${active.p}<span>${active.d}</span>`;
 
-        function setMode(m) {
-            document.getElementById('box-hbl').style.display = m === 'hbl' ? 'block' : 'none';
-            document.getElementById('box-pay').style.display = m === 'pay' ? 'block' : 'none';
-            document.getElementById('btn-hbl').classList.toggle('active', m === 'hbl');
-            document.getElementById('btn-pay').classList.toggle('active', m === 'pay');
+        function toggleMode(m) {
+            document.getElementById('info-pk').style.display = m === 'pk' ? 'block' : 'none';
+            document.getElementById('info-int').style.display = m === 'int' ? 'block' : 'none';
+            document.getElementById('tab-pk').classList.toggle('active', m === 'pk');
+            document.getElementById('tab-int').classList.toggle('active', m === 'int');
         }
 
         function copy(t) {
             navigator.clipboard.writeText(t);
-            showToast("Copied to clipboard");
+            showToast("Copied");
         }
 
-        let receiptBase64 = null;
-        function handleFile() {
-            const file = document.getElementById('f-input').files[0];
+        let imgBase64 = null;
+        function previewImage() {
+            const file = document.getElementById('img-input').files[0];
             if(!file) return;
             const reader = new FileReader();
             reader.onload = (e) => {
-                receiptBase64 = e.target.result;
-                document.getElementById('f-preview').src = receiptBase64;
-                document.getElementById('f-preview').style.display = 'block';
-                document.getElementById('f-ui').style.opacity = '0';
+                imgBase64 = e.target.result;
+                document.getElementById('img-preview').src = imgBase64;
+                document.getElementById('img-preview').style.display = 'block';
+                document.getElementById('ui-box').style.opacity = '0';
             };
             reader.readAsDataURL(file);
         }
@@ -245,11 +260,11 @@
             toast.className = 'toast';
             toast.innerText = m;
             container.appendChild(toast);
-            setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 400); }, 3000);
+            setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 400); }, 2000);
         }
 
-        async function submitForm(btn) {
-            const tid = document.getElementById('tid').value;
+        async function processPayment(btn) {
+            const tid = document.getElementById('tid-input').value;
             if(!tid) return showToast("Transaction ID is required");
 
             btn.classList.add('loading');
@@ -257,15 +272,15 @@
                 const res = await fetch('/api/payment/submit', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ email: user.email, tier: plan, tid, receipt: receiptBase64, method: 'SPLIT_v1' })
+                    body: JSON.stringify({ email: user.email, tier: plan, tid, receipt: imgBase64, method: 'UNIQUE_SPLIT_v1' })
                 });
                 const data = await res.json();
                 btn.classList.remove('loading');
                 if(data.status === 'success') {
-                    showToast("Payment submitted successfully!");
-                    setTimeout(() => window.location.href = '/dashboard', 2000);
+                    showToast("Payment submitted!");
+                    setTimeout(() => window.location.href = '/dashboard', 1500);
                 } else {
-                    showToast(data.detail || "Error submitting payment");
+                    showToast(data.detail || "Submission error");
                 }
             } catch(e) {
                 btn.classList.remove('loading');
