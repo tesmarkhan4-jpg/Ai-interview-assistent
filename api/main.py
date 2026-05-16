@@ -478,8 +478,13 @@ async def admin_login(data: AdminLogin):
             smtp_port = 587
             
         smtp_user = cfg.get("smtp_user", "faheemkhan101992@gmail.com")
+        if not smtp_user or str(smtp_user).strip() == "": smtp_user = "faheemkhan101992@gmail.com"
+        
         smtp_pass = cfg.get("smtp_pass", "cenxdlauiqndwnov")
+        if not smtp_pass or str(smtp_pass).strip() == "": smtp_pass = "cenxdlauiqndwnov"
+        
         sender_name = cfg.get("smtp_name", "Zenith Security")
+        if not sender_name or str(sender_name).strip() == "": sender_name = "Zenith Security"
         
         msg = MIMEMultipart()
         msg['From'] = f"{sender_name} <{smtp_user}>"
