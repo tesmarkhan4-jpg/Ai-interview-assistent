@@ -110,6 +110,10 @@
     <script>
         const urlParams = new URLSearchParams(window.location.search);
         const plan = urlParams.get('plan') || 'trial';
+        
+        // Carry plan to login link
+        const loginLink = document.querySelector('.login-link a');
+        if(loginLink && plan) loginLink.href = `/login?plan=${plan}`;
 
         document.getElementById('signup-form').addEventListener('submit', async (e) => {
             e.preventDefault();

@@ -222,13 +222,15 @@
         if(!user) window.location.href = '/login';
 
         const planData = {
-            'basic': { name: 'Basic Tier', price: '$29' },
-            'pro': { name: 'Pro Tier', price: '$49' },
-            'lifetime': { name: 'Lifetime Access', price: '$199' }
+            'trial': { name: 'Trial Mission', price: '$0', duration: '/7 days' },
+            'basic': { name: 'Basic Tier', price: '$29', duration: '/month' },
+            'pro': { name: 'Pro Tier', price: '$49', duration: '/month' },
+            'lifetime': { name: 'Lifetime Access', price: '$199', duration: '/forever' }
         };
 
-        document.getElementById('plan-name').innerText = planData[plan].name;
-        document.getElementById('plan-price').innerHTML = `${planData[plan].price}<span>${plan === 'lifetime' ? '/forever' : '/month'}</span>`;
+        const currentPlan = planData[plan] || planData['pro'];
+        document.getElementById('plan-name').innerText = currentPlan.name;
+        document.getElementById('plan-price').innerHTML = `${currentPlan.price}<span>${currentPlan.duration}</span>`;
 
         function switchMethod(m) {
             document.getElementById('method-hbl').style.display = m === 'hbl' ? 'flex' : 'none';
