@@ -674,12 +674,18 @@
         });
     </script>
     <script src="https://cdn.paddle.com/paddle/v2/paddle.js"></script>
-    <script type="text/javascript">
         Paddle.Initialize({ 
             token: "live_90425a06e0e4d8e804bd29d92cd"
         });
-        switchTab(target);
+        
         loadTicketHistory();
-    </script>
+
+        // Check for upgrade redirect from login
+        const urlParams = new URLSearchParams(window.location.search);
+        const autoPlan = urlParams.get('plan');
+        if (autoPlan) {
+            document.getElementById('pay-tier').value = autoPlan.toUpperCase();
+            openBankModal();
+        }
 </body>
 </html>
