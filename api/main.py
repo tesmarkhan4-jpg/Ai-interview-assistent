@@ -599,9 +599,9 @@ async def create_safepay_session(request: Request):
         # 1. Define Order Details
         order_id = f"ZENITH_{int(time.time())}" # Payments 2.0 likes unique IDs
         
-        # 2. Build Initialization Payload (V2 Style)
+        # 2. Build Initialization Payload
         payload = {
-            "merchant_api_key": pub_key,
+            "client": pub_key,
             "amount": float(amount),
             "currency": "PKR",
             "environment": "sandbox",
