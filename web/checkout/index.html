@@ -3,170 +3,198 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Checkout | ZenithHUD</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <title>Activate ZenithHUD</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         :root {
-            --primary: #4f46e5;
-            --bg: #fdfdfd;
-            --text: #1e293b;
+            --primary: #6366f1;
+            --primary-glow: rgba(99, 102, 241, 0.15);
+            --bg: #f8fafc;
+            --text: #0f172a;
             --text-muted: #64748b;
-            --border: #e2e8f0;
+            --border: rgba(99, 102, 241, 0.1);
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { 
-            font-family: 'Inter', sans-serif; 
+            font-family: 'Outfit', sans-serif; 
             background: var(--bg); 
             color: var(--text); 
-            height: 100vh;
-            display: flex; align-items: center; justify-content: center;
-            overflow: hidden;
+            min-height: 100vh;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            overflow-x: hidden; padding: 20px;
         }
 
-        /* SOFT BACKGROUND */
-        .bg-gradient {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            z-index: -1;
-            background: radial-gradient(circle at 0% 0%, rgba(79, 70, 229, 0.03) 0%, transparent 50%),
-                        radial-gradient(circle at 100% 100%, rgba(6, 182, 212, 0.03) 0%, transparent 50%);
+        /* BACKGROUND DECOR */
+        .decor-blob {
+            position: fixed; width: 600px; height: 600px; border-radius: 50%;
+            filter: blur(100px); opacity: 0.15; z-index: -1;
+            animation: move 20s infinite alternate ease-in-out;
         }
+        .blob-1 { background: var(--primary); top: -200px; left: -200px; }
+        .blob-2 { background: #06b6d4; bottom: -200px; right: -200px; animation-delay: -5s; }
+        @keyframes move { from { transform: translate(0, 0); } to { transform: translate(100px, 100px); } }
 
-        .checkout-box {
-            width: 100%; max-width: 900px;
-            display: grid; grid-template-columns: 380px 1fr;
-            background: white; border-radius: 24px;
+        .checkout-container {
+            width: 100%; max-width: 520px;
+            animation: cardEnter 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes cardEnter { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+
+        .main-card {
+            background: white; border-radius: 32px; padding: 48px;
+            box-shadow: 0 40px 100px -20px rgba(0,0,0,0.06);
             border: 1px solid var(--border);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.03);
-            overflow: hidden;
+            position: relative; overflow: hidden;
         }
 
-        /* LEFT SIDE - SUMMARY */
-        .summary-side {
-            background: #f8fafc; padding: 40px;
-            border-right: 1px solid var(--border);
-            display: flex; flex-direction: column;
+        .header { text-align: center; margin-bottom: 32px; }
+        .logo { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 24px; }
+        .logo span { font-weight: 900; font-size: 1.4rem; letter-spacing: -1px; }
+
+        .plan-pill {
+            display: inline-block; padding: 8px 16px; border-radius: 100px;
+            background: #eef2ff; color: var(--primary);
+            font-weight: 800; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px;
+            margin-bottom: 12px;
+        }
+        .price-text { font-size: 3rem; font-weight: 900; letter-spacing: -2px; margin-bottom: 32px; line-height: 1; }
+        .price-text span { font-size: 1.2rem; color: var(--text-muted); font-weight: 600; letter-spacing: 0; }
+
+        .tabs {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+            background: #f1f5f9; padding: 6px; border-radius: 16px; margin-bottom: 32px;
+        }
+        .tab {
+            padding: 12px; border: none; border-radius: 12px; font-weight: 800; font-size: 0.8rem;
+            cursor: pointer; transition: 0.2s; background: transparent; color: var(--text-muted);
+        }
+        .tab.active { background: white; color: var(--primary); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+
+        .details-grid { background: #f8fafc; border-radius: 20px; padding: 24px; margin-bottom: 32px; display: flex; flex-direction: column; gap: 14px; border: 1px dashed #cbd5e1; }
+        .detail-row { display: flex; justify-content: space-between; font-size: 0.9rem; font-weight: 600; }
+        .detail-label { color: var(--text-muted); }
+        .detail-value { color: #000; display: flex; align-items: center; gap: 8px; cursor: pointer; }
+        .detail-value:hover { color: var(--primary); }
+
+        .input-box { margin-bottom: 24px; }
+        .input-label { display: block; font-size: 0.75rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; margin-bottom: 10px; padding-left: 4px; }
+        .input-field {
+            width: 100%; padding: 18px 24px; border-radius: 18px;
+            border: 2px solid #f1f5f9; background: #f8fafc;
+            font-size: 1rem; font-weight: 600; outline: none; transition: 0.3s;
+        }
+        .input-field:focus { border-color: var(--primary); background: white; box-shadow: 0 0 0 5px var(--primary-glow); }
+
+        /* UPLOAD ZONE */
+        .upload-zone {
+            border: 2px dashed #e2e8f0; border-radius: 20px; padding: 32px;
+            text-align: center; cursor: pointer; transition: 0.3s;
+            background: #fcfdfe; margin-bottom: 32px;
+            position: relative; overflow: hidden;
+        }
+        .upload-zone:hover { border-color: var(--primary); background: #f5f7ff; }
+        .upload-icon { color: var(--primary); margin-bottom: 12px; }
+        .upload-text { font-size: 0.85rem; font-weight: 700; color: #475569; }
+        .upload-hint { font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; font-weight: 500; }
+        #receipt-preview {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            object-fit: cover; display: none; z-index: 2;
+        }
+        .preview-overlay {
+            position: absolute; bottom: 0; left: 0; width: 100%; padding: 10px;
+            background: rgba(0,0,0,0.5); color: white; font-size: 0.7rem; font-weight: 800;
+            z-index: 3; display: none;
         }
 
-        .logo { display: flex; align-items: center; gap: 10px; margin-bottom: 32px; }
-        .logo span { font-weight: 800; font-size: 1.2rem; color: #000; }
-
-        .plan-info { margin-bottom: 32px; }
-        .plan-tag { font-size: 0.7rem; font-weight: 800; color: var(--primary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; display: block; }
-        .plan-price { font-size: 2.5rem; font-weight: 800; color: #000; }
-        .plan-price span { font-size: 1rem; color: var(--text-muted); font-weight: 500; }
-
-        .feature-list { list-style: none; }
-        .feature-list li { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; font-size: 0.9rem; font-weight: 500; color: #475569; }
-        .feature-list li i { color: #10b981; width: 16px; }
-
-        .security-note { margin-top: auto; font-size: 0.8rem; color: var(--text-muted); line-height: 1.5; display: flex; gap: 10px; }
-
-        /* RIGHT SIDE - PAYMENT */
-        .payment-side { padding: 40px; display: flex; flex-direction: column; }
-        .title { font-size: 1.25rem; font-weight: 800; margin-bottom: 24px; color: #000; }
-
-        .tabs { display: flex; gap: 8px; margin-bottom: 24px; background: #f1f5f9; padding: 4px; border-radius: 12px; }
-        .tab { flex: 1; padding: 10px; border: none; border-radius: 8px; font-weight: 700; font-size: 0.75rem; cursor: pointer; transition: 0.2s; background: transparent; color: var(--text-muted); }
-        .tab.active { background: white; color: var(--primary); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-
-        .details-card { background: #f8fafc; border: 1px solid var(--border); border-radius: 16px; padding: 20px; margin-bottom: 24px; }
-        .row { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 0.85rem; }
-        .row:last-child { margin-bottom: 0; }
-        .label { font-weight: 600; color: var(--text-muted); }
-        .value { font-weight: 700; color: #000; display: flex; align-items: center; gap: 8px; cursor: pointer; }
-        .value:hover { color: var(--primary); }
-
-        .form-group { margin-bottom: 24px; }
-        .form-label { display: block; font-size: 0.75rem; font-weight: 700; margin-bottom: 8px; color: var(--text-muted); }
-        .form-input { width: 100%; padding: 14px 16px; border-radius: 10px; border: 1px solid var(--border); outline: none; font-size: 0.95rem; font-weight: 600; transition: 0.2s; }
-        .form-input:focus { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.05); }
-
-        .btn-confirm { width: 100%; padding: 16px; border-radius: 12px; background: var(--primary); color: white; border: none; font-weight: 800; font-size: 0.95rem; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 10px; }
-        .btn-confirm:hover { background: #4338ca; transform: translateY(-1px); }
-
-        .spinner { width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: white; animation: spin 0.8s linear infinite; display: none; }
+        .btn-pay {
+            width: 100%; padding: 22px; border-radius: 20px;
+            background: var(--primary); color: white; border: none;
+            font-weight: 800; font-size: 1.1rem; cursor: pointer;
+            transition: 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex; align-items: center; justify-content: center; gap: 12px;
+            box-shadow: 0 20px 40px -10px var(--primary-glow);
+        }
+        .btn-pay:hover { transform: translateY(-3px); box-shadow: 0 25px 50px -10px var(--primary-glow); }
+        
+        .spinner { width: 22px; height: 22px; border: 3px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: white; animation: spin 0.8s linear infinite; display: none; }
         @keyframes spin { to { transform: rotate(360deg); } }
         .loading .spinner { display: block; }
         .loading span { display: none; }
 
-        /* TOAST */
-        #toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 100; }
-        .toast { background: #1e293b; color: white; padding: 12px 20px; border-radius: 10px; font-size: 0.85rem; font-weight: 600; box-shadow: 0 10px 20px rgba(0,0,0,0.1); animation: slideIn 0.3s ease; }
-        @keyframes slideIn { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        #toast-container { position: fixed; top: 32px; right: 32px; z-index: 1000; }
+        .toast { background: #1e293b; color: white; padding: 16px 24px; border-radius: 16px; font-weight: 600; font-size: 0.9rem; box-shadow: 0 20px 40px rgba(0,0,0,0.1); animation: slideIn 0.4s ease; margin-bottom: 10px; }
+        @keyframes slideIn { from { transform: translateX(20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 
-        @media (max-width: 800px) {
-            body { overflow-y: auto; height: auto; padding: 20px; }
-            .checkout-box { grid-template-columns: 1fr; border-radius: 16px; }
-            .summary-side { padding: 30px; }
-            .payment-side { padding: 30px; }
-        }
+        .footer { margin-top: 32px; text-align: center; font-size: 0.85rem; color: var(--text-muted); font-weight: 500; }
+        .footer a { color: var(--primary); font-weight: 700; text-decoration: none; }
     </style>
 </head>
 <body>
-    <div class="bg-gradient"></div>
+    <div class="decor-blob blob-1"></div>
+    <div class="decor-blob blob-2"></div>
+
     <div id="toast-container"></div>
 
-    <div class="checkout-box">
-        <div class="summary-side">
-            <div class="logo">
-                <img src="/icon.png" alt="Z" style="height: 24px; width: 24px; border-radius: 6px;">
-                <span>ZenithHUD</span>
+    <div class="checkout-container">
+        <div class="main-card">
+            <div class="header">
+                <div class="logo">
+                    <img src="/icon.png" alt="Z" style="height: 32px; width: 32px; border-radius: 10px;">
+                    <span>ZenithHUD</span>
+                </div>
+                <div class="plan-pill" id="plan-name">PRO PLAN</div>
+                <div class="price-text" id="plan-price">$49<span>/month</span></div>
             </div>
-
-            <div class="plan-info">
-                <span class="plan-tag" id="p-name">BASIC PLAN</span>
-                <div class="plan-price" id="p-price">$29<span>/month</span></div>
-            </div>
-
-            <ul class="feature-list">
-                <li><i data-lucide="check"></i> Real-time AI Assistant</li>
-                <li><i data-lucide="check"></i> Invisible Screen Overlay</li>
-                <li><i data-lucide="check"></i> Career Data Sync</li>
-                <li><i data-lucide="check"></i> Secure Encrypted Account</li>
-                <li><i data-lucide="check"></i> 24/7 Priority Support</li>
-            </ul>
-
-            <div class="security-note">
-                <i data-lucide="shield-check" style="width: 18px; flex-shrink: 0; color: #10b981;"></i>
-                <p>Your account will be activated within 24 hours after we verify your payment details.</p>
-            </div>
-        </div>
-
-        <div class="payment-side">
-            <h2 class="title">Complete Payment</h2>
 
             <div class="tabs">
-                <button class="tab active" id="t-hbl" onclick="setTab('hbl')">Local Bank (PK)</button>
-                <button class="tab" id="t-pay" onclick="setTab('pay')">International</button>
+                <button class="tab active" id="tab-hbl" onclick="setTab('hbl')">Local Bank (PK)</button>
+                <button class="tab" id="tab-pay" onclick="setTab('pay')">International</button>
             </div>
 
-            <div id="box-hbl" class="details-card">
-                <div class="row"><span class="label">Name</span><span class="value">fahim</span></div>
-                <div class="row"><span class="label">Account</span><span class="value" onclick="copy('03180005850701')">03180005850701 <i data-lucide="copy"></i></span></div>
-                <div class="row"><span class="label">IBAN</span><span class="value" onclick="copy('PKHABB0003180005850701')">...5850701 <i data-lucide="copy"></i></span></div>
+            <!-- HBL -->
+            <div id="box-hbl" class="details-grid">
+                <div class="detail-row"><span class="detail-label">Name</span><span class="detail-value">fahim</span></div>
+                <div class="detail-row"><span class="detail-label">Account</span><span class="detail-value" onclick="copy('03180005850701')">03180005850701 <i data-lucide="copy" style="width:14px;"></i></span></div>
+                <div class="detail-row"><span class="detail-label">IBAN</span><span class="detail-value" onclick="copy('PKHABB0003180005850701')">PKHABB...0701 <i data-lucide="copy" style="width:14px;"></i></span></div>
             </div>
 
-            <div id="box-pay" class="details-card" style="display:none;">
-                <div class="row"><span class="label">Name</span><span class="value">Faheem Ullah Khan</span></div>
-                <div class="row"><span class="label">Account</span><span class="value" onclick="copy('70580320002238229')">...2238229 <i data-lucide="copy"></i></span></div>
-                <div class="row"><span class="label">SWIFT</span><span class="value" onclick="copy('CITIUS33')">CITIUS33 <i data-lucide="copy"></i></span></div>
+            <!-- PAYONEER -->
+            <div id="box-pay" class="details-grid" style="display:none;">
+                <div class="detail-row"><span class="detail-label">Beneficiary</span><span class="detail-value">Faheem Ullah Khan</span></div>
+                <div class="detail-row"><span class="detail-label">Account</span><span class="detail-value" onclick="copy('70580320002238229')">...2238229 <i data-lucide="copy" style="width:14px;"></i></span></div>
+                <div class="detail-row"><span class="detail-label">SWIFT</span><span class="detail-value" onclick="copy('CITIUS33')">CITIUS33 <i data-lucide="copy" style="width:14px;"></i></span></div>
             </div>
 
-            <div class="form-group">
-                <label class="form-label">Enter Transaction ID</label>
-                <input type="text" id="tid" class="form-input" placeholder="e.g. 123456789012">
+            <div class="input-box">
+                <label class="input-label">Transaction ID</label>
+                <input type="text" id="tid" class="input-field" placeholder="123456789012">
             </div>
 
-            <button class="btn-confirm" onclick="submit(this)">
+            <div class="input-box">
+                <label class="input-label">Upload Proof of Payment</label>
+                <div class="upload-zone" onclick="document.getElementById('file-input').click()">
+                    <img id="receipt-preview" src="">
+                    <div class="preview-overlay" id="preview-tag">FILE READY</div>
+                    <div id="upload-content">
+                        <i data-lucide="image-plus" class="upload-icon" style="width: 32px; height: 32px;"></i>
+                        <div class="upload-text">Click to upload receipt</div>
+                        <div class="upload-hint">Supported: JPG, PNG, PDF</div>
+                    </div>
+                </div>
+                <input type="file" id="file-input" style="display:none" accept="image/*,.pdf" onchange="previewFile()">
+            </div>
+
+            <button class="btn-pay" id="pay-btn" onclick="submitPayment(this)">
                 <div class="spinner"></div>
-                <span>Confirm Payment</span>
+                <span>Complete Activation</span>
             </button>
-            
-            <p style="text-align: center; margin-top: 16px; font-size: 0.75rem; color: var(--text-muted);">
-                Need help? <a href="/dashboard?tab=support" style="color:var(--primary); font-weight:600; text-decoration:none;">Contact Support</a>
-            </p>
+
+            <div class="footer">
+                Account will be activated within 24 hours. <br>
+                <a href="/dashboard?tab=support">Contact Support</a>
+            </div>
         </div>
     </div>
 
@@ -180,35 +208,57 @@
             'trial': { n: 'Trial Access', p: '$0', d: '/7 days' },
             'basic': { n: 'Basic Plan', p: '$29', d: '/month' },
             'pro': { n: 'Pro Plan', p: '$49', d: '/month' },
-            'lifetime': { n: 'Lifetime Access', p: '$199', d: '/once' }
+            'lifetime': { n: 'Lifetime Access', p: '$199', d: '/forever' }
         };
 
         const active = plans[plan] || plans['pro'];
-        document.getElementById('p-name').innerText = active.n;
-        document.getElementById('p-price').innerHTML = `${active.p}<span>${active.d}</span>`;
+        document.getElementById('plan-name').innerText = active.n;
+        document.getElementById('plan-price').innerHTML = `${active.p}<span>${active.d}</span>`;
 
         function setTab(t) {
-            document.getElementById('box-hbl').style.display = t === 'hbl' ? 'block' : 'none';
-            document.getElementById('box-pay').style.display = t === 'pay' ? 'block' : 'none';
-            document.getElementById('t-hbl').classList.toggle('active', t === 'hbl');
-            document.getElementById('t-pay').classList.toggle('active', t === 'pay');
+            document.getElementById('box-hbl').style.display = t === 'hbl' ? 'flex' : 'none';
+            document.getElementById('box-pay').style.display = t === 'pay' ? 'flex' : 'none';
+            document.getElementById('tab-hbl').classList.toggle('active', t === 'hbl');
+            document.getElementById('tab-pay').classList.toggle('active', t === 'pay');
         }
 
-        function copy(text) {
-            navigator.clipboard.writeText(text);
+        function copy(t) {
+            navigator.clipboard.writeText(t);
             showToast("Copied to clipboard");
         }
 
-        function showToast(msg) {
+        let base64Receipt = null;
+
+        function previewFile() {
+            const file = document.getElementById('file-input').files[0];
+            if(!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                base64Receipt = e.target.result;
+                if(file.type.startsWith('image/')) {
+                    document.getElementById('receipt-preview').src = base64Receipt;
+                    document.getElementById('receipt-preview').style.display = 'block';
+                    document.getElementById('preview-tag').style.display = 'block';
+                    document.getElementById('upload-content').style.opacity = '0';
+                } else {
+                    document.getElementById('upload-content').innerHTML = `<i data-lucide="file-text" style="color:var(--primary); width:32px; height:32px;"></i><div class="upload-text">${file.name}</div>`;
+                    lucide.createIcons();
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function showToast(m) {
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
             toast.className = 'toast';
-            toast.innerText = msg;
+            toast.innerText = m;
             container.appendChild(toast);
-            setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 2000);
+            setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 400); }, 3000);
         }
 
-        async function submit(btn) {
+        async function submitPayment(btn) {
             const tid = document.getElementById('tid').value;
             if(!tid) return showToast("Please enter Transaction ID");
 
@@ -217,15 +267,21 @@
                 const res = await fetch('/api/payment/submit', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ email: user.email, tier: plan, tid, method: 'MANUAL_v2' })
+                    body: JSON.stringify({ 
+                        email: user.email, 
+                        tier: plan, 
+                        tid, 
+                        receipt: base64Receipt,
+                        method: 'MANUAL_v3' 
+                    })
                 });
                 const data = await res.json();
                 btn.classList.remove('loading');
                 if(data.status === 'success') {
-                    showToast("Payment submitted successfully!");
-                    setTimeout(() => window.location.href = '/dashboard', 1500);
+                    showToast("Payment submitted! Activating soon.");
+                    setTimeout(() => window.location.href = '/dashboard', 2000);
                 } else {
-                    showToast(data.detail || "Error submitting payment");
+                    showToast(data.detail || "Submission failed");
                 }
             } catch(e) {
                 btn.classList.remove('loading');

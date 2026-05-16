@@ -663,6 +663,7 @@ async def submit_payment(data: dict):
         tier = data.get("tier")
         tid = data.get("tid")
         method = data.get("method", "BANK_TRANSFER")
+        receipt = data.get("receipt") # Base64 image
         
         if not email or not tid:
             return {"status": "error", "detail": "Missing email or TID"}
@@ -677,6 +678,7 @@ async def submit_payment(data: dict):
             "tier": tier,
             "tid": tid,
             "method": method,
+            "receipt": receipt,
             "status": "pending",
             "timestamp": datetime.datetime.utcnow().isoformat()
         })
