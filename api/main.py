@@ -591,9 +591,10 @@ async def create_safepay_session(request: Request):
             "PRO": "plan_xxx" # To be added
         }
         
-        # 3. Secure Backend Handshake
-        # We call Safepay's internal API to get a one-time session token
+        # 3. Secure Backend Handshake with Mandatory Security Header
+        # We call Safepay's internal API with the Merchant Secret for authentication
         pub_key = "sec_1938fc7a-d894-4c85-bb00-16b2d63ee7a3"
+        secret_key = "b6125a345d51cefb89c52c1a1f7b16125201fe6d524cc5bac6e6e366b89e3616"
         import requests
         
         payload = {
@@ -603,11 +604,16 @@ async def create_safepay_session(request: Request):
             "environment": "sandbox"
         }
         
+        headers = {
+            "Content-Type": "application/json",
+            "X-SFPY-MERCHANT-SECRET": secret_key
+        }
+        
         # Initialize the tracker
         res = requests.post(
             "https://sandbox.api.getsafepay.com/order/v1/init",
             json=payload,
-            headers={"Content-Type": "application/json"}
+            headers=headers
         )
         
         result = res.json()
