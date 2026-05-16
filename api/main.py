@@ -592,31 +592,36 @@ async def create_safepay_session(request: Request):
         }
         
         # 3. Secure Backend Handshake with Full Payload
+        # 3. Secure Backend Handshake with Full Payload
         pub_key = "sec_1938fc7a-d894-4c85-bb00-16b2d63ee7a3"
         secret_key = "b6125a345d51cefb89c52c1a1f7b16125201fe6d524cc5bac6e6e366b89e3616"
         import requests
+        import urllib.parse
         
         # 1. Define Redirect and Order ID
         order_id = f"{email}_{plan}"
-        redirect_url = f"https://zenith-hud.vercel.app/dashboard?payment=success"
+        encoded_order_id = urllib.parse.quote(order_id)
+        redirect_url = urllib.parse.quote(f"https://zenith-hud.vercel.app/dashboard?payment=success")
         
-        # 2. Build Initialization Payload
+        # If it's NOT a subscription, let's try the Quick Checkout Direct URL first
+        # This is the most reliable way to test if the API Keys are working
+        if plan not in ["BASIC", "PRO"]:
+            checkout_url = f"https://sandbox.api.getsafepay.com/checkout/pay?env=sandbox&api_key={pub_key}&amount={float(amount):.2f}&currency=PKR&source=custom&order_id={encoded_order_id}&redirect_url={redirect_url}"
+            return {"status": "success", "url": checkout_url}
+
+        # For Subscriptions, we continue with the Tracker Handshake
         payload = {
             "client": pub_key,
             "amount": float(amount),
             "currency": "PKR",
             "environment": "sandbox",
             "order_id": order_id,
-            "redirect_url": redirect_url,
-            "source": "custom"
+            "redirect_url": f"https://zenith-hud.vercel.app/dashboard?payment=success",
+            "source": "custom",
+            "mode": "subscription",
+            "plan_id": plan_ids.get(plan)
         }
         
-        # Add subscription specific params if needed
-        if plan in ["BASIC", "PRO"]:
-            payload["mode"] = "subscription"
-            payload["plan_id"] = plan_ids.get(plan)
-        
-        # 3. Initialize the tracker
         res = requests.post(
             "https://sandbox.api.getsafepay.com/order/v1/init",
             json=payload,
@@ -629,7 +634,6 @@ async def create_safepay_session(request: Request):
         result = res.json()
         if res.status_code == 200 and result.get("data"):
             token = result["data"]["token"]
-            # Use the /components route which is better for tokenized session handling
             checkout_url = f"https://sandbox.api.getsafepay.com/components?token={token}&env=sandbox"
             return {"status": "success", "url": checkout_url}
         else:
