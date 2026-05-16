@@ -198,12 +198,27 @@
             </form>
             
             <div style="margin-top: 32px; text-align: center; font-size: 0.95rem; color: var(--text-muted); font-weight: 500;">
-                Need an account? <a href="/signup" style="color: #000; font-weight: 800; text-decoration: none;">Start Free Trial</a>
+                Need an account? <a id="signup-link" href="/signup" style="color: #000; font-weight: 800; text-decoration: none;">Start Free Trial</a>
             </div>
         </div>
     </div>
 
     <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const planParam = urlParams.get('plan');
+        if (planParam) {
+            document.getElementById('signup-link').href = `/signup?plan=${planParam}`;
+        }
+
+        function initSafepay(email, plan, amount) {
+            const pubKey = "sec_1938fc7a-d894-4c85-bb00-16b2d63ee7a3";
+            const orderId = `${email}_${plan}`;
+            const baseUrl = window.location.origin + '/dashboard';
+            const redirectUrl = encodeURIComponent(`${baseUrl}?payment=success`);
+            const url = `https://sandbox.api.getsafepay.com/checkout/pay?env=sandbox&api_key=${pubKey}&amount=${amount * 100}&currency=PKR&source=custom&order_id=${orderId}&redirect_url=${redirectUrl}`;
+            window.location.href = url;
+        }
+
         document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const email = document.getElementById('email').value;
@@ -228,7 +243,15 @@
                     if (adminEmails.includes(data.user.email) || data.user.role === 'OWNER') {
                         window.location.href = '/admin';
                     } else {
-                        window.location.href = '/dashboard';
+                        if (planParam === 'basic') {
+                            initSafepay(data.user.email, 'BASIC', 2900);
+                        } else if (planParam === 'pro') {
+                            initSafepay(data.user.email, 'PRO', 4900);
+                        } else if (planParam === 'lifetime') {
+                            initSafepay(data.user.email, 'LIFETIME', 19900);
+                        } else {
+                            window.location.href = '/dashboard';
+                        }
                     }
                 } else {
                     error.innerText = data.detail || "Incorrect email or password.";
