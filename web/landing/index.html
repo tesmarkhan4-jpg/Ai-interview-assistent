@@ -43,10 +43,13 @@
                 // User is logged in - show Dashboard button
                 const loginLink = authContainer.querySelector('.login-link');
                 const getStartedBtn = authContainer.querySelector('.get-started-btn');
-                if(loginLink) loginLink.remove();
+                if(loginLink) loginLink.style.display = 'none';
                 if(getStartedBtn) {
                     getStartedBtn.innerText = 'Dashboard';
                     getStartedBtn.href = '/dashboard';
+                    getStartedBtn.style.background = 'linear-gradient(135deg, #4f46e5, #0ea5e9)';
+                    getStartedBtn.style.color = 'white';
+                    getStartedBtn.style.boxShadow = '0 10px 20px rgba(79, 70, 229, 0.2)';
                 }
             }
         });

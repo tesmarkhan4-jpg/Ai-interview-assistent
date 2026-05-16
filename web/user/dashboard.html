@@ -113,7 +113,16 @@
             <div class="nav-link" data-tab="settings"><i data-lucide="settings"></i> Settings</div>
         </nav>
 
-        <div class="nav-link" id="logout-btn" style="color: #f43f5e; margin-top: auto;"><i data-lucide="log-out"></i> Logout</div>
+        <div style="margin-top: auto; display: flex; flex-direction: column; gap: 8px;">
+            <a href="/" class="nav-link" style="color: var(--primary);">
+                <i data-lucide="external-link"></i>
+                Visit Website
+            </a>
+            <div class="nav-link" onclick="logout()" style="color: #f43f5e; margin-bottom: 0;">
+                <i data-lucide="log-out"></i>
+                Logout
+            </div>
+        </div>
     </aside>
 
     <main style="padding: 40px;">
