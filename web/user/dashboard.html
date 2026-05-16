@@ -271,7 +271,6 @@
             document.getElementById('billing-price').innerText = "PAID";
         }
 
-        // Safepay Checkout Logic
         async function initSafepay(plan) {
             try {
                 const res = await fetch('/api/safepay/create-session', {
@@ -281,7 +280,15 @@
                 });
                 const data = await res.json();
                 if (data.status === 'success') {
-                    window.location.href = data.url;
+                    // Use Safepay SDK if available, otherwise fallback
+                    if (window.Safepay) {
+                        Safepay.checkout({
+                            token: data.token,
+                            env: 'sandbox'
+                        });
+                    } else {
+                        window.location.href = data.url;
+                    }
                 } else {
                     alert("Payment Error: " + data.detail);
                 }
@@ -376,5 +383,6 @@
             window.location.href = '/login';
         });
     </script>
+    <script src="https://sandbox.api.getsafepay.com/checkout/sdk.js"></script>
 </body>
 </html>

@@ -635,7 +635,7 @@ async def create_safepay_session(request: Request):
         if res.status_code == 200 and result.get("data"):
             token = result["data"]["token"]
             checkout_url = f"https://sandbox.api.getsafepay.com/components?token={token}&env=sandbox"
-            return {"status": "success", "url": checkout_url}
+            return {"status": "success", "url": checkout_url, "token": token}
         else:
             err_msg = str(result.get("status", {}).get("errors", ["Handshake Rejected"]))
             return {"status": "error", "detail": f"Safepay Error: {err_msg}"}
