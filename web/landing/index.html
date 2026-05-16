@@ -259,12 +259,20 @@
         
         fetchConfig();
         
-        // Download Loader Logic
+        // Dynamic Download Experience
         document.querySelectorAll('.dynamic-download').forEach(btn => {
             btn.addEventListener('click', function(e) {
-                if(this.href && this.href !== window.location.href + '#') {
+                const url = this.href;
+                if(url && url !== window.location.href + '#') {
+                    e.preventDefault(); // Take manual control
                     this.classList.add('btn-loading');
-                    setTimeout(() => this.classList.remove('btn-loading'), 4000);
+                    
+                    // Tactical Delay for Smooth Feel
+                    setTimeout(() => {
+                        window.location.href = url;
+                        // Reset button state after browser registers the download
+                        setTimeout(() => this.classList.remove('btn-loading'), 1500);
+                    }, 800);
                 }
             });
         });
