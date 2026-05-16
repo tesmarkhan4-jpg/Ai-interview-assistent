@@ -629,8 +629,8 @@ async def create_safepay_session(request: Request):
         result = res.json()
         if res.status_code == 200 and result.get("data"):
             token = result["data"]["token"]
-            # Use the most stable checkout URL structure
-            checkout_url = f"https://sandbox.api.getsafepay.com/checkout/pay?token={token}&env=sandbox"
+            # Use the /components route which is better for tokenized session handling
+            checkout_url = f"https://sandbox.api.getsafepay.com/components?token={token}&env=sandbox"
             return {"status": "success", "url": checkout_url}
         else:
             err_msg = str(result.get("status", {}).get("errors", ["Handshake Rejected"]))
