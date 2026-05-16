@@ -9,83 +9,219 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
-        body { background: #f8fafc; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
-        .split-card {
-            background: white; width: 100%; max-width: 1100px; 
-            display: grid; grid-template-columns: 1fr 1fr;
-            border-radius: 40px; overflow: hidden;
-            border: 1px solid rgba(0,0,0,0.06);
-            box-shadow: 0 40px 80px rgba(0,0,0,0.08);
-            animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
-
-        .form-side { padding: 60px; }
-        .info-side { 
-            background: #ffffff; padding: 60px; display: flex; flex-direction: column; justify-content: center;
-            border-left: 1px solid rgba(0,0,0,0.05);
+        :root {
+            --primary: #4f46e5;
+            --primary-glow: rgba(79, 70, 229, 0.4);
+            --text: #111827;
+            --text-muted: #6b7280;
         }
 
-        .form-group { margin-bottom: 20px; }
-        label { display: block; font-size: 0.75rem; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 1px; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+
+        body {
+            background: #ffffff;
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* Left Side - Unique Premium Visual */
+        .visual-side {
+            flex: 1.2;
+            background: #020617; /* Very deep slate */
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            padding: 40px;
+        }
+
+        /* Distinct Floating Blobs for Signup (Emerald/Teal/Indigo) */
+        .blob-container {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            filter: blur(80px);
+            z-index: 1;
+        }
+
+        .blob {
+            position: absolute;
+            border-radius: 50%;
+            opacity: 0.5;
+            animation: float 20s infinite alternate cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .blob-1 {
+            width: 450px; height: 450px;
+            background: #059669; /* Emerald */
+            top: -100px; left: -100px;
+            animation-duration: 18s;
+        }
+
+        .blob-2 {
+            width: 550px; height: 550px;
+            background: #4f46e5; /* Indigo */
+            bottom: -150px; right: -100px;
+            animation-duration: 25s;
+            animation-delay: -5s;
+        }
+
+        .blob-3 {
+            width: 350px; height: 350px;
+            background: #0d9488; /* Teal */
+            top: 40%; left: 30%;
+            animation-duration: 22s;
+            animation-delay: -10s;
+        }
+
+        @keyframes float {
+            0% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(100px, 50px) scale(1.1); }
+            66% { transform: translate(-50px, 100px) scale(0.9); }
+            100% { transform: translate(0, 0) scale(1); }
+        }
+
+        .brand-content {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            max-width: 500px;
+            animation: logoEnter 1.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes logoEnter {
+            from { opacity: 0; transform: translateY(20px) scale(0.95); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .trial-benefit { 
+            display: flex; gap: 20px; margin-bottom: 30px; padding: 24px; 
+            background: rgba(255,255,255,0.05); border-radius: 24px; 
+            border: 1px solid rgba(255,255,255,0.1); 
+            backdrop-filter: blur(10px);
+            transition: 0.3s;
+        }
+        .trial-benefit:hover { background: rgba(255,255,255,0.08); transform: translateY(-2px); }
+        .benefit-icon { font-size: 2.5rem; text-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+
+        /* Right Side - Form section */
+        .form-side {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 60px;
+            background: white;
+            overflow-y: auto; /* Allow scrolling if screen is small */
+        }
+
+        .login-container {
+            width: 100%;
+            max-width: 440px;
+            animation: fadeIn 1s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateX(40px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .form-group { margin-bottom: 24px; }
+        label { display: block; font-size: 0.75rem; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 10px; letter-spacing: 1px; }
+        
         input { 
-            width: 100%; padding: 14px 20px; border-radius: 16px; 
-            border: 1px solid #e2e8f0; outline: none; font-size: 1rem;
-            transition: 0.2s; background: #fcfdfe;
+            width: 100%; background: #f8fafc; border: 1px solid #e2e8f0; 
+            border-radius: 16px; padding: 18px; color: #000; font-size: 1rem;
+            transition: all 0.3s ease; outline: none;
         }
-        input:focus { border-color: #4f46e5; box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1); background: white; }
+        input:focus { background: white; border-color: var(--primary); box-shadow: 0 0 0 5px rgba(79, 70, 229, 0.08); }
         
         .otp-row { display: flex; gap: 12px; align-items: flex-end; }
-        .btn-send { background: #f1f5f9; border: 1px solid #e2e8f0; padding: 14px 20px; border-radius: 14px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+        .btn-send { background: #f1f5f9; border: 1px solid #e2e8f0; padding: 18px 24px; border-radius: 14px; font-weight: 700; cursor: pointer; white-space: nowrap; transition: 0.2s; }
+        .btn-send:hover { background: #e2e8f0; }
         .btn-send:disabled { opacity: 0.5; cursor: not-allowed; }
 
         .btn-auth {
-            width: 100%; justify-content: center; margin-top: 20px;
-            display: inline-flex; align-items: center; gap: 10px;
-            background: var(--primary); color: white;
-            padding: 16px 32px; border-radius: 14px;
-            font-weight: 700; text-decoration: none; border: none; cursor: pointer;
-            transition: 0.3s; box-shadow: 0 10px 25px var(--primary-glow);
-            font-size: 1rem;
+            width: 100%; background: var(--primary); color: white; border: none;
+            border-radius: 16px; padding: 20px; font-size: 1rem; font-weight: 800;
+            cursor: pointer; transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            margin-top: 12px; box-shadow: 0 10px 20px -5px var(--primary-glow);
         }
-        .btn-auth:hover { transform: translateY(-2px); box-shadow: 0 15px 35px var(--primary-glow); }
+        .btn-auth:hover { background: #3730a3; transform: translateY(-3px); box-shadow: 0 20px 30px -10px var(--primary-glow); }
 
-        .trial-benefit { display: flex; gap: 20px; margin-bottom: 24px; padding: 24px; background: #f8fafc; border-radius: 24px; border: 1px solid rgba(0,0,0,0.03); }
-        .benefit-icon { font-size: 2rem; }
-        .error-msg { color: #f43f5e; font-size: 0.85rem; font-weight: 600; margin-bottom: 20px; display: none; text-align: center; }
-        .success-msg { color: #10b981; font-size: 0.85rem; font-weight: 600; margin-bottom: 20px; display: none; text-align: center; }
+        .error-msg { background: #fff1f2; border: 1px solid #fee2e2; color: #e11d48; padding: 14px; border-radius: 12px; font-size: 0.9rem; margin-bottom: 24px; display: none; text-align: center; font-weight: 600; }
+        .success-msg { background: #ecfdf5; border: 1px solid #d1fae5; color: #059669; padding: 14px; border-radius: 12px; font-size: 0.9rem; margin-bottom: 24px; display: none; text-align: center; font-weight: 600; }
 
-        @media (max-width: 1000px) {
-            .split-card { grid-template-columns: 1fr; max-width: 500px; }
-            .info-side { display: none; }
-            .form-side { padding: 40px; }
-        }
         .trial-notice {
-            background: #ecfdf5; border: 1px solid #10b981; border-radius: 20px;
+            background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 20px;
             padding: 24px; margin-bottom: 32px; display: none;
             animation: fadeIn 0.5s ease;
         }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        @media (max-width: 1100px) {
+            .visual-side { display: none; }
+            .form-side { padding: 40px; }
+        }
     </style>
 </head>
 <body>
-    <div class="aurora"></div>
-    <div class="split-card">
-        <!-- FORM SIDE -->
-        <div class="form-side">
+    <div class="visual-side">
+        <div class="blob-container">
+            <div class="blob blob-1"></div>
+            <div class="blob blob-2"></div>
+            <div class="blob blob-3"></div>
+        </div>
+        <div class="brand-content">
+            <h3 style="font-size: 2.5rem; font-weight: 900; margin-bottom: 40px; color: white; letter-spacing: -1.5px; text-shadow: 0 4px 20px rgba(0,0,0,0.5);">Trial Deployment Status</h3>
+            
+            <div class="trial-benefit">
+                <div class="benefit-icon">🎁</div>
+                <div>
+                    <h4 style="color: white; margin-bottom: 6px; font-size: 1.1rem; font-weight: 800;">7 Days of Full Access</h4>
+                    <p style="font-size: 0.95rem; color: rgba(255,255,255,0.7); line-height: 1.5;">Unlock every feature of the Zenith engine, including all model providers.</p>
+                </div>
+            </div>
+
+            <div class="trial-benefit">
+                <div class="benefit-icon">🛰️</div>
+                <div>
+                    <h4 style="color: white; margin-bottom: 6px; font-size: 1.1rem; font-weight: 800;">Verified Infrastructure</h4>
+                    <p style="font-size: 0.95rem; color: rgba(255,255,255,0.7); line-height: 1.5;">Access the same high-speed Key Pool used by PRO members.</p>
+                </div>
+            </div>
+
+            <div class="trial-benefit">
+                <div class="benefit-icon">🤖</div>
+                <div>
+                    <h4 style="color: white; margin-bottom: 6px; font-size: 1.1rem; font-weight: 800;">Unlimited Potential</h4>
+                    <p style="font-size: 0.95rem; color: rgba(255,255,255,0.7); line-height: 1.5;">Ground your AI with your specific career history for unique answers.</p>
+                </div>
+            </div>
+
+            <div style="margin-top: 40px; padding: 20px; background: rgba(0,0,0,0.2); border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); font-size: 0.9rem; color: rgba(255,255,255,0.6); font-weight: 600; text-align: center; letter-spacing: 0.5px;">
+                NO CREDIT CARD REQUIRED FOR TRIAL DEPLOYMENT
+            </div>
+        </div>
+    </div>
+
+    <div class="form-side">
+        <div class="login-container">
             <div style="margin-bottom: 40px; display: flex; align-items: center; gap: 12px; font-size: 1.5rem; font-weight: 900; letter-spacing: -1px; color: #1e293b;">
                 <img src="/icon.png" alt="Z" style="height: 36px; width: 36px; border-radius: 8px;">
                 <div>Zenith<span style="color: #4f46e5;">HUD</span> PRO</div>
             </div>
-            <h2 style="margin-bottom: 8px; font-weight: 900; letter-spacing: -1.5px; color: #1e293b; font-size: 2rem;">Join the Elite</h2>
-            <p style="color: #64748b; font-size: 1rem; margin-bottom: 32px;">Join the elite tier of verified agents.</p>
+            <h2 style="margin-bottom: 10px; font-weight: 900; letter-spacing: -1.5px; color: #000; font-size: 2.2rem;">Join the Elite</h2>
+            <p style="color: var(--text-muted); font-size: 1rem; margin-bottom: 32px; font-weight: 500;">Join the elite tier of verified agents.</p>
             
             <div id="trial-notice" class="trial-notice">
                 <div style="display: flex; gap: 16px; align-items: flex-start;">
                     <div style="font-size: 1.5rem;">🎁</div>
                     <div>
-                        <h4 style="color: #065f46; margin-bottom: 4px;">7-Day Trial Mission Active</h4>
-                        <p style="font-size: 0.85rem; color: #047857; line-height: 1.5;">Register your account below, then download the app. Your free 7-day tactical access will start instantly upon your first login.</p>
+                        <h4 style="color: #166534; margin-bottom: 4px; font-weight: 800;">7-Day Trial Mission Active</h4>
+                        <p style="font-size: 0.85rem; color: #15803d; line-height: 1.5; font-weight: 500;">Register your account below, then download the app. Your free 7-day tactical access will start instantly upon your first login.</p>
                     </div>
                 </div>
             </div>
@@ -101,13 +237,13 @@
                 <div class="form-group">
                     <label>Email Address</label>
                     <div class="otp-row">
-                        <input type="email" id="email" placeholder="name@example.com" required>
+                        <input type="email" id="email" placeholder="name@company.com" required>
                         <button type="button" id="btn-otp" class="btn-send">Get Code</button>
                     </div>
                 </div>
                 <div class="form-group" id="otp-group" style="display: none;">
                     <label>6-Digit Verification Code</label>
-                    <input type="text" id="otp" placeholder="123456" maxlength="6">
+                    <input type="text" id="otp" placeholder="000000" maxlength="6" style="text-align: center; font-size: 24px; letter-spacing: 8px; font-weight: 900;">
                 </div>
                 <div class="form-group">
                     <label>Create Secure Password</label>
@@ -116,41 +252,8 @@
                 <button type="submit" class="btn-auth">Verify & Create Account</button>
             </form>
             
-            <div style="margin-top: 32px; text-align: center; font-size: 0.95rem; color: #64748b;">
-                Already verified? <a href="/login" style="color: #4f46e5; font-weight: 700; text-decoration: none;">Login Here</a>
-            </div>
-        </div>
-
-        <!-- INFO SIDE -->
-        <div class="info-side">
-            <h3 style="font-size: 1.8rem; font-weight: 900; margin-bottom: 32px; color: #1e293b;">Trial Deployment Status</h3>
-            
-            <div class="trial-benefit">
-                <div class="benefit-icon">🎁</div>
-                <div>
-                    <h4 style="color: #1e293b; margin-bottom: 4px;">7 Days of Full Access</h4>
-                    <p style="font-size: 0.9rem; color: #64748b;">Unlock every feature of the Zenith engine, including all model providers.</p>
-                </div>
-            </div>
-
-            <div class="trial-benefit">
-                <div class="benefit-icon">🛰️</div>
-                <div>
-                    <h4 style="color: #1e293b; margin-bottom: 4px;">Verified Infrastructure</h4>
-                    <p style="font-size: 0.9rem; color: #64748b;">Access the same high-speed Key Pool used by PRO members.</p>
-                </div>
-            </div>
-
-            <div class="trial-benefit">
-                <div class="benefit-icon">🤖</div>
-                <div>
-                    <h4 style="color: #1e293b; margin-bottom: 4px;">Unlimited Potential</h4>
-                    <p style="font-size: 0.9rem; color: #64748b;">Ground your AI with your specific career history for unique answers.</p>
-                </div>
-            </div>
-
-            <div style="margin-top: 20px; padding: 20px; background: rgba(79, 70, 229, 0.05); border-radius: 16px; font-size: 0.85rem; color: var(--primary); font-weight: 600; text-align: center;">
-                No Credit Card Required for Trial Deployment
+            <div style="margin-top: 32px; text-align: center; font-size: 0.95rem; color: var(--text-muted); font-weight: 500;">
+                Already verified? <a href="/login" style="color: #000; font-weight: 800; text-decoration: none;">Login Here</a>
             </div>
         </div>
     </div>
