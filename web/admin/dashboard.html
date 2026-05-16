@@ -119,6 +119,13 @@
                     <tbody id="payment-list"></tbody>
                 </table>
             </div>
+            <div class="data-card">
+                <div class="card-header"><span class="card-title" style="color:var(--rose);">Urgent Refund Requests</span></div>
+                <table>
+                    <thead><tr><th>User</th><th>TID</th><th>Reason</th><th>Bank Details</th><th>Action</th></tr></thead>
+                    <tbody id="admin-refund-list"></tbody>
+                </table>
+            </div>
         </div>
 
         <div id="content-settings" style="display: none;">
@@ -271,6 +278,18 @@
                     <td><b style="color:var(--primary);">${p.tier}</b></td>
                     <td>${new Date(p.timestamp).toLocaleTimeString()}</td>
                     <td><button class="btn-action" style="padding:4px 12px; font-size:0.7rem;" onclick="approvePayment('${p._id}', '${p.email}', '${p.tier}')">APPROVE</button></td>
+                </tr>
+            `).join('');
+
+            const refundRes = await adminFetch(`${API_BASE}/admin/payments/refunds`);
+            const refundData = await refundRes.json();
+            document.getElementById('admin-refund-list').innerHTML = refundData.refunds.map(r => `
+                <tr>
+                    <td><b>${r.email}</b><br><span style="font-size:0.7rem; color:var(--text-muted);">${r.name}</span></td>
+                    <td><code>${r.tid}</code></td>
+                    <td><span style="font-size:0.8rem; color:var(--rose); font-weight:700;">${r.reason}</span></td>
+                    <td><span style="font-size:0.75rem;">${r.bank_details}</span></td>
+                    <td><button class="btn-action" style="background:var(--rose); padding:4px 12px; font-size:0.7rem;">PROCESSED</button></td>
                 </tr>
             `).join('');
         }

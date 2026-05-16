@@ -714,6 +714,44 @@ async def approve_payment(data: dict, request: Request):
     except Exception as e:
         return {"status": "error", "detail": str(e)}
 
+@app.post("/api/payment/refund-request")
+async def refund_request(data: dict):
+    try:
+        conn = get_conn()
+        email = data.get("email")
+        name = data.get("name")
+        tid = data.get("tid")
+        reason = data.get("reason")
+        bank = data.get("bank")
+        
+        if not email or not tid or not bank:
+            return {"status": "error", "detail": "Missing mandatory fields"}
+            
+        conn.db.refund_requests.insert_one({
+            "email": email,
+            "name": name,
+            "tid": tid,
+            "reason": reason,
+            "bank_details": bank,
+            "status": "pending",
+            "timestamp": datetime.datetime.utcnow().isoformat()
+        })
+        return {"status": "success"}
+    except Exception as e:
+        return {"status": "error", "detail": str(e)}
+
+@app.get("/api/admin/payments/refunds")
+async def get_refund_requests(request: Request):
+    verify_admin_token(request)
+    try:
+        conn = get_conn()
+        refunds = list(conn.db.refund_requests.find({"status": "pending"}))
+        for r in refunds:
+            r["_id"] = str(r["_id"])
+        return {"refunds": refunds}
+    except Exception as e:
+        return {"status": "error", "detail": str(e)}
+
 @app.delete("/api/admin/keys/{key_id}")
 async def delete_key(key_id: str, request: Request):
     verify_admin_token(request)
