@@ -137,7 +137,10 @@
                     <div><label class="stat-label">MASTER EMAIL</label><input type="text" id="cfg-smtp-user" style="width:100%;"></div>
                     <div><label class="stat-label">APP PASSWORD</label><input type="password" id="cfg-smtp-pass" style="width:100%;"></div>
                     <div style="grid-column: span 2;"><label class="stat-label">SENDER NAME</label><input type="text" id="cfg-smtp-name" placeholder="Zenith Support" style="width:100%;"></div>
-                    <button class="btn-action" onclick="updateConfig()" style="grid-column: span 2; padding:16px;">Update Relay State</button>
+                    <button class="btn-action" onclick="handleConfigUpdate(this)" style="grid-column: span 2; padding:16px;">
+                        <span class="loader-spinner"></span>
+                        <span class="btn-text">Update Relay State</span>
+                    </button>
                 </div>
             </div>
             <div class="data-card">
@@ -145,7 +148,10 @@
                 <div style="display: grid; gap: 20px;">
                     <div style="display: flex; gap: 20px;"><div style="flex:1;"><label class="stat-label">VERSION</label><input type="text" id="cfg-app-version" style="width:100%;"></div><div style="flex:1;"><label class="stat-label">PAYLOAD URL</label><input type="text" id="cfg-download-url" style="width:100%;"></div></div>
                     <div><label class="stat-label">RELEASE NOTES</label><textarea id="cfg-release-notes" style="width:100%; height:100px;"></textarea></div>
-                    <button class="btn-action" onclick="updateConfig()" style="padding:16px;">Synchronize Infrastructure</button>
+                    <button class="btn-action" onclick="handleConfigUpdate(this)" style="padding:16px;">
+                        <span class="loader-spinner"></span>
+                        <span class="btn-text">Synchronize Infrastructure</span>
+                    </button>
                 </div>
             </div>
         </div>
@@ -166,6 +172,16 @@
         const API_BASE = '/api';
         const admin_token = localStorage.getItem('admin_token');
         if (!admin_token) window.location.href = '/admin/login';
+
+        function showToast(msg, type='success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `<i data-lucide="${type==='success'?'check-circle':'alert-circle'}"></i> ${msg}`;
+            container.appendChild(toast);
+            lucide.createIcons();
+            setTimeout(() => { toast.style.opacity = '0'; toast.style.transform = 'translateY(20px)'; setTimeout(() => toast.remove(), 400); }, 3000);
+        }
 
         async function adminFetch(url, options = {}) {
             options.headers = options.headers || {};
@@ -332,6 +348,14 @@
             setVal('cfg-payment-instructions', data.payment_instructions);
         }
 
+        async function handleConfigUpdate(btn) {
+            btn.classList.add('btn-loading');
+            const success = await updateConfig();
+            btn.classList.remove('btn-loading');
+            if(success) showToast("Tactical Configuration Synchronized.");
+            else showToast("Configuration Sync Failed.", "error");
+        }
+
         async function updateConfig() { 
             const cfg = { 
                 app_version: getVal('cfg-app-version'), 
@@ -347,8 +371,7 @@
                 payment_instructions: getVal('cfg-payment-instructions')
             }; 
             const res = await adminFetch(`${API_BASE}/admin/config`, {method:'POST', body:JSON.stringify(cfg)}); 
-            if(res && res.ok) alert("System Configuration Synchronized."); 
-            else alert("Configuration Update Failed.");
+            return (res && res.ok);
         }
         async function toggleMaintenance() { const active = document.getElementById('maintenance-toggle').checked; await adminFetch(`${API_BASE}/admin/maintenance?active=${active}`, {method:'POST'}); }
 

@@ -61,6 +61,28 @@
             transition: 0.2s; cursor: pointer; width: 100%; font-size: 0.9rem;
         }
 
+        /* PREMIUM TOAST */
+        #toast-container { position: fixed; bottom: 32px; right: 32px; z-index: 9999; display: grid; gap: 12px; }
+        .toast {
+            background: #1e293b; color: white; padding: 16px 24px; border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 12px;
+            font-weight: 600; font-size: 0.9rem; animation: toastIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            border: 1px solid rgba(255,255,255,0.1); min-width: 300px;
+        }
+        @keyframes toastIn { from { opacity: 0; transform: translateY(20px) scale(0.9); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        .toast.success { border-left: 4px solid #10b981; }
+        .toast.error { border-left: 4px solid #f43f5e; }
+
+        /* BUTTON LOADER */
+        .btn-loading { pointer-events: none; opacity: 0.8; }
+        .btn-loading .loader-spinner { display: inline-block !important; }
+        .loader-spinner {
+            width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%; border-top-color: white; animation: spin 0.8s linear infinite;
+            display: none;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
         .form-input {
             width: 100%; padding: 12px 16px; border-radius: 12px;
             border: 1px solid #e2e8f0; background: #fcfdfe;
@@ -76,6 +98,7 @@
 </head>
 <body>
     <aside>
+        <div id="toast-container"></div>
         <div style="margin-bottom: 32px; display: flex; align-items: center; gap: 10px; font-size: 1.2rem; font-weight: 900; letter-spacing: -1.2px; color: #1e293b;">
             <img src="/icon.png" alt="Z" style="height: 28px; width: 28px; border-radius: 6px;">
             <div>Zenith<span style="color: #4f46e5;">HUD</span> PRO</div>
@@ -209,8 +232,9 @@
                     </button>
                     <div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid #e2e8f0;">
                         <p style="text-align: center; font-size: 0.8rem; font-weight: 800; color: #64748b; margin-bottom: 16px;">LOCAL & INTERNATIONAL TRANSFERS</p>
-                        <button class="btn-action" style="width: 100%; justify-content: center; background: #059669;" onclick="openBankModal()">
-                            <i data-lucide="landmark"></i> Pay via Bank Transfer / Raast / Payoneer
+                        <button class="btn-action" style="width: 100%; justify-content: center; background: #059669;" onclick="handlePaymentSubmit(this)">
+                            <span class="loader-spinner"></span>
+                            <span class="btn-text">Confirm Transaction ID</span>
                         </button>
                     </div>
 
@@ -268,8 +292,9 @@
                         <label style="font-size: 0.7rem; font-weight: 800; color: #94a3b8; text-transform: uppercase;">Message</label>
                         <textarea id="ticket-message" class="form-input" style="height: 120px;" placeholder="Describe your issue in detail..."></textarea>
                     </div>
-                    <button class="btn-action" style="width: 100%; justify-content: center;" onclick="submitTicket()">
-                        <i data-lucide="send"></i> Dispatch Priority Ticket
+                    <button class="btn-action" style="width: 100%; justify-content: center;" onclick="handleTicketSubmit(this)">
+                        <span class="loader-spinner"></span>
+                        <span class="btn-text">Dispatch Priority Ticket</span>
                     </button>
                 </div>
 
@@ -314,8 +339,9 @@
                     <label style="font-size: 0.7rem; font-weight: 800; color: #94a3b8; text-transform: uppercase;">HBL / Bank Details for Return</label>
                     <input type="text" id="refund-bank" class="form-input" placeholder="Where should we send the money?">
                 </div>
-                <button class="btn-danger-action" style="margin-top: 12px; padding: 16px;" onclick="submitRefund()">
-                    Submit Refund Request
+                <button class="btn-danger-action" style="margin-top: 12px; padding: 16px;" onclick="handleRefundSubmit(this)">
+                    <span class="loader-spinner"></span>
+                    <span class="btn-text">Submit Refund Request</span>
                 </button>
             </div>
         </div>
@@ -400,6 +426,16 @@
             document.getElementById('billing-price').innerText = "PAID";
         }
 
+        function showToast(msg, type='success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `<i data-lucide="${type==='success'?'check-circle':'alert-circle'}"></i> ${msg}`;
+            container.appendChild(toast);
+            lucide.createIcons();
+            setTimeout(() => { toast.style.opacity = '0'; toast.style.transform = 'translateY(20px)'; setTimeout(() => toast.remove(), 400); }, 3000);
+        }
+
         async function initPaddle(tier) {
             const prices = {
                 'BASIC': 'pri_01krqx6y16x6h152wvn2xs75wq',
@@ -438,36 +474,47 @@
             alert("Copied to clipboard!");
         }
 
+        async function handlePaymentSubmit(btn) {
+            btn.classList.add('btn-loading');
+            const success = await submitPayment();
+            btn.classList.remove('btn-loading');
+            if(success) {
+                showToast("Submission Successful! Our intelligence unit will verify shortly.");
+                closeBankModal();
+            }
+        }
+
         async function submitPayment() {
             const tier = document.getElementById('pay-tier').value;
             const tid = document.getElementById('pay-tid').value;
-            
-            if(!tid) return alert("Please enter Transaction ID");
+            if(!tid) { showToast("Please enter Transaction ID", "error"); return false; }
 
             try {
                 const res = await fetch('/api/payment/submit', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({
-                        email: user.email,
-                        tier: tier,
-                        tid: tid,
-                        method: 'BANK_TRANSFER'
-                    })
+                    body: JSON.stringify({ email: user.email, tier, tid, method: 'BANK_TRANSFER' })
                 });
                 const data = await res.json();
-                if(data.status === 'success') {
-                    alert("Submission Successful! Our intelligence unit will verify your payment shortly.");
-                    closeBankModal();
-                } else {
-                    alert(data.detail);
-                }
-            } catch(e) { alert("Submission failed"); }
+                if(data.status === 'success') return true;
+                else showToast(data.detail, "error");
+            } catch(e) { showToast("Submission failed", "error"); }
+            return false;
         }
 
         // --- Refund & Ticket Logic ---
         function openRefundModal() { document.getElementById('refund-modal').style.display = 'flex'; }
         function closeRefundModal() { document.getElementById('refund-modal').style.display = 'none'; }
+
+        async function handleRefundSubmit(btn) {
+            btn.classList.add('btn-loading');
+            const success = await submitRefund();
+            btn.classList.remove('btn-loading');
+            if(success) {
+                showToast("Refund Request Received. Processing within 24h.");
+                closeRefundModal();
+            }
+        }
 
         async function submitRefund() {
             const name = document.getElementById('refund-name').value;
@@ -475,7 +522,7 @@
             const reason = document.getElementById('refund-reason').value;
             const bank = document.getElementById('refund-bank').value;
 
-            if(!name || !tid || !bank) return alert("All fields are mandatory for refund processing.");
+            if(!name || !tid || !bank) { showToast("All fields are mandatory.", "error"); return false; }
 
             try {
                 const res = await fetch('/api/payment/refund-request', {
@@ -483,20 +530,21 @@
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ email: user.email, name, tid, reason, bank })
                 });
-                const data = await res.json();
-                if(data.status === 'success') {
-                    alert("Refund Request Received. Our team will verify and return the amount within 24 hours.");
-                    closeRefundModal();
-                } else {
-                    alert(data.detail);
-                }
-            } catch(e) { alert("System Error."); }
+                if((await res.json()).status === 'success') return true;
+            } catch(e) { showToast("System Error.", "error"); }
+            return false;
+        }
+
+        async function handleTicketSubmit(btn) {
+            btn.classList.add('btn-loading');
+            await submitTicket();
+            btn.classList.remove('btn-loading');
         }
 
         async function submitTicket() {
             const category = document.getElementById('ticket-category').value;
             const msg = document.getElementById('ticket-message').value;
-            if(!msg) return alert("Message cannot be empty.");
+            if(!msg) { showToast("Message cannot be empty.", "error"); return; }
 
             try {
                 const res = await fetch('/api/auth/ticket/send', {
@@ -509,11 +557,11 @@
                     })
                 });
                 if((await res.json()).status === 'success') {
-                    alert("Ticket Dispatched! Our support agents will respond shortly.");
+                    showToast("Ticket Dispatched! Respond shortly.");
                     document.getElementById('ticket-message').value = '';
                     loadTicketHistory();
                 }
-            } catch(e) { alert("Dispatch Failed."); }
+            } catch(e) { showToast("Dispatch Failed.", "error"); }
         }
 
         async function loadTicketHistory() {
