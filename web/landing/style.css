@@ -16,6 +16,7 @@
 
 html {
     scroll-behavior: smooth;
+    height: 100%;
 }
 
 * { 
@@ -31,6 +32,17 @@ body {
     line-height: 1.6;
     overflow-x: hidden;
     position: relative;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+main {
+    flex: 1 0 auto;
+}
+
+footer {
+    flex-shrink: 0;
 }
 
 /* Glowing Pastel Background Grids and Blobs */
@@ -218,10 +230,10 @@ nav {
 
 h1 { 
     font-size: 4.2rem; 
-    font-weight: 900; 
-    line-height: 1.1; 
+    font-weight: 800; 
+    line-height: 1.15; 
     margin-bottom: 24px; 
-    letter-spacing: -2px; 
+    letter-spacing: -1px; 
     color: var(--text-main); 
 }
 
@@ -350,11 +362,11 @@ section {
 
 h2 { 
     font-size: 3rem; 
-    font-weight: 900; 
+    font-weight: 800; 
     margin-top: 12px; 
-    letter-spacing: -1.5px; 
+    letter-spacing: -0.5px; 
     color: var(--text-main); 
-    line-height: 1.2;
+    line-height: 1.25;
 }
 
 /* Problem Pain points */
@@ -390,9 +402,9 @@ h2 {
 .pain-card h3 { 
     font-size: 1.4rem; 
     margin-bottom: 14px; 
-    font-weight: 800; 
+    font-weight: 700; 
     color: var(--text-main); 
-    letter-spacing: -0.5px;
+    letter-spacing: normal;
 }
 
 .pain-card p { 
@@ -445,9 +457,9 @@ h2 {
 
 .feature-card h3 {
     font-size: 1.45rem;
-    font-weight: 800;
+    font-weight: 700;
     color: var(--text-main);
-    letter-spacing: -0.5px;
+    letter-spacing: normal;
     margin: 0;
 }
 
@@ -489,7 +501,7 @@ h2 {
 
 .price-card h3 { 
     font-size: 1.25rem; 
-    font-weight: 800; 
+    font-weight: 700; 
     margin-bottom: 12px; 
 }
 
