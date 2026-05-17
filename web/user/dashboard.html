@@ -290,25 +290,10 @@
                     </div>
                 </div>
 
-                <div style="display: flex; align-items: center; justify-content: space-between; background: #fcfdfe; border: 1px solid #f1f5f9; border-radius: 24px; padding: 24px 32px;">
-                    <div style="display: flex; align-items: center; gap: 20px;">
-                        <div style="width: 48px; height: 48px; background: white; border: 1px solid #e2e8f0; border-radius: 14px; display: flex; align-items: center; justify-content: center; color: #64748b;">
-                            <i data-lucide="landmark"></i>
-                        </div>
-                        <div>
-                            <h5 style="font-weight: 900; color: #0f172a; font-size: 1rem; margin-bottom: 2px;">Manual Verification</h5>
-                            <p style="color: #64748b; font-size: 0.8rem; font-weight: 600;">HBL Bank & International Transfer Submission</p>
-                        </div>
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 16px;">
-                        <button class="btn-secondary-action" style="border: none; background: none; color: #94a3b8; font-size: 0.75rem; text-decoration: underline;" onclick="openRefundModal()">
-                            Need a refund?
-                        </button>
-                        <button class="btn-action" style="background: #10b981; padding: 12px 24px; box-shadow: 0 8px 20px rgba(16, 185, 129, 0.15); font-size: 0.85rem;" onclick="openBankModal()">
-                            <i data-lucide="check-circle-2" style="width:16px; margin-right:8px;"></i>
-                            Confirm Transfer
-                        </button>
-                    </div>
+                <div style="display: flex; justify-content: center; margin-top: 32px;">
+                    <button style="border: none; background: none; color: #64748b; font-size: 0.85rem; font-weight: 600; text-decoration: underline; cursor: pointer; transition: 0.2s;" onmouseover="this.style.color='#4f46e5'" onmouseout="this.style.color='#64748b'" onclick="openRefundModal()">
+                        Need a refund? Submit a request
+                    </button>
                 </div>
             </div>
         </div>
