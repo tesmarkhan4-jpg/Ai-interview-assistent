@@ -72,8 +72,8 @@ class AudioThread(QThread):
 
             # --- Thread 1: Robust System Audio & Mic Reader ---
             def mic_reader():
+                mic = None
                 try:
-                    mic = None
                     all_mics = sc.all_microphones(include_loopback=True)
                     speaker = sc.default_speaker()
                     for m in all_mics:
@@ -89,20 +89,29 @@ class AudioThread(QThread):
                         try: mic = sc.get_microphone(id=speaker.name, include_loopback=True)
                         except: pass
                     if not mic: mic = sc.default_microphone()
-                    if not mic: return
-
-                    with mic.recorder(samplerate=self.rate) as recorder:
-                        while self.is_running and self.ws and self.ws.connected:
-                            try:
-                                data = recorder.record(numframes=int(self.rate * 0.1))
-                                data_mono = data[:, 0] if len(data.shape) > 1 else data
-                                max_val = np.max(np.abs(data_mono))
-                                if 0 < max_val < 0.05: data_mono = data_mono * 10.0 # Boost whispers
-                                elif 0.05 <= max_val < 0.2: data_mono = data_mono * 4.0
-                                data_int16 = (data_mono * 32767).astype(np.int16)
-                                if not audio_queue.full(): audio_queue.put(data_int16.tobytes())
-                            except: break
                 except: pass
+                
+                if not mic: return
+
+                while self.is_running and self.ws and self.ws.connected:
+                    try:
+                        with mic.recorder(samplerate=self.rate) as recorder:
+                            while self.is_running and self.ws and self.ws.connected:
+                                try:
+                                    data = recorder.record(numframes=int(self.rate * 0.1))
+                                    data_mono = data[:, 0] if len(data.shape) > 1 else data
+                                    max_val = np.max(np.abs(data_mono))
+                                    if 0 < max_val < 0.05: data_mono = data_mono * 10.0 # Boost whispers
+                                    elif 0.05 <= max_val < 0.2: data_mono = data_mono * 4.0
+                                    data_int16 = (data_mono * 32767).astype(np.int16)
+                                    if not audio_queue.full(): audio_queue.put(data_int16.tobytes())
+                                except Exception as e:
+                                    # Windows loopback silences cause exceptions. Break inner to restart recorder.
+                                    time.sleep(0.1)
+                                    break
+                    except Exception as e:
+                        # Major failure, pause before retry
+                        time.sleep(0.5)
 
             threading.Thread(target=mic_reader, daemon=True).start()
 

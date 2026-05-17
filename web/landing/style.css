@@ -557,6 +557,17 @@ h2 {
     font-weight: 900; 
 }
 
+.benefit-list li.locked {
+    color: #64748b;
+    opacity: 0.6;
+}
+
+.benefit-list li.locked::before {
+    content: '✗';
+    color: #94a3b8;
+    font-weight: 900;
+}
+
 /* FAQ Accordion */
 .faq-grid {
     max-width: 800px;

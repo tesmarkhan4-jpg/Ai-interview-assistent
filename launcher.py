@@ -22,35 +22,37 @@ env_path = get_resource_path(".env")
 dotenv.load_dotenv(env_path, override=True)
 log_time("Env Loaded")
 
-from PyQt6.QtWidgets import QApplication, QMessageBox
-from PyQt6.QtCore import QObject
-import traceback
-log_time("Qt Core Loaded")
+from PyQt6.QtCore import QObject, QThread
+from PyQt6.QtWidgets import QApplication
+import requests
 
-def exception_hook(exctype, value, tb):
-    error_msg = "".join(traceback.format_exception(exctype, value, tb))
-    print(error_msg)
-    
-    # Log to file for debugging
-    try:
-        data_dir = os.path.join(os.environ.get('APPDATA', os.path.expanduser('~')), "StealthHUD")
-        os.makedirs(data_dir, exist_ok=True)
-        log_path = os.path.join(data_dir, "crash_log.txt")
-        with open(log_path, "w") as f:
-            f.write(error_msg)
-    except:
-        pass
+class HeartbeatThread(QThread):
+    def __init__(self, email):
+        super().__init__()
+        self.email = email
+        self._is_stopped = False
 
-    msg = QMessageBox()
-    msg.setIcon(QMessageBox.Icon.Critical)
-    msg.setText("StealthHUD - Application Error")
-    msg.setDetailedText(error_msg)
-    msg.exec()
-    sys.exit(1)
+    def stop(self):
+        self._is_stopped = True
 
-sys.excepthook = exception_hook
-
-# Heavy GUI imports moved inside methods for speed
+    def run(self):
+        from auth_manager import auth_manager
+        
+        while not self._is_stopped:
+            try:
+                requests.post(
+                    f"{auth_manager.backend_url}/api/user/heartbeat",
+                    json={"email": self.email, "status": "Active"},
+                    timeout=5
+                )
+            except Exception as e:
+                print(f"[Heartbeat] Active ping anomaly: {e}")
+            
+            # Cooperative sleep for 25 seconds
+            for _ in range(25):
+                if self._is_stopped:
+                    break
+                self.sleep(1)
 
 class StealthController(QObject):
     def __init__(self):
@@ -59,6 +61,7 @@ class StealthController(QObject):
         self.login_win = None
         self.dash_win = None
         self.hud_win = None
+        self.heartbeat_worker = None
         
         # Check if already signed in
         log_time("Importing Auth")
@@ -67,15 +70,35 @@ class StealthController(QObject):
         if auth_manager.current_user:
             print(f"[Launcher] Session detected: {auth_manager.current_user}. Skipping Login.")
             auth_manager.validate_session_async() # Verify in background
+            self.start_heartbeat(auth_manager.current_user)
             self.transition_to_cv()
         else:
             self.show_login()
 
+    def start_heartbeat(self, email):
+        self.stop_heartbeat()
+        if email:
+            print(f"[Launcher] Engaging live heartbeat monitor for: {email}")
+            self.heartbeat_worker = HeartbeatThread(email)
+            self.heartbeat_worker.start()
+
+    def stop_heartbeat(self):
+        if self.heartbeat_worker:
+            self.heartbeat_worker.stop()
+            self.heartbeat_worker.wait()
+            self.heartbeat_worker = None
+
     def show_login(self):
         from login_window import LoginWindow
         self.login_win = LoginWindow()
-        self.login_win.login_success.connect(self.transition_to_cv)
+        self.login_win.login_success.connect(self.handle_login_success)
         self.login_win.show()
+
+    def handle_login_success(self):
+        from auth_manager import auth_manager
+        if auth_manager.current_user:
+            self.start_heartbeat(auth_manager.current_user)
+        self.transition_to_cv()
 
     def transition_to_cv(self):
         from cv_panel import UserDashboard
@@ -90,18 +113,22 @@ class StealthController(QObject):
             self.login_win = None
 
     def handle_dashboard_logout(self):
+        self.stop_heartbeat()
         pos = self.dash_win.pos() if self.dash_win else None
         self.show_login()
         if pos and self.login_win: self.login_win.move(pos)
         if self.dash_win:
             self.dash_win.close()
             self.dash_win = None
+        if self.dash_win:
+            self.dash_win.close()
+            self.dash_win = None
 
-    def transition_to_hud(self, cv_text, jd_text, link_text, linkedin_url):
+    def transition_to_hud(self, cv_text, jd_text, link_text, linkedin_url, intelligence_mode="turbo"):
         from main import StealthHUD
         pos = self.dash_win.pos() if self.dash_win else None
         # Pass full context to HUD
-        self.hud_win = StealthHUD(cv_text, jd_text, link_text, linkedin_url)
+        self.hud_win = StealthHUD(cv_text, jd_text, link_text, linkedin_url, intelligence_mode)
         if pos: self.hud_win.move(pos)
         self.hud_win.show()
         if self.dash_win:

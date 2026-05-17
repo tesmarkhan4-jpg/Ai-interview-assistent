@@ -1,7 +1,7 @@
 import os
 import sys
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QTextEdit, QLineEdit, 
-                             QPushButton, QLabel, QFrame, QFileDialog, QApplication)
+                             QPushButton, QLabel, QFrame, QFileDialog, QApplication, QComboBox)
 from PyQt6.QtCore import Qt, pyqtSignal, QThread
 from PyQt6.QtGui import QColor, QFont, QLinearGradient
 
@@ -25,6 +25,41 @@ class HistoryWorker(QThread):
         self.user = user
     def run(self):
         history = history_manager.get_user_history(self.user)
+        
+        # Self-healing history sync: Silently upload missing local interviews to cloud database
+        try:
+            from auth_manager import auth_manager
+            import requests
+            
+            res = requests.get(f"{auth_manager.backend_url}/api/user/interviews?email={self.user}", timeout=5)
+            if res.ok:
+                remote_data = res.json()
+                if remote_data.get("status") == "success":
+                    remote_interviews = remote_data.get("interviews", [])
+                    remote_transcripts = {ri.get("full_transcript", "").strip() for ri in remote_interviews if ri.get("full_transcript")}
+                    
+                    for local_item in history:
+                        local_transcript = local_item.get("full_transcript", "").strip()
+                        if local_transcript and local_transcript not in remote_transcripts:
+                            print(f"[HistorySync] Uploading missing local interview dated {local_item.get('date')}...")
+                            requests.post(
+                                f"{auth_manager.backend_url}/api/user/interviews",
+                                json={
+                                    "email": self.user,
+                                    "summary": local_item.get("summary", "No summary available."),
+                                    "salary": local_item.get("salary_recommendation", "N/A"),
+                                    "market": local_item.get("market_analysis", "N/A"),
+                                    "client_needs": local_item.get("client_needs", "N/A"),
+                                    "project_scope": local_item.get("project_scope", "N/A"),
+                                    "technical_breakdown": local_item.get("technical_breakdown", "N/A"),
+                                    "job_requirements": local_item.get("job_requirements", "N/A"),
+                                    "full_transcript": local_item.get("full_transcript", "No transcript recorded.")
+                                },
+                                timeout=5
+                            )
+        except Exception as e:
+            print(f"[HistorySync] Anomaly syncing history to cloud: {e}")
+            
         self.finished.emit(history or [])
 
 class PDFWorker(QThread):
@@ -105,7 +140,7 @@ class InterviewCard(QFrame):
         webbrowser.open('file://' + path)
 
 class UserDashboard(QWidget):
-    cv_submitted = pyqtSignal(str, str, str, str) # CV, JD, Link, LinkedIn
+    cv_submitted = pyqtSignal(str, str, str, str, str) # CV, JD, Link, LinkedIn, IntelligenceMode
     logout_requested = pyqtSignal()
 
     def __init__(self):
@@ -318,10 +353,24 @@ class UserDashboard(QWidget):
 
         # Launch Card
         self.launch_card = QFrame()
-        self.launch_card.setFixedHeight(120)
+        self.launch_card.setFixedHeight(170)
         self.launch_card.setStyleSheet("background-color: #FFFFFF; border: 1px solid #F1F5F9; border-radius: 12px;")
         self.launch_layout = QVBoxLayout(self.launch_card)
-        self.launch_layout.setContentsMargins(25, 25, 25, 25)
+        self.launch_layout.setContentsMargins(25, 20, 25, 20)
+        
+        self.mode_label = QLabel("Intelligence Mode")
+        self.mode_label.setStyleSheet("color: #64748B; font-size: 11px; font-weight: 800; letter-spacing: 0.5px;")
+        self.launch_layout.addWidget(self.mode_label)
+        
+        self.mode_selector = QComboBox()
+        self.mode_selector.addItems(["⚡ Turbo Mode (Standard AI)", "🧠 Savant Mode (Premium AI)"])
+        self.mode_selector.setStyleSheet("""
+            QComboBox { background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 8px; font-weight: 700; color: #1E293B; }
+            QComboBox::drop-down { border: none; }
+        """)
+        self.launch_layout.addWidget(self.mode_selector)
+        
+        self.launch_layout.addSpacing(10)
         
         self.launch_btn = QPushButton("Start Interview Assistant")
         self.launch_btn.setEnabled(False)
@@ -381,12 +430,23 @@ class UserDashboard(QWidget):
         self.scroll_layout.addStretch()
 
     def update_trial_status(self):
-        if auth_manager.tier == "PRO":
+        if hasattr(self, 'mode_selector'):
+            if auth_manager.tier in ["PRO", "LIFETIME"]:
+                self.mode_selector.model().item(1).setEnabled(True)
+            else:
+                self.mode_selector.setCurrentIndex(0) # Force Turbo
+                self.mode_selector.model().item(1).setEnabled(False)
+
+        if auth_manager.tier in ["PRO", "LIFETIME"]:
             self.trial_label.setText("✨ PREMIUM ACCOUNT")
             self.trial_label.setStyleSheet("color: #6200EA; font-size: 11px; font-weight: 800; background: #EDE7F6; padding: 5px 12px; border-radius: 10px;")
             return
+        elif auth_manager.tier == "BASIC":
+            self.trial_label.setText("🚀 BASIC ACCOUNT")
+            self.trial_label.setStyleSheet("color: #0284C7; font-size: 11px; font-weight: 800; background: #E0F2FE; padding: 5px 12px; border-radius: 10px;")
+            return
 
-        # Calculate days left
+        # Calculate days left for Trial
         try:
             if auth_manager.trial_expiry:
                 expiry = datetime.datetime.fromisoformat(auth_manager.trial_expiry)
@@ -408,7 +468,7 @@ class UserDashboard(QWidget):
             self.trial_label.setText("TRIAL MODE")
 
     def is_expired(self):
-        if auth_manager.tier == "PRO": return False
+        if auth_manager.tier in ["PRO", "LIFETIME", "BASIC"]: return False
         try:
             if auth_manager.trial_expiry:
                 expiry = datetime.datetime.fromisoformat(auth_manager.trial_expiry)
@@ -484,7 +544,10 @@ class UserDashboard(QWidget):
         final_jd = self.jd_area.toPlainText().strip()
         final_link = self.link_field.text().strip()
         final_linkedin = self.linkedin_field.text().strip()
-        self.cv_submitted.emit(final_cv, final_jd, final_link, final_linkedin)
+        
+        selected_mode = "savant" if hasattr(self, 'mode_selector') and self.mode_selector.currentIndex() == 1 else "turbo"
+        
+        self.cv_submitted.emit(final_cv, final_jd, final_link, final_linkedin, selected_mode)
         self.close()
 
     def handle_logout(self):

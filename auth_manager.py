@@ -38,7 +38,7 @@ class AuthManager:
                     data = json.load(f)
                     self.current_user = data.get("email")
                     self.current_user_name = data.get("full_name")
-                    self.tier = data.get("tier", "TRIAL")
+                    self.tier = data.get("tier", "TRIAL").upper()
                     self.trial_expiry = data.get("trial_expiry")
                     print(f"[Auth] Local Session Loaded for {self.current_user}")
             except Exception as e:
@@ -107,7 +107,7 @@ class AuthManager:
                     return False, "Infrastructure Error: Response missing identity data."
                     
                 self.current_user_name = data.get("full_name", "Authorized Agent")
-                self.tier = data.get("tier", "TRIAL")
+                self.tier = data.get("tier", "TRIAL").upper()
                 self.trial_expiry = data.get("trial_expiry")
                 self.server_time = data.get("server_time")
                 

@@ -59,6 +59,7 @@ class StealthDB:
             self.history = self.db["mission_history"]
             self.config = self.db['system_config']
             self.otps = self.db['otps']
+            self.active_users = self.db['active_users']
         except Exception as e:
             print(f"CRITICAL: DB Engine Failure: {str(e)}")
             raise e
@@ -1228,6 +1229,123 @@ async def get_app_version():
             "release_notes": cfg.get("release_notes", "Minor bug fixes and performance improvements."),
             "force_update": cfg.get("force_update", False)
         }
+    except Exception as e:
+        return {"status": "error", "detail": str(e)}
+
+# --- REALTIME ACTIVE OPERATORS & INTERVIEW HISTORIES ---
+
+class HeartbeatData(BaseModel):
+    email: EmailStr
+    status: Optional[str] = "Active"
+
+class InterviewHistoryData(BaseModel):
+    email: EmailStr
+    summary: Optional[str] = "No summary provided."
+    salary: Optional[str] = "N/A"
+    market: Optional[str] = "N/A"
+    client_needs: Optional[str] = "N/A"
+    project_scope: Optional[str] = "N/A"
+    technical_breakdown: Optional[str] = "N/A"
+    job_requirements: Optional[str] = "N/A"
+    full_transcript: Optional[str] = ""
+
+@app.post("/api/user/heartbeat")
+async def user_heartbeat(data: HeartbeatData):
+    try:
+        conn = get_conn()
+        if not conn: return {"status": "error", "detail": "Database unavailable."}
+        
+        if data.status == "Offline":
+            conn.active_users.delete_one({"email": data.email})
+            return {"status": "success", "message": "Offline acknowledged."}
+            
+        # Resolve full name
+        user = conn.get_user(data.email)
+        full_name = user.get("full_name", "Anonymous Operator") if user else "Anonymous Operator"
+        
+        # Upsert heartbeat
+        conn.active_users.update_one(
+            {"email": data.email},
+            {
+                "$set": {
+                    "email": data.email,
+                    "full_name": full_name,
+                    "status": data.status,
+                    "last_ping": datetime.datetime.utcnow()
+                }
+            },
+            upsert=True
+        )
+        return {"status": "success"}
+    except Exception as e:
+        return {"status": "error", "detail": str(e)}
+
+@app.get("/api/admin/active-users")
+async def get_active_users(request: Request):
+    verify_admin_token(request)
+    try:
+        conn = get_conn()
+        if not conn: return {"status": "error", "detail": "Database unavailable."}
+        
+        # Active is defined as pinged within last 60 seconds
+        time_threshold = datetime.datetime.utcnow() - datetime.timedelta(seconds=60)
+        active_list = list(conn.active_users.find({"last_ping": {"$gt": time_threshold}}))
+        
+        for au in active_list:
+            au["_id"] = str(au["_id"])
+            if isinstance(au.get("last_ping"), datetime.datetime):
+                au["time_str"] = au["last_ping"].strftime("%H:%M:%S")
+                
+        return {"status": "success", "active_users": active_list}
+    except Exception as e:
+        return {"status": "error", "detail": str(e)}
+
+@app.post("/api/user/interviews")
+async def save_user_interview(data: InterviewHistoryData):
+    try:
+        conn = get_conn()
+        if not conn: return {"status": "error", "detail": "Database unavailable."}
+        
+        # Resolve full name
+        user = conn.get_user(data.email)
+        full_name = user.get("full_name", "Anonymous Operator") if user else "Anonymous Operator"
+        
+        # Save interview record in mission_history (conn.history)
+        record = {
+            "user_email": data.email,
+            "user_name": full_name,
+            "timestamp": datetime.datetime.utcnow(),
+            "summary": data.summary,
+            "salary_recommendation": data.salary,
+            "market_analysis": data.market,
+            "client_needs": data.client_needs,
+            "project_scope": data.project_scope,
+            "technical_breakdown": data.technical_breakdown,
+            "job_requirements": data.job_requirements,
+            "full_transcript": data.full_transcript
+        }
+        
+        conn.history.insert_one(record)
+        return {"status": "success"}
+    except Exception as e:
+        return {"status": "error", "detail": str(e)}
+
+@app.get("/api/admin/interviews")
+async def get_all_interviews(request: Request):
+    verify_admin_token(request)
+    try:
+        conn = get_conn()
+        if not conn: return {"status": "error", "detail": "Database unavailable."}
+        
+        # Retrieve all historical interviews
+        interviews = list(conn.history.find({}).sort("timestamp", -1))
+        
+        for i in interviews:
+            i["_id"] = str(i["_id"])
+            if isinstance(i.get("timestamp"), datetime.datetime):
+                i["date_str"] = i["timestamp"].strftime("%b %d, %Y at %H:%M")
+                
+        return {"status": "success", "interviews": interviews}
     except Exception as e:
         return {"status": "error", "detail": str(e)}
 

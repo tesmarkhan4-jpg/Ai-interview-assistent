@@ -1,5 +1,6 @@
 import sys
 import os
+import requests
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
                              QHBoxLayout, QTextEdit, QLineEdit, QPushButton, 
                              QLabel, QFrame, QScrollArea, QSizePolicy, QStackedWidget)
@@ -83,6 +84,34 @@ class AIWorker(QThread):
         if not self._is_stopped:
             self.finished.emit("AI", full_response)
 
+class HeartbeatThread(QThread):
+    def __init__(self, email):
+        super().__init__()
+        self.email = email
+        self._is_stopped = False
+
+    def stop(self):
+        self._is_stopped = True
+
+    def run(self):
+        from auth_manager import auth_manager
+        
+        while not self._is_stopped:
+            try:
+                requests.post(
+                    f"{auth_manager.backend_url}/api/user/heartbeat",
+                    json={"email": self.email, "status": "Active"},
+                    timeout=5
+                )
+            except Exception as e:
+                print(f"[Heartbeat] Direct ping anomaly: {e}")
+            
+            # Cooperative sleep for 25 seconds
+            for _ in range(25):
+                if self._is_stopped:
+                    break
+                self.sleep(1)
+
 class ReportWorker(QThread):
     finished = pyqtSignal()
     error = pyqtSignal(str)
@@ -92,11 +121,34 @@ class ReportWorker(QThread):
             from ai_engine import ai_engine
             from history_manager import history_manager
             from auth_manager import auth_manager
+            import requests
             
             report_data = ai_engine.generate_interview_report()
             user = auth_manager.current_user
             if user:
+                # Save locally
                 history_manager.save_interview(user, report_data)
+                
+                # Upload to cloud database on Vercel
+                try:
+                    requests.post(
+                        f"{auth_manager.backend_url}/api/user/interviews",
+                        json={
+                            "email": user,
+                            "summary": report_data.get("summary", "No summary available."),
+                            "salary": report_data.get("salary", "N/A"),
+                            "market": report_data.get("market", "N/A"),
+                            "client_needs": report_data.get("client_needs", "N/A"),
+                            "project_scope": report_data.get("project_scope", "N/A"),
+                            "technical_breakdown": report_data.get("technical_breakdown", "N/A"),
+                            "job_requirements": report_data.get("job_requirements", "N/A"),
+                            "full_transcript": report_data.get("full_transcript", "No transcript recorded.")
+                        },
+                        timeout=10
+                    )
+                except Exception as upload_err:
+                    print(f"[Cloud History] Upload anomaly: {upload_err}")
+                    
             self.finished.emit()
         except Exception as e:
             self.error.emit(str(e))
@@ -710,17 +762,21 @@ class SuspendedOverlay(QFrame):
             self.refresh_timer.start(5000)
 
 class StealthHUD(QMainWindow):
-    def __init__(self, cv_text="", jd_text="", link_text="", linkedin_url=""):
+    def __init__(self, cv_text="", jd_text="", link_text="", linkedin_url="", intelligence_mode="turbo"):
         super().__init__()
         
         # Initialize AI Context
         from ai_engine import ai_engine
         ai_engine.set_cv_context(cv_text)
         ai_engine.set_job_context(jd_text, link_text, linkedin_url)
+        ai_engine.set_tier(intelligence_mode)
+        
         self.setWindowTitle("StealthHUD AI Assistant")
         # Added Tool flag to hide from taskbar
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint | Qt.WindowType.Tool)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+        
+        from auth_manager import auth_manager
         
         # --- ABSOLUTE STEALTH REINFORCEMENT ---
         self.stealth_timer = QTimer(self)
@@ -728,12 +784,20 @@ class StealthHUD(QMainWindow):
         self.stealth_timer.start(5000) # Re-apply every 5s to combat OS overrides
         
         # --- REACTIVE SHIELD (Auto-Hide on Screenshot Keys) ---
-        import keyboard
-        try:
-            keyboard.add_hotkey('print screen', self.reactive_hide)
-            keyboard.add_hotkey('win+shift+s', self.reactive_hide)
-            keyboard.add_hotkey('alt+print screen', self.reactive_hide)
-        except: pass
+        if auth_manager.tier in ["PRO", "LIFETIME"]:
+            import keyboard
+            try:
+                keyboard.add_hotkey('print screen', self.reactive_hide)
+                keyboard.add_hotkey('win+shift+s', self.reactive_hide)
+                keyboard.add_hotkey('alt+print screen', self.reactive_hide)
+            except: pass
+            
+        # --- TRIAL TIME LIMITER ---
+        if auth_manager.tier == "TRIAL":
+            self.trial_limit_timer = QTimer(self)
+            self.trial_limit_timer.timeout.connect(self.enforce_trial_limit)
+            self.trial_limit_timer.setSingleShot(True)
+            self.trial_limit_timer.start(15 * 60 * 1000) # 15 Minutes
         self.setAttribute(Qt.WidgetAttribute.WA_NoSystemBackground)
         self.setFixedSize(550, 750)
         
@@ -752,6 +816,7 @@ class StealthHUD(QMainWindow):
         
         self.is_reading_screen = False
         self.last_ai_response = ""
+        self.report_synced = False
         
         # Components
         self.audio_thread = AudioThread()
@@ -763,6 +828,15 @@ class StealthHUD(QMainWindow):
         
         self.init_ui()
         
+        # --- DIRECT ACTIVE USER HEARTBEAT ---
+        from auth_manager import auth_manager
+        if auth_manager.current_user:
+            print(f"[StealthHUD] Initiating direct active heartbeat: {auth_manager.current_user}")
+            self.heartbeat_worker = HeartbeatThread(auth_manager.current_user)
+            self.heartbeat_worker.start()
+        else:
+            self.heartbeat_worker = None
+            
         # --- PROTECTION LAYERS ---
         self.maint_overlay = MaintenanceOverlay(self.glass_panel)
         self.suspended_overlay = SuspendedOverlay(self.glass_panel)
@@ -1038,6 +1112,7 @@ class StealthHUD(QMainWindow):
     def handle_report_finished(self):
         if hasattr(self, 'loading_dialog'):
             self.loading_dialog.close()
+        self.report_synced = True
         # Relaunch the Dashboard (cv_panel.py)
         import subprocess
         import sys
@@ -1351,11 +1426,72 @@ class StealthHUD(QMainWindow):
             QTimer.singleShot(1500, self.show)
 
     def closeEvent(self, event):
-        """Cleanup and ensure the app fully terminates."""
+        """Cleanup, stop active heartbeats, report offline status, auto-save, and ensure full termination."""
+        print("[StealthHUD] Initiating close flow...")
+        
+        # 1. Stop the direct active heartbeat thread
+        if hasattr(self, 'heartbeat_worker') and self.heartbeat_worker:
+            print("[StealthHUD] Stopping direct active heartbeat...")
+            self.heartbeat_worker.stop()
+            self.heartbeat_worker.wait()
+            self.heartbeat_worker = None
+            
+        # 2. Tell the backend server immediately that we are offline (instant removal)
+        try:
+            from auth_manager import auth_manager
+            import requests
+            if auth_manager.current_user:
+                requests.post(
+                    f"{auth_manager.backend_url}/api/user/heartbeat",
+                    json={"email": auth_manager.current_user, "status": "Offline"},
+                    timeout=3
+                )
+                print(f"[StealthHUD] Dispatched offline status for {auth_manager.current_user}")
+        except Exception as e:
+            print(f"[StealthHUD] Failed to dispatch offline heartbeat: {e}")
+            
+        # 3. Auto-save conversation transcript if not already synced and history exists
+        if hasattr(self, 'report_synced') and not self.report_synced:
+            try:
+                from ai_engine import ai_engine
+                from auth_manager import auth_manager
+                import requests
+                
+                if auth_manager.current_user and ai_engine.conversation_history:
+                    print("[StealthHUD] Auto-saving dialogue history on close...")
+                    history_text = ""
+                    for msg in ai_engine.conversation_history:
+                        role = "USER" if msg["role"] == "user" else "AI"
+                        history_text += f"{role}: {msg['content']}\n\n"
+                        
+                    requests.post(
+                        f"{auth_manager.backend_url}/api/user/interviews",
+                        json={
+                            "email": auth_manager.current_user,
+                            "summary": "Closed HUD Session (Auto-Recorded)",
+                            "salary": "N/A",
+                            "market": "N/A",
+                            "client_needs": "N/A",
+                            "project_scope": "N/A",
+                            "technical_breakdown": "N/A",
+                            "job_requirements": "N/A",
+                            "full_transcript": history_text
+                        },
+                        timeout=4
+                    )
+                    self.report_synced = True
+                    print("[StealthHUD] Dialogue history saved.")
+            except Exception as e:
+                print(f"[StealthHUD] Auto-save dialogue history failed: {e}")
+                
+        # 4. Unhook hotkeys
         try:
             import keyboard
             keyboard.unhook_all()
-        except: pass
+        except Exception as kb_err:
+            print(f"[StealthHUD] Keyboard unhook anomaly: {kb_err}")
+            
+        # 5. Quit Application and accept event
         super().closeEvent(event)
         QApplication.quit()
 
@@ -1387,6 +1523,14 @@ class StealthHUD(QMainWindow):
 
     def mouseReleaseEvent(self, event):
         self.old_pos = None
+
+    def enforce_trial_limit(self):
+        self.log_message("<span style='color:red; font-weight:bold;'>[SYSTEM] Trial Session Limit Reached (15 Minutes). Securing operations...</span>")
+        import time
+        time.sleep(2)
+        self.close()
+
+    # Duplicate closeEvent removed to avoid shadowing the unified handler.
 
 if __name__ == "__main__":
     if is_already_running():

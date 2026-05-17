@@ -15,6 +15,36 @@ from PIL import Image
 import io
 from auth_manager import auth_manager
 
+def extract_name_from_cv(text: str) -> str:
+    if not text:
+        return ""
+    lines = [line.strip() for line in text.split("\n") if line.strip()]
+    
+    # Common headers to skip
+    skip_keywords = {"resume", "cv", "curriculum", "vitae", "profile", "summary", "contact", "page", "about", "me", "portfolio", "pitch", "deck", "specialist"}
+    
+    # Strict scan (all words capitalized, only letters)
+    for line in lines[:8]:
+        clean = "".join([c for c in line if c.isalnum() or c.isspace()])
+        words = clean.split()
+        if len(words) >= 2 and len(words) <= 4:
+            if all(w[0].isupper() and w.isalpha() for w in words):
+                if any(k in clean.lower() for k in skip_keywords):
+                    continue
+                return clean
+                
+    # Failsafe scan (mostly alphabetic first line)
+    for line in lines[:5]:
+        clean = "".join([c for c in line if c.isalnum() or c.isspace()])
+        words = clean.split()
+        if len(words) >= 2 and len(words) <= 3:
+            if all(w.isalpha() for w in words):
+                if any(k in clean.lower() for k in skip_keywords):
+                    continue
+                return " ".join(w.capitalize() for w in words)
+                
+    return ""
+
 class AIEngine:
     def __init__(self):
         self.conversation_history = []
@@ -41,12 +71,13 @@ class AIEngine:
                 "### CANDIDATE IDENTITY ###\n"
                 "{cv_data}\n"
                 "\n"
-                "### OPERATIONAL RULES ###\n"
-                "1. ORGANIC EXPERT: You are the candidate. Speak with a natural, human-like professional friendly tone. Use contractions (I'm, don't, I've). Use natural fillers (Honestly, actually, I'd say...). Avoid formal academic structures.\n"
-                "2. NO REPETITION: Never repeat your name, location, or background if you have already mentioned it in the conversation history. Treat this like a continuous natural chat.\n"
-                "3. DYNAMIC LENGTH: Match your response to the question's weight. Simple questions = 1 punchy sentence. Complex technical deep-dives = 2-3 concise paragraphs (max 60 words total).\n"
-                "4. FIRST-PERSON FLOW: Explain HOW you do things using 'I'. Instead of 'A custom post type is...', say 'In my experience, I usually set up custom post types by...'.\n"
-                "5. ZERO ROBOTICS: No bolding, no lists, no AI-isms. Avoid academic transitions like 'For instance' or 'In conclusion'. Use 'So...' or 'Actually...' instead."
+                "### STRICT OPERATIONAL RULES ###\n"
+                "1. REAL CONVERSATION ONLY: Speak exactly like a real human candidate on a live Zoom call. Use a relaxed, friendly, and natural professional tone. Use contractions (I'm, don't, I've) and natural conversational starters (Honestly, I'd say, Yeah so, Actually). Avoid formal, academic, or textbook-like language.\n"
+                "2. STUNNING BREVITY (MAX 60-80 WORDS): Keep your answers extremely short. For simple questions, reply in 1 punchy sentence. For complex technical questions, reply in 3-4 sentences total (max 80 words). NEVER write long essays, lists, or multiple paragraphs. If the interviewer asks multiple questions, only answer the main one briefly and let them ask follow-ups. Keep it conversational so they can respond.\n"
+                "3. ABSOLUTE FORBIDDEN FORMATTING: Never use bullet points, numbered lists, dash points, or bold text. Never use headers or structural dividers. Write only in 1 or 2 short, natural paragraphs of pure conversational speech. Do not list things out.\n"
+                "4. FIRST-PERSON EXPERIENCED FLOW: Explain things through your personal experience using 'I' (e.g., 'In my previous role, I usually set up custom post types by...' rather than 'A custom post type is...').\n"
+                "5. NO REPETITION: Never repeat your name, location, or full background if you have already mentioned it. Keep the conversation moving forward organically.\n"
+                "6. UNCOMPROMISING PERSONA ADHERENCE: You must act 100% like the person described in the uploaded CV. Your name, background, skills, and experience are entirely and strictly defined by the uploaded CV. Never mention or admit any mismatch, mix-up, or discrepancy between the CV and any system, account, or user profile details. Speak and act with total confidence as the person whose CV was uploaded."
             ),
             "code_challenge": (
                 "SYSTEM (HIDDEN): Output ONLY the solution.\n"
@@ -85,17 +116,23 @@ class AIEngine:
             )
             data = json.loads(chat_completion.choices[0].message.content)
             
-            kb.add_identity("name", data.get("name", "Faheem Khan"))
+            from auth_manager import auth_manager
+            candidate_name = data.get("name") or auth_manager.current_user_name or "Candidate"
+            kb.add_identity("name", candidate_name)
             kb.add_identity("email", data.get("email", ""))
             kb.add_identity("whatsapp", data.get("whatsapp", ""))
-            kb.add_identity("location", data.get("location", "Islamabad, Pakistan"))
+            kb.add_identity("location", data.get("location", ""))
             
             # Save raw text into a specialized 'Deep Memory' key
             kb.add_identity("deep_memory_cv", text)
             
-            print(f"[AIEngine] Photographic Memory Locked for {data.get('name')}.")
+            print(f"[AIEngine] Photographic Memory Locked for {candidate_name}.")
         except Exception as e:
             print(f"[AIEngine] Memory Mapping Error: {e}")
+            from auth_manager import auth_manager
+            candidate_name = auth_manager.current_user_name or "Candidate"
+            kb.add_identity("name", candidate_name)
+            kb.add_identity("deep_memory_cv", text)
 
     def set_job_context(self, jd: str, link: str, linkedin: str = ""):
         self.jd_context = jd
@@ -125,31 +162,37 @@ class AIEngine:
         all_exp = kb.query_brain("all")
         
         # Identity Logic
-        name = identity.get('name', 'FAHEEM KHAN')
-        location = identity.get('location', 'Islāmābād, Pakistan')
+        from auth_manager import auth_manager
+        name = identity.get('name') or auth_manager.current_user_name or 'Candidate'
+        location = identity.get('location') or 'Refer to the source CV text below.'
         
         # TEMPORAL LOGIC: Find CURRENT role
-        current_role = "AI Automation Specialist"
-        current_company = "Try Soft AI"
+        current_role = None
+        current_company = None
         for exp in all_exp:
-            if "present" in exp.get('duration', '').lower():
-                current_role = exp['role']
-                current_company = exp['company']
+            if exp.get('duration') and "present" in exp.get('duration', '').lower():
+                current_role = exp.get('role')
+                current_company = exp.get('company')
                 break
 
         # AGENTIC SEARCH (DEEP RECALL)
         query_lower = user_query.lower()
         recalled_facts = []
         for exp in all_exp:
-            if any(k in exp['company'].lower() for k in query_lower.split() if len(k) > 3):
+            if exp.get('company') and any(k in exp['company'].lower() for k in query_lower.split() if len(k) > 3):
                 recalled_facts.append(f"VERIFIED RECORD: {exp['role']} at {exp['company']} ({exp['duration']})")
 
         # Construct the High-Fidelity Context
         brain_context = f"## ACTIVE PERSONA ##\n"
         brain_context += f"NAME: {name}\n"
         brain_context += f"LOCATION: {location}\n"
-        brain_context += f"CURRENT STATUS: Working as {current_role} at {current_company} (May 2025 - Present)\n"
-        brain_context += f"HEADLINE: {identity.get('linkedin_headline', 'AI Automation Specialist')}\n\n"
+        if current_role and current_company:
+            brain_context += f"CURRENT STATUS: Working as {current_role} at {current_company} (Present)\n"
+        else:
+            brain_context += f"CURRENT STATUS: Refer to the source CV text below.\n"
+            
+        headline = identity.get('linkedin_headline') or 'Refer to the source CV text below.'
+        brain_context += f"HEADLINE: {headline}\n\n"
         
         if recalled_facts:
             brain_context += "### HISTORICAL RECALL ###\n"
@@ -194,9 +237,10 @@ class AIEngine:
             history = history_manager.get_user_history(auth_manager.current_user)
             if history:
                 try:
-                    last_mission_time = datetime.datetime.strptime(history[0]["id"], "%Y%m%d%H%M%S")
-                    if (datetime.datetime.now() - last_mission_time).days < 7:
-                        return "TACTICAL LIMIT REACHED: Basic Tier is restricted to 1 mission per week. Upgrade to PRO for Unlimited Dominance."
+                    now = datetime.datetime.now()
+                    recent_missions = [m for m in history if (now - datetime.datetime.strptime(m["id"], "%Y%m%d%H%M%S")).days < 30]
+                    if len(recent_missions) >= 20:
+                        return "TACTICAL LIMIT REACHED: Basic Tier is restricted to 20 missions per month. Upgrade to PRO for Unlimited Dominance."
                 except Exception as e:
                     print(f"Time parse error: {e}")
                     
@@ -247,9 +291,10 @@ class AIEngine:
             history = history_manager.get_user_history(auth_manager.current_user)
             if history:
                 try:
-                    last_mission_time = datetime.datetime.strptime(history[0]["id"], "%Y%m%d%H%M%S")
-                    if (datetime.datetime.now() - last_mission_time).days < 7:
-                        yield "TACTICAL LIMIT REACHED: Basic Tier is restricted to 1 mission per week. Upgrade to PRO for Unlimited Dominance."
+                    now = datetime.datetime.now()
+                    recent_missions = [m for m in history if (now - datetime.datetime.strptime(m["id"], "%Y%m%d%H%M%S")).days < 30]
+                    if len(recent_missions) >= 20:
+                        yield "TACTICAL LIMIT REACHED: Basic Tier is restricted to 20 missions per month. Upgrade to PRO for Unlimited Dominance."
                         return
                 except Exception as e:
                     print(f"Time parse error: {e}")
