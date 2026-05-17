@@ -35,6 +35,34 @@
 </head>
 <body>
     <div id="toast-container"></div>
+
+    <!-- Custom Premium Alert/Confirm Dialog Modal -->
+    <div id="custom-dialog-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(12px); z-index: 9999; align-items: center; justify-content: center;">
+        <div style="width: 95%; max-width: 420px; padding: 30px; border: 1px solid rgba(255,255,255,0.08); background: rgba(15, 23, 42, 0.95); border-radius: 20px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); text-align: center; font-family: 'Inter', sans-serif;">
+            <div id="dialog-icon-container" style="margin-bottom: 20px; display: inline-flex; align-items: center; justify-content: center; width: 56px; height: 56px; border-radius: 50%; background: rgba(79, 70, 229, 0.1); color: #4f46e5;">
+                <i data-lucide="help-circle" style="width: 24px; height: 24px;"></i>
+            </div>
+            <h3 id="dialog-title" style="font-size: 1.25rem; font-weight: 900; color: #fff; margin: 0 0 10px 0; letter-spacing: -0.5px;">Confirm Action</h3>
+            <p id="dialog-message" style="font-size: 0.9rem; color: #94a3b8; line-height: 1.5; margin: 0 0 24px 0;">Are you sure you want to proceed with this tactical operation?</p>
+            
+            <!-- Dynamic Rejection Dropdown -->
+            <div id="dialog-extra-content" style="display: none; margin-bottom: 24px; text-align: left;">
+                <label style="font-size: 0.7rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; display: block; margin-bottom: 6px;">Select Rejection Reason</label>
+                <select id="dialog-reason-select" style="width: 100%; padding: 12px 16px; border-radius: 12px; background: rgba(255,255,255,0.03); color: #fff; border: 1px solid rgba(255,255,255,0.08); font-size: 0.85rem; font-weight: 600; outline: none;">
+                    <option value="Payment not verified" style="background:#0f172a;">Payment not verified</option>
+                    <option value="The proofs are not valid" style="background:#0f172a;">The proofs are not valid</option>
+                    <option value="TID not matched" style="background:#0f172a;">TID not matched</option>
+                    <option value="Policy Non-compliance / Abuse" style="background:#0f172a;">Other / Policy Non-compliance</option>
+                </select>
+            </div>
+
+            <div style="display: flex; gap: 12px; justify-content: center;">
+                <button id="dialog-cancel-btn" style="flex: 1; padding: 12px 20px; border-radius: 12px; font-size: 0.85rem; border: 1px solid rgba(255,255,255,0.1); background: transparent; color: #94a3b8; font-weight: 700; cursor: pointer; transition: all 0.2s;">Cancel</button>
+                <button id="dialog-confirm-btn" style="flex: 1; padding: 12px 24px; border-radius: 12px; font-size: 0.85rem; background: linear-gradient(135deg, #4f46e5, #0ea5e9); color: white; border: none; font-weight: 700; cursor: pointer; box-shadow: 0 4px 14px rgba(79, 70, 229, 0.3); transition: all 0.2s;">Confirm</button>
+            </div>
+        </div>
+    </div>
+
     <aside>
         <div style="margin-bottom: 32px; padding-left: 10px;"><img src="/logo.png" alt="Logo" style="height: 30px;"></div>
         <nav class="nav-group">
@@ -333,23 +361,72 @@
 
         async function upgradeUser(email, plan) {
             if(!plan) return;
-            if(confirm(`Provision ${email} as ${plan.toUpperCase()}?`)) { 
-                await adminFetch(`${API_BASE}/admin/users/upgrade?email=${email}&plan=${plan}`, {method:'POST'}); 
-                fetchUsers(); 
-            }
+            showCustomDialog({
+                title: 'Provision Plan',
+                message: `Are you sure you want to provision ${email} as ${plan.toUpperCase()}?`,
+                icon: 'user-check',
+                iconColor: '#4f46e5',
+                iconBg: 'rgba(79, 70, 229, 0.1)',
+                confirmText: 'Provision',
+                onConfirm: async () => {
+                    await adminFetch(`${API_BASE}/admin/users/upgrade?email=${email}&plan=${plan}`, {method:'POST'}); 
+                    fetchUsers(); 
+                }
+            });
         }
         async function resetHWID(email) {
-            if(confirm("Reset Hardware Identity?")) { await adminFetch(`${API_BASE}/admin/users/reset-hwid?email=${email}`, {method:'POST'}); fetchUsers(); }
+            showCustomDialog({
+                title: 'Reset Hardware Identity',
+                message: `Reset the hardware locking parameters for ${email}?`,
+                icon: 'shield-alert',
+                iconColor: '#f97316',
+                iconBg: 'rgba(249, 115, 22, 0.1)',
+                confirmText: 'Reset HWID',
+                onConfirm: async () => {
+                    await adminFetch(`${API_BASE}/admin/users/reset-hwid?email=${email}`, {method:'POST'}); 
+                    fetchUsers(); 
+                }
+            });
         }
         async function deleteUser(email) {
-            if(confirm("Terminate Access Permanently?")) { await adminFetch(`${API_BASE}/admin/users/${email}`, {method:'DELETE'}); fetchUsers(); }
+            showCustomDialog({
+                title: 'Terminate Access',
+                message: `Are you sure you want to permanently delete user account ${email}?`,
+                icon: 'user-minus',
+                iconColor: '#f43f5e',
+                iconBg: 'rgba(244, 63, 94, 0.1)',
+                confirmText: 'Delete Access',
+                onConfirm: async () => {
+                    await adminFetch(`${API_BASE}/admin/users/${email}`, {method:'DELETE'}); 
+                    fetchUsers(); 
+                }
+            });
         }
 
         async function sendBroadcast() {
             const data = { target: document.getElementById('notify-target').value, template: document.getElementById('notify-template').value, subject: document.getElementById('notify-subject').value, message: document.getElementById('notify-message').value };
-            if(!data.target || !data.subject || !data.message) return alert("Missing fields.");
+            if(!data.target || !data.subject || !data.message) {
+                showCustomDialog({
+                    title: 'Missing Fields',
+                    message: 'Please fill in all broadcast parameters before transmitting.',
+                    icon: 'alert-circle',
+                    iconColor: '#f43f5e',
+                    iconBg: 'rgba(244, 63, 94, 0.1)',
+                    confirmText: 'Close',
+                    cancelText: ''
+                });
+                return;
+            }
             await adminFetch(`${API_BASE}/admin/notify`, {method:'POST', body:JSON.stringify(data)});
-            alert("Broadcast Dispatched.");
+            showCustomDialog({
+                title: 'Broadcast Dispatched',
+                message: 'Elite transmission dispatched successfully to target users.',
+                icon: 'send',
+                iconColor: '#10b981',
+                iconBg: 'rgba(16, 185, 129, 0.1)',
+                confirmText: 'OK',
+                cancelText: ''
+            });
         }
 
         async function fetchPayments() {
@@ -500,33 +577,187 @@
         async function loadMessages(e) { const res = await adminFetch(`${API_BASE}/auth/ticket/history?email=${e}`); const data = await res.json(); document.getElementById('chat-messages').innerHTML = data.messages.map(m => `<div style="align-self:${m.role==='admin'?'flex-end':'flex-start'}; background:${m.role==='admin'?'#000':'#f1f5f9'}; color:${m.role==='admin'?'#fff':'#000'}; padding:10px 14px; border-radius:14px; max-width:85%; font-weight:600;">${m.text}</div>`).join(''); const chat = document.getElementById('chat-messages'); chat.scrollTop = chat.scrollHeight; }
         async function sendReply() { const t = document.getElementById('ticket-reply-input').value; if(!t) return; await adminFetch(`${API_BASE}/admin/ticket/reply?email=${currentTicketEmail}&message=${encodeURIComponent(t)}`, {method:'POST'}); document.getElementById('ticket-reply-input').value = ''; loadMessages(currentTicketEmail); }
 
-        async function updateRefundStatus(id, status) {
-            if(confirm(`Mark this refund request as ${status.toUpperCase()}?`)) {
-                const res = await adminFetch(`${API_BASE}/admin/refunds/status`, {
-                    method: 'POST',
-                    body: JSON.stringify({ id, status })
-                });
-                if(res && res.ok) {
-                    alert("Status updated successfully.");
-                    fetchPayments();
-                } else {
-                    alert("Failed to update status.");
+        let currentDialogConfirmHandler = null;
+        let currentDialogCancelHandler = null;
+
+        function showCustomDialog({
+            title = 'Confirm Action',
+            message = 'Are you sure?',
+            icon = 'help-circle',
+            iconColor = '#4f46e5',
+            iconBg = 'rgba(79, 70, 229, 0.1)',
+            confirmText = 'Confirm',
+            cancelText = 'Cancel',
+            showReasonSelect = false,
+            onConfirm = () => {},
+            onCancel = () => {}
+        }) {
+            const modal = document.getElementById('custom-dialog-modal');
+            document.getElementById('dialog-title').innerText = title;
+            document.getElementById('dialog-message').innerText = message;
+            
+            const iconContainer = document.getElementById('dialog-icon-container');
+            iconContainer.style.color = iconColor;
+            iconContainer.style.background = iconBg;
+            iconContainer.innerHTML = `<i data-lucide="${icon}" style="width: 24px; height: 24px;"></i>`;
+            
+            const extraContent = document.getElementById('dialog-extra-content');
+            if (showReasonSelect) {
+                extraContent.style.display = 'block';
+            } else {
+                extraContent.style.display = 'none';
+            }
+
+            const confirmBtn = document.getElementById('dialog-confirm-btn');
+            const cancelBtn = document.getElementById('dialog-cancel-btn');
+            
+            confirmBtn.innerText = confirmText;
+            cancelBtn.innerText = cancelText;
+            
+            if (cancelText === '') {
+                cancelBtn.style.display = 'none';
+                confirmBtn.style.flex = '1';
+            } else {
+                cancelBtn.style.display = 'block';
+                confirmBtn.style.flex = '1';
+            }
+
+            modal.style.display = 'flex';
+            lucide.createIcons();
+
+            currentDialogConfirmHandler = () => {
+                let reason = null;
+                if (showReasonSelect) {
+                    reason = document.getElementById('dialog-reason-select').value;
                 }
+                modal.style.display = 'none';
+                onConfirm(reason);
+            };
+
+            currentDialogCancelHandler = () => {
+                modal.style.display = 'none';
+                onCancel();
+            };
+            
+            confirmBtn.onclick = currentDialogConfirmHandler;
+            cancelBtn.onclick = currentDialogCancelHandler;
+        }
+
+        async function updateRefundStatus(id, status) {
+            if (status === 'not_eligible') {
+                showCustomDialog({
+                    title: 'Deny Refund Request',
+                    message: 'Please select the verification failure reason to notify the user.',
+                    icon: 'alert-triangle',
+                    iconColor: '#f97316',
+                    iconBg: 'rgba(249, 115, 22, 0.1)',
+                    confirmText: 'Deny Request',
+                    showReasonSelect: true,
+                    onConfirm: async (reason) => {
+                        const res = await adminFetch(`${API_BASE}/admin/refunds/status`, {
+                            method: 'POST',
+                            body: JSON.stringify({ id, status, reason })
+                        });
+                        if(res && res.ok) {
+                            showCustomDialog({
+                                title: 'Verdict Sent',
+                                message: `Refund denied with reason: "${reason}". Notification dispatched.`,
+                                icon: 'check-circle',
+                                iconColor: '#10b981',
+                                iconBg: 'rgba(16, 185, 129, 0.1)',
+                                confirmText: 'OK',
+                                cancelText: ''
+                            });
+                            fetchPayments();
+                        } else {
+                            showCustomDialog({
+                                title: 'Error',
+                                message: 'Failed to update strategic status.',
+                                icon: 'x-circle',
+                                iconColor: '#ef4444',
+                                iconBg: 'rgba(239, 68, 68, 0.1)',
+                                confirmText: 'Close',
+                                cancelText: ''
+                            });
+                        }
+                    }
+                });
+            } else {
+                showCustomDialog({
+                    title: 'Approve Refund',
+                    message: 'Are you sure this refund has been successfully processed from our end?',
+                    icon: 'check-circle',
+                    iconColor: '#10b981',
+                    iconBg: 'rgba(16, 185, 129, 0.1)',
+                    confirmText: 'Approve & Notify',
+                    onConfirm: async () => {
+                        const res = await adminFetch(`${API_BASE}/admin/refunds/status`, {
+                            method: 'POST',
+                            body: JSON.stringify({ id, status })
+                        });
+                        if(res && res.ok) {
+                            showCustomDialog({
+                                title: 'Refund Completed',
+                                message: 'Refund successfully marked as PROCESSED and recipient notified.',
+                                icon: 'check-circle',
+                                iconColor: '#10b981',
+                                iconBg: 'rgba(16, 185, 129, 0.1)',
+                                confirmText: 'OK',
+                                cancelText: ''
+                            });
+                            fetchPayments();
+                        } else {
+                            showCustomDialog({
+                                title: 'Error',
+                                message: 'Failed to complete transaction approval.',
+                                icon: 'x-circle',
+                                iconColor: '#ef4444',
+                                iconBg: 'rgba(239, 68, 68, 0.1)',
+                                confirmText: 'Close',
+                                cancelText: ''
+                            });
+                        }
+                    }
+                });
             }
         }
 
         async function deleteRefundRequest(id) {
-            if(confirm("Are you sure you want to permanently delete this refund request?")) {
-                const res = await adminFetch(`${API_BASE}/admin/refunds/${id}`, {
-                    method: 'DELETE'
-                });
-                if(res && res.ok) {
-                    alert("Refund request deleted successfully.");
-                    fetchPayments();
-                } else {
-                    alert("Failed to delete request.");
+            showCustomDialog({
+                title: 'Delete Request',
+                message: 'Are you sure you want to permanently delete this refund request record?',
+                icon: 'trash-2',
+                iconColor: '#f43f5e',
+                iconBg: 'rgba(244, 63, 94, 0.1)',
+                confirmText: 'Delete Record',
+                onConfirm: async () => {
+                    const res = await adminFetch(`${API_BASE}/admin/refunds/${id}`, {
+                        method: 'DELETE'
+                    });
+                    if(res && res.ok) {
+                        showCustomDialog({
+                            title: 'Purged',
+                            message: 'Refund record deleted successfully.',
+                            icon: 'check-circle',
+                            iconColor: '#10b981',
+                            iconBg: 'rgba(16, 185, 129, 0.1)',
+                            confirmText: 'OK',
+                            cancelText: ''
+                        });
+                        fetchPayments();
+                    } else {
+                        showCustomDialog({
+                            title: 'Error',
+                            message: 'Failed to delete record.',
+                            icon: 'x-circle',
+                            iconColor: '#ef4444',
+                            iconBg: 'rgba(239, 68, 68, 0.1)',
+                            confirmText: 'Close',
+                            cancelText: ''
+                        });
+                    }
                 }
-            }
+            });
         }
 
         window.addEventListener('DOMContentLoaded', () => fetchStats());

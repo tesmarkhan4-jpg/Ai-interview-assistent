@@ -808,14 +808,129 @@ async def update_refund_status(data: dict, request: Request):
         conn = get_conn()
         refund_id = data.get("id")
         status = data.get("status") # "refunded" or "not_eligible"
+        reason = data.get("reason") # Rejection reason if not_eligible
         
         if not refund_id or not status:
             return {"status": "error", "detail": "Missing id or status"}
             
+        refund = conn.db.refund_requests.find_one({"_id": ObjectId(refund_id)})
+        if not refund:
+            return {"status": "error", "detail": "Refund request not found."}
+            
+        email = refund.get("email")
+        name = refund.get("name", "Valued Customer")
+        tid = refund.get("tid")
+        bank = refund.get("bank_details")
+        
+        # Save state in database
+        upd = {"status": status}
+        if reason:
+            upd["rejection_reason"] = reason
+            
         conn.db.refund_requests.update_one(
             {"_id": ObjectId(refund_id)},
-            {"$set": {"status": status}}
+            {"$set": upd}
         )
+        
+        # Dispatch Custom Premium Emails
+        try:
+            smtp_user = "faheemkhan101992@gmail.com"
+            smtp_pass = "cenxdlauiqndwnov"
+            
+            if status == "refunded":
+                subject = "ZenithHUD | Refund Processed Successfully"
+                html_content = f"""
+                <html>
+                    <body style="font-family: 'Inter', Helvetica, Arial, sans-serif; background-color: #f8fafc; padding: 40px; margin: 0;">
+                        <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 24px; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
+                            <div style="background: linear-gradient(135deg, #10b981, #059669); padding: 40px; text-align: center;">
+                                <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 900; letter-spacing: -1px;">Zenith<span style="opacity: 0.8;">HUD</span> PRO</h1>
+                                <p style="color: rgba(255,255,255,0.9); margin-top: 8px; font-size: 16px;">Refund Processed</p>
+                            </div>
+                            <div style="padding: 40px;">
+                                <h2 style="color: #1e293b; margin-bottom: 12px; font-weight: 800; letter-spacing: -1px; font-size: 22px;">Dear {name},</h2>
+                                <p style="color: #475569; font-size: 15px; line-height: 1.6; margin-bottom: 24px;">This email is to officially notify you that your refund request for ZenithHUD has been <strong>successfully approved and fully processed</strong> from our side.</p>
+                                
+                                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px; margin-bottom: 24px;">
+                                    <h4 style="color: #1e293b; margin: 0 0 12px 0; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: #64748b;">Transaction Summary</h4>
+                                    <div style="display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 8px; color: #475569;">
+                                        <span>Transaction ID (TID):</span>
+                                        <strong style="color: #0f172a; font-family: monospace;">{tid}</strong>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 8px; color: #475569;">
+                                        <span>Target Bank Account:</span>
+                                        <strong style="color: #0f172a; text-align: right; max-width: 60%; font-size: 0.85rem;">{bank}</strong>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; font-size: 14px; color: #475569;">
+                                        <span>Processing Status:</span>
+                                        <strong style="color: #10b981;">COMPLETED & DISPATCHED</strong>
+                                    </div>
+                                </div>
+                                
+                                <p style="color: #475569; font-size: 15px; line-height: 1.6; margin-bottom: 24px;">The processed funds will reflect in your bank account shortly. Thank you for trying ZenithHUD PRO.</p>
+                                <p style="color: #94a3b8; font-size: 13px; margin: 0;">Warm regards,<br>The ZenithHUD Tactical Team</p>
+                            </div>
+                            <div style="padding: 24px; background: #f8fafc; text-align: center; border-top: 1px solid #f1f5f9;">
+                                <p style="color: #cbd5e1; font-size: 12px; margin: 0;">&copy; 2026 ZenithHUD PRO &bull; All Rights Reserved</p>
+                            </div>
+                        </div>
+                    </body>
+                </html>
+                """
+            else:
+                subject = "ZenithHUD | Update Regarding Your Refund Request"
+                html_content = f"""
+                <html>
+                    <body style="font-family: 'Inter', Helvetica, Arial, sans-serif; background-color: #f8fafc; padding: 40px; margin: 0;">
+                        <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 24px; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
+                            <div style="background: linear-gradient(135deg, #f97316, #ea580c); padding: 40px; text-align: center;">
+                                <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 900; letter-spacing: -1px;">Zenith<span style="opacity: 0.8;">HUD</span> PRO</h1>
+                                <p style="color: rgba(255,255,255,0.9); margin-top: 8px; font-size: 16px;">Refund Verdict Notice</p>
+                            </div>
+                            <div style="padding: 40px;">
+                                <h2 style="color: #1e293b; margin-bottom: 12px; font-weight: 800; letter-spacing: -1px; font-size: 22px;">Dear {name},</h2>
+                                <p style="color: #475569; font-size: 15px; line-height: 1.6; margin-bottom: 24px;">Thank you for your patience. Following a meticulous verification process of your refund request logs, we are writing to inform you that your refund claim is <strong>not eligible</strong> for processing.</p>
+                                
+                                <div style="background: #fef2f2; border: 1px solid #fee2e2; border-radius: 16px; padding: 20px; margin-bottom: 24px;">
+                                    <h4 style="color: #991b1b; margin: 0 0 12px 0; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">Verification Verdict Details</h4>
+                                    <div style="display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 8px; color: #7f1d1d;">
+                                        <span>Transaction ID (TID):</span>
+                                        <strong style="color: #991b1b; font-family: monospace;">{tid}</strong>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 8px; color: #7f1d1d;">
+                                        <span>Status Verdict:</span>
+                                        <strong style="color: #dc2626;">NOT ELIGIBLE</strong>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; font-size: 14px; color: #7f1d1d;">
+                                        <span>Verdict Reason:</span>
+                                        <strong style="color: #dc2626;">{reason}</strong>
+                                    </div>
+                                </div>
+                                
+                                <p style="color: #475569; font-size: 15px; line-height: 1.6; margin-bottom: 24px;">If you believe this determination has been made in error or would like to provide updated evidence, please contact our support leads immediately.</p>
+                                <p style="color: #94a3b8; font-size: 13px; margin: 0;">Warm regards,<br>The ZenithHUD Tactical Team</p>
+                            </div>
+                            <div style="padding: 24px; background: #f8fafc; text-align: center; border-top: 1px solid #f1f5f9;">
+                                <p style="color: #cbd5e1; font-size: 12px; margin: 0;">&copy; 2026 ZenithHUD PRO &bull; All Rights Reserved</p>
+                            </div>
+                        </div>
+                    </body>
+                </html>
+                """
+                
+            msg = MIMEMultipart("alternative")
+            msg['Subject'] = subject
+            msg['From'] = f"ZenithHUD PRO <{smtp_user}>"
+            msg['To'] = email
+            msg.attach(MIMEText(html_content, "html"))
+            
+            with smtplib.SMTP("smtp.gmail.com", 587) as server:
+                server.starttls()
+                server.login(smtp_user, smtp_pass)
+                server.send_message(msg)
+        except Exception as mail_err:
+            print(f"MAIL_ERROR: {str(mail_err)}")
+            
         return {"status": "success"}
     except Exception as e:
         return {"status": "error", "detail": str(e)}
