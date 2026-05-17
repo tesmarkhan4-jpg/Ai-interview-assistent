@@ -37,22 +37,47 @@
     <script>
         (function() {
             const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+            
+            // Standard Mobile/Tablet User Agent tests
             const isMobileUA = /android|iphone|ipod|blackberry|iemobile|opera mini/i.test(userAgent.toLowerCase());
             const isTabletUA = /(ipad|tablet|(android(?!.*mobile))|kindle|playbook|silk)/i.test(userAgent.toLowerCase());
-            const isIPadOS = (navigator.maxTouchPoints > 0 && /Macintosh|iPad/.test(navigator.userAgent));
             
-            // Touch & Coarse Pointer capabilities
+            // Touch screen capabilities
             const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
             const isCoarse = window.matchMedia("(any-pointer: coarse)").matches;
             
-            // Desktop Mode bypass check (pretends to be a desktop UA but has touch hardware and coarse input)
-            const isAndroidDesktop = /Linux x86_64/i.test(userAgent) && isTouchDevice && isCoarse;
-            const isIPadDesktop = /Macintosh/i.test(userAgent) && isTouchDevice && isCoarse && !isMobileUA && !isTabletUA;
+            // Real Windows PC exclusion (standard Windows laptops with touch screens should NEVER be blocked)
+            const isWindowsPC = /Windows/i.test(userAgent);
             
-            const isDesktopModeChecked = isAndroidDesktop || isIPadDesktop || ((!isMobileUA && !isTabletUA) && isTouchDevice && isCoarse);
-            const isMobileScreen = (window.innerWidth < 1024) || (window.innerHeight < 768);
+            // iPad OS (Macintosh + Touchpoints)
+            const isIPadOS = (navigator.maxTouchPoints > 1 && /Macintosh|iPad/.test(userAgent) && !isWindowsPC);
             
-            if (isMobileUA || isTabletUA || isIPadOS || isDesktopModeChecked || isMobileScreen) {
+            // Android Desktop Mode (claims Linux x86_64, but has touch, coarse input, and is NOT a Windows machine)
+            const isAndroidDesktop = /Linux x86_64/i.test(userAgent) && isTouchDevice && isCoarse && !isWindowsPC;
+            
+            // True desktop setting activation on mobile/tablet
+            const isDesktopModeChecked = (isAndroidDesktop || isIPadOS) && !isWindowsPC;
+            const isMobileScreen = (window.innerWidth < 1024) || (window.innerHeight < 700);
+            
+            let shouldBlock = false;
+            let isBypassedDesktop = false;
+            
+            if (isWindowsPC) {
+                // Real Windows computer is only blocked if the user explicitly resizes their browser window extremely small
+                if (window.innerWidth < 1024) {
+                    shouldBlock = true;
+                }
+            } else {
+                // Block standard mobiles, tablets, iPads, and Android devices in Desktop Settings Mode
+                if (isMobileUA || isTabletUA || isIPadOS || isAndroidDesktop || isMobileScreen) {
+                    shouldBlock = true;
+                    if (isDesktopModeChecked) {
+                        isBypassedDesktop = true;
+                    }
+                }
+            }
+            
+            if (shouldBlock) {
                 // Instantly inject scroll locking class onto html and body elements
                 document.documentElement.classList.add('mobile-locked-active');
                 document.body.classList.add('mobile-locked-active');
@@ -66,7 +91,7 @@
                     const msg = blocker.querySelector('#blocker-message');
                     
                     // Display funny warning ONLY when desktop-mode setting was actively requested by user!
-                    if (isDesktopModeChecked) {
+                    if (isBypassedDesktop) {
                         title.innerText = "Nice Try! 😊";
                         msg.innerHTML = "We see that you enabled the 'Request Desktop Site' checkmark in your mobile browser settings. You are very clever, but this elite system still cannot run on a mobile screen. Please open this website on a real Laptop or Desktop computer to experience the magic!";
                     } else {
