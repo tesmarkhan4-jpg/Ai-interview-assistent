@@ -436,14 +436,32 @@
                 </div>
 
                 <div style="padding-top: 12px; border-top: 1px solid #e2e8f0;">
-                    <label style="font-size: 0.7rem; font-weight: 800; color: #94a3b8; text-transform: uppercase;">Submission Form</label>
-                    <select id="pay-tier" class="form-input" style="margin-bottom: 12px; margin-top: 8px;">
+                    <label style="font-size: 0.7rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; display: block; margin-bottom: 8px;">Submission Form</label>
+                    <select id="pay-tier" class="form-input" style="margin-bottom: 12px;">
                         <option value="BASIC">BASIC - Rs. 2,900 / $29</option>
                         <option value="PRO">PRO - Rs. 4,900 / $49</option>
                         <option value="LIFETIME">LIFETIME - Rs. 19,900 / $199</option>
                     </select>
                     <input type="text" id="pay-tid" class="form-input" placeholder="Transaction ID (TID)" style="margin-bottom: 12px;">
-                    <button class="btn-action" style="width: 100%; justify-content: center;" onclick="submitPayment()">Submit for Verification</button>
+                    
+                    <!-- PREMIUM UPLOAD RECEIPT WIDGET -->
+                    <div style="margin-bottom: 16px;">
+                        <label style="font-size: 0.7rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; display: block; margin-bottom: 6px;">Upload Proof / Receipt (Optional)</label>
+                        <div id="receipt-upload-box" style="border: 2px dashed #cbd5e1; border-radius: 12px; padding: 16px; text-align: center; background: #f8fafc; cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;" onclick="document.getElementById('pay-receipt').click()">
+                            <i id="upload-icon" data-lucide="upload-cloud" style="width: 28px; height: 28px; color: #94a3b8;"></i>
+                            <span id="upload-text" style="font-size: 0.8rem; font-weight: 600; color: #64748b;">Click to upload proof / receipt image</span>
+                            <span style="font-size: 0.65rem; color: #94a3b8;">Supports JPG, PNG (Max 5MB)</span>
+                            <img id="receipt-preview" style="display: none; max-width: 100%; max-height: 120px; border-radius: 8px; border: 1px solid #e2e8f0; margin-top: 6px;" />
+                        </div>
+                        <input type="file" id="pay-receipt" accept="image/*" style="display: none;" onchange="handleReceiptSelect(event)">
+                        <div style="text-align: center;">
+                            <button id="delete-receipt-btn" style="display: none; border: none; background: none; color: #ef4444; font-size: 0.75rem; font-weight: 700; text-decoration: underline; margin-top: 6px; cursor: pointer;" onclick="clearReceipt()">
+                                Remove Receipt
+                            </button>
+                        </div>
+                    </div>
+
+                    <button class="btn-action" style="width: 100%; justify-content: center;" onclick="handlePaymentSubmit(this)">Submit for Verification</button>
                     <p style="font-size: 0.75rem; color: #94a3b8; text-align: center; margin-top: 12px;">Our system will auto-verify your TID and upgrade your account within 1-4 hours.</p>
                 </div>
             </div>
@@ -609,6 +627,45 @@
             alert("Copied to clipboard!");
         }
 
+        let uploadedReceiptBase64 = null;
+
+        function handleReceiptSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            if (file.size > 5 * 1024 * 1024) {
+                showToast("File size too large. Max limit is 5MB.", "error");
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                uploadedReceiptBase64 = e.target.result;
+                
+                // Show preview and remove standard instructions
+                document.getElementById('receipt-preview').src = uploadedReceiptBase64;
+                document.getElementById('receipt-preview').style.display = 'block';
+                document.getElementById('upload-icon').style.display = 'none';
+                document.getElementById('upload-text').style.display = 'none';
+                document.getElementById('delete-receipt-btn').style.display = 'inline-block';
+                document.getElementById('receipt-upload-box').style.borderColor = '#4f46e5';
+                document.getElementById('receipt-upload-box').style.background = '#eef2ff';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function clearReceipt() {
+            uploadedReceiptBase64 = null;
+            document.getElementById('pay-receipt').value = '';
+            document.getElementById('receipt-preview').src = '';
+            document.getElementById('receipt-preview').style.display = 'none';
+            document.getElementById('upload-icon').style.display = 'block';
+            document.getElementById('upload-text').style.display = 'block';
+            document.getElementById('delete-receipt-btn').style.display = 'none';
+            document.getElementById('receipt-upload-box').style.borderColor = '#cbd5e1';
+            document.getElementById('receipt-upload-box').style.background = '#f8fafc';
+        }
+
         async function handlePaymentSubmit(btn) {
             btn.classList.add('btn-loading');
             const success = await submitPayment();
@@ -616,6 +673,8 @@
             if(success) {
                 showToast("Submission Successful! Our intelligence unit will verify shortly.");
                 closeBankModal();
+                clearReceipt();
+                document.getElementById('pay-tid').value = '';
                 updatePlanButtonsStatus();
             }
         }
@@ -629,7 +688,13 @@
                 const res = await fetch('/api/payment/submit', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ email: user.email, tier, tid, method: 'BANK_TRANSFER' })
+                    body: JSON.stringify({ 
+                        email: user.email, 
+                        tier, 
+                        tid, 
+                        method: 'BANK_TRANSFER',
+                        receipt: uploadedReceiptBase64 
+                    })
                 });
                 const data = await res.json();
                 if(data.status === 'success') return true;
