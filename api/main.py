@@ -794,10 +794,93 @@ async def get_refund_requests(request: Request):
     verify_admin_token(request)
     try:
         conn = get_conn()
-        refunds = list(conn.db.refund_requests.find({"status": "pending"}))
+        refunds = list(conn.db.refund_requests.find({}))
         for r in refunds:
             r["_id"] = str(r["_id"])
         return {"refunds": refunds}
+    except Exception as e:
+        return {"status": "error", "detail": str(e)}
+
+@app.post("/api/admin/refunds/status")
+async def update_refund_status(data: dict, request: Request):
+    verify_admin_token(request)
+    try:
+        conn = get_conn()
+        refund_id = data.get("id")
+        status = data.get("status") # "refunded" or "not_eligible"
+        
+        if not refund_id or not status:
+            return {"status": "error", "detail": "Missing id or status"}
+            
+        conn.db.refund_requests.update_one(
+            {"_id": ObjectId(refund_id)},
+            {"$set": {"status": status}}
+        )
+        return {"status": "success"}
+    except Exception as e:
+        return {"status": "error", "detail": str(e)}
+
+@app.delete("/api/admin/refunds/{refund_id}")
+async def delete_refund_request(refund_id: str, request: Request):
+    verify_admin_token(request)
+    try:
+        conn = get_conn()
+        conn.db.refund_requests.delete_one({"_id": ObjectId(refund_id)})
+        return {"status": "success"}
+    except Exception as e:
+        return {"status": "error", "detail": str(e)}
+
+@app.get("/api/user/refund-status")
+async def get_user_refund_status(email: str):
+    try:
+        conn = get_conn()
+        
+        # 1. Get latest successful payment to check 48h purchase window
+        payment = conn.db.payments.find_one(
+            {"email": email},
+            sort=[("timestamp", -1)]
+        )
+        
+        purchase_time = None
+        is_eligible = False
+        hours_since_purchase = None
+        
+        if payment:
+            purchase_time = payment.get("timestamp")
+            if purchase_time:
+                p_dt = datetime.datetime.fromisoformat(purchase_time)
+                now = datetime.datetime.utcnow()
+                diff = now - p_dt
+                hours_since_purchase = diff.total_seconds() / 3600.0
+                if hours_since_purchase <= 48.0:
+                    is_eligible = True
+        
+        # 2. Check if they have an active refund request
+        refund = conn.db.refund_requests.find_one(
+            {"email": email},
+            sort=[("timestamp", -1)]
+        )
+        
+        refund_details = None
+        if refund:
+            refund_details = {
+                "id": str(refund["_id"]),
+                "name": refund.get("name"),
+                "tid": refund.get("tid"),
+                "reason": refund.get("reason"),
+                "bank_details": refund.get("bank_details"),
+                "proof": refund.get("proof"),
+                "status": refund.get("status"), # "pending", "refunded", "not_eligible"
+                "timestamp": refund.get("timestamp")
+            }
+            
+        return {
+            "status": "success",
+            "is_eligible": is_eligible,
+            "purchase_time": purchase_time,
+            "hours_since_purchase": hours_since_purchase,
+            "refund": refund_details
+        }
     except Exception as e:
         return {"status": "error", "detail": str(e)}
 

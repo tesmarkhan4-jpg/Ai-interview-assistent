@@ -290,13 +290,13 @@
                     </div>
                 </div>
 
-                <div style="display: flex; justify-content: center; margin-top: 40px;">
-                    <button style="display: flex; align-items: center; gap: 8px; border: 1px dashed #e2e8f0; background: white; color: #64748b; padding: 10px 20px; border-radius: 12px; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); box-shadow: 0 4px 12px rgba(0,0,0,0.015);" 
+                <div id="refund-trigger-container" style="display: none; justify-content: center; margin-top: 40px;">
+                    <button id="refund-trigger-btn" style="display: flex; align-items: center; gap: 8px; border: 1px dashed #e2e8f0; background: white; color: #64748b; padding: 10px 20px; border-radius: 12px; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); box-shadow: 0 4px 12px rgba(0,0,0,0.015);" 
                             onmouseover="this.style.borderColor='#cbd5e1'; this.style.color='#1e293b'; this.style.background='#f8fafc'; this.style.transform='translateY(-1px)';" 
                             onmouseout="this.style.borderColor='#e2e8f0'; this.style.color='#64748b'; this.style.background='white'; this.style.transform='none';" 
                             onclick="openRefundModal()">
                         <i data-lucide="help-circle" style="width: 14px; height: 14px; color: #94a3b8;"></i>
-                        Need a refund? Submit a request
+                        <span id="refund-trigger-text">Need a refund? Submit a request</span>
                     </button>
                 </div>
             </div>
@@ -365,56 +365,106 @@
 
     <!-- Refund Modal -->
     <div id="refund-modal" class="modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); z-index: 1000; align-items: center; justify-content: center;">
-        <div class="data-card" style="width: 90%; max-width: 500px; padding: 32px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
-                <h2 style="font-weight: 900; font-size: 1.5rem; color: #e11d48;">Request Refund</h2>
+        <div class="data-card" style="width: 90%; max-width: 500px; padding: 32px; max-height: 90vh; overflow-y: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 id="refund-modal-title" style="font-weight: 900; font-size: 1.5rem; color: #e11d48;">Request Refund</h2>
                 <button onclick="closeRefundModal()" style="background: none; border: none; cursor: pointer; color: #64748b;"><i data-lucide="x"></i></button>
             </div>
             
-            <p style="color: #64748b; font-size: 0.9rem; margin-bottom: 24px;">Refunds are processed within 24 hours of request. Please provide accurate details.</p>
+            <!-- FORM VIEW (Shown only if not requested yet) -->
+            <div id="refund-form-view">
+                <p style="color: #64748b; font-size: 0.9rem; margin-bottom: 24px;">Refunds are processed within 24 hours of request. Please provide accurate details.</p>
 
-            <div style="display: grid; gap: 16px;">
-                <div>
-                    <label style="font-size: 0.7rem; font-weight: 800; color: #94a3b8; text-transform: uppercase;">Account Holder Name</label>
-                    <input type="text" id="refund-name" class="form-input" placeholder="Your full name">
-                </div>
-                <div>
-                    <label style="font-size: 0.7rem; font-weight: 800; color: #94a3b8; text-transform: uppercase;">Transaction ID (TID)</label>
-                    <input type="text" id="refund-tid" class="form-input" placeholder="The TID from your receipt">
-                </div>
-                <div>
-                    <label style="font-size: 0.7rem; font-weight: 800; color: #94a3b8; text-transform: uppercase;">Reason for Refund</label>
-                    <select id="refund-reason" class="form-input">
-                        <option value="Not Happy">Not happy with the product</option>
-                        <option value="Delay">Plan not upgraded after 24h</option>
-                        <option value="Other">Other reason</option>
-                    </select>
-                </div>
-                <div>
-                    <label style="font-size: 0.7rem; font-weight: 800; color: #94a3b8; text-transform: uppercase;">HBL / Bank Details for Return</label>
-                    <input type="text" id="refund-bank" class="form-input" placeholder="Where should we send the money?">
-                </div>
-
-                <!-- PREMIUM REFUND PROOF UPLOAD WIDGET -->
-                <div style="margin-top: 4px;">
-                    <label style="font-size: 0.7rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; display: block; margin-bottom: 6px;">Upload Proof / Receipt (Optional)</label>
-                    <div id="refund-proof-upload-box" style="border: 2px dashed #cbd5e1; border-radius: 12px; padding: 16px; text-align: center; background: #f8fafc; cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;" onclick="document.getElementById('refund-proof').click()">
-                        <i id="refund-upload-icon" data-lucide="upload-cloud" style="width: 24px; height: 24px; color: #94a3b8;"></i>
-                        <span id="refund-upload-text" style="font-size: 0.75rem; font-weight: 600; color: #64748b;">Click to upload proof document / receipt</span>
-                        <img id="refund-proof-preview" style="display: none; max-width: 100%; max-height: 100px; border-radius: 8px; border: 1px solid #e2e8f0; margin-top: 6px;" />
+                <div style="display: grid; gap: 16px;">
+                    <div>
+                        <label style="font-size: 0.7rem; font-weight: 800; color: #94a3b8; text-transform: uppercase;">Account Holder Name / Title</label>
+                        <input type="text" id="refund-name" class="form-input" placeholder="Name as shown on account">
                     </div>
-                    <input type="file" id="refund-proof" accept="image/*" style="display: none;" onchange="handleRefundProofSelect(event)">
-                    <div style="text-align: center;">
-                        <button id="delete-refund-proof-btn" style="display: none; border: none; background: none; color: #ef4444; font-size: 0.75rem; font-weight: 700; text-decoration: underline; margin-top: 6px; cursor: pointer;" onclick="clearRefundProof()">
-                            Remove Receipt
-                        </button>
+                    <div>
+                        <label style="font-size: 0.7rem; font-weight: 800; color: #94a3b8; text-transform: uppercase;">Transaction ID (TID)</label>
+                        <input type="text" id="refund-tid" class="form-input" placeholder="The TID from your receipt">
+                    </div>
+                    <div>
+                        <label style="font-size: 0.7rem; font-weight: 800; color: #94a3b8; text-transform: uppercase;">Reason for Refund</label>
+                        <select id="refund-reason" class="form-input">
+                            <option value="Not Happy">Not happy with the product</option>
+                            <option value="Delay">Plan not upgraded after 24h</option>
+                            <option value="Other">Other reason</option>
+                        </select>
+                    </div>
+                    
+                    <!-- SPLIT BANK DETAILS WIDGET -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                        <div>
+                            <label style="font-size: 0.7rem; font-weight: 800; color: #94a3b8; text-transform: uppercase;">Bank Name</label>
+                            <input type="text" id="refund-bank-name" class="form-input" placeholder="e.g. HBL, Alfalah">
+                        </div>
+                        <div>
+                            <label style="font-size: 0.7rem; font-weight: 800; color: #94a3b8; text-transform: uppercase;">Account Title</label>
+                            <input type="text" id="refund-account-title" class="form-input" placeholder="Account Title">
+                        </div>
+                    </div>
+                    <div>
+                        <label style="font-size: 0.7rem; font-weight: 800; color: #94a3b8; text-transform: uppercase;">Account Number / IBAN</label>
+                        <input type="text" id="refund-account-number" class="form-input" placeholder="Enter account or IBAN number">
+                    </div>
+
+                    <!-- PREMIUM REFUND PROOF UPLOAD WIDGET -->
+                    <div style="margin-top: 4px;">
+                        <label style="font-size: 0.7rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; display: block; margin-bottom: 6px;">Upload Proof / Receipt (Optional)</label>
+                        <div id="refund-proof-upload-box" style="border: 2px dashed #cbd5e1; border-radius: 12px; padding: 16px; text-align: center; background: #f8fafc; cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;" onclick="document.getElementById('refund-proof').click()">
+                            <i id="refund-upload-icon" data-lucide="upload-cloud" style="width: 24px; height: 24px; color: #94a3b8;"></i>
+                            <span id="refund-upload-text" style="font-size: 0.75rem; font-weight: 600; color: #64748b;">Click to upload proof document / receipt</span>
+                            <img id="refund-proof-preview" style="display: none; max-width: 100%; max-height: 100px; border-radius: 8px; border: 1px solid #e2e8f0; margin-top: 6px;" />
+                        </div>
+                        <input type="file" id="refund-proof" accept="image/*" style="display: none;" onchange="handleRefundProofSelect(event)">
+                        <div style="text-align: center;">
+                            <button id="delete-refund-proof-btn" style="display: none; border: none; background: none; color: #ef4444; font-size: 0.75rem; font-weight: 700; text-decoration: underline; margin-top: 6px; cursor: pointer;" onclick="clearRefundProof()">
+                                Remove Receipt
+                            </button>
+                        </div>
+                    </div>
+
+                    <button class="btn-danger-action" style="margin-top: 12px; padding: 16px;" onclick="handleRefundSubmit(this)">
+                        <span class="loader-spinner"></span>
+                        <span class="btn-text">Submit Refund Request</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- STATUS VIEW (Shown only if already submitted) -->
+            <div id="refund-status-view" style="display: none;">
+                <div style="text-align: center; margin-bottom: 24px; padding: 20px; background: #faf5ff; border-radius: 16px; border: 1px solid #f3e8ff;">
+                    <div style="font-size: 0.75rem; font-weight: 800; color: #a855f7; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px;">Strategic Status</div>
+                    <div id="status-badge-container" style="display: inline-block;">
+                        <!-- Dynamic Badge -->
                     </div>
                 </div>
 
-                <button class="btn-danger-action" style="margin-top: 12px; padding: 16px;" onclick="handleRefundSubmit(this)">
-                    <span class="loader-spinner"></span>
-                    <span class="btn-text">Submit Refund Request</span>
-                </button>
+                <div style="display: grid; gap: 14px; margin-bottom: 24px; background: #f8fafc; padding: 20px; border-radius: 16px; border: 1px solid #e2e8f0;">
+                    <h4 style="font-weight: 800; font-size: 0.9rem; color: #1e293b; margin-bottom: 4px; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px;">Submitted Details</h4>
+                    <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+                        <span style="color: #64748b; font-weight: 600;">Account Title:</span>
+                        <span id="status-val-name" style="color: #0f172a; font-weight: 700;">-</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+                        <span style="color: #64748b; font-weight: 600;">TID:</span>
+                        <span id="status-val-tid" style="color: #0f172a; font-weight: 700; font-family: monospace;">-</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+                        <span style="color: #64748b; font-weight: 600;">Bank Details:</span>
+                        <span id="status-val-bank" style="color: #0f172a; font-weight: 700; text-align: right; max-width: 60%;">-</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+                        <span style="color: #64748b; font-weight: 600;">Reason:</span>
+                        <span id="status-val-reason" style="color: #0f172a; font-weight: 700;">-</span>
+                    </div>
+                </div>
+
+                <!-- 24h Countdown Timer or WhatsApp Button -->
+                <div id="refund-timer-container" style="text-align: center; padding: 20px; border-radius: 16px;">
+                    <!-- Dynamic -->
+                </div>
             </div>
         </div>
     </div>
@@ -510,6 +560,8 @@
             const daysHero = document.getElementById('days-left');
             if(daysHero) daysHero.innerText = `${diff > 0 ? diff : 0} Days`;
         }
+
+        checkRefundEligibility();
 
         function showToast(msg, type='success') {
             const container = document.getElementById('toast-container');
@@ -722,6 +774,148 @@
 
         // --- Refund & Ticket Logic ---
         let uploadedRefundProofBase64 = null;
+        let refundTimerInterval = null;
+        let eligibilityInterval = null;
+
+        function checkRefundEligibility() {
+            if(!user || !user.email) return;
+            fetch(`/api/user/refund-status?email=${user.email}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        const container = document.getElementById('refund-trigger-container');
+                        const textEl = document.getElementById('refund-trigger-text');
+                        
+                        // 1. If refund request already exists
+                        if (data.refund) {
+                            container.style.display = 'flex';
+                            
+                            let statusText = '';
+                            if (data.refund.status === 'pending') {
+                                statusText = '⏳ Refund Request Under Review';
+                            } else if (data.refund.status === 'refunded') {
+                                statusText = '✓ Refunded';
+                            } else if (data.refund.status === 'not_eligible') {
+                                statusText = '✕ Refund Not Eligible';
+                            }
+                            textEl.innerText = `${statusText} (View Details)`;
+                            
+                            // Setup Refund Status Modal view
+                            document.getElementById('refund-form-view').style.display = 'none';
+                            document.getElementById('refund-status-view').style.display = 'block';
+                            document.getElementById('refund-modal-title').innerText = 'Refund Status';
+                            
+                            // Fill status details
+                            document.getElementById('status-val-name').innerText = data.refund.name;
+                            document.getElementById('status-val-tid').innerText = data.refund.tid;
+                            document.getElementById('status-val-bank').innerText = data.refund.bank_details;
+                            document.getElementById('status-val-reason').innerText = data.refund.reason;
+                            
+                            const badgeContainer = document.getElementById('status-badge-container');
+                            if (data.refund.status === 'pending') {
+                                badgeContainer.innerHTML = '<span style="background: #fff7ed; color: #ea580c; border: 1px solid #fed7aa; padding: 6px 16px; border-radius: 9999px; font-size: 0.8rem; font-weight: 800; display: inline-flex; align-items: center; gap: 6px;"><span class="loader-spinner" style="width: 12px; height: 12px; border-width: 2px; border-color: #ea580c transparent transparent transparent; margin-right: 6px;"></span> Pending Verification</span>';
+                                startRefundCountdown(data.refund.timestamp, data.refund.tid);
+                            } else if (data.refund.status === 'refunded') {
+                                badgeContainer.innerHTML = '<span style="background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; padding: 6px 16px; border-radius: 9999px; font-size: 0.8rem; font-weight: 800; display: inline-flex; align-items: center; gap: 6px;"><i data-lucide="check-circle" style="width: 14px; height: 14px;"></i> Refunded Successfully</span>';
+                                document.getElementById('refund-timer-container').style.display = 'none';
+                            } else if (data.refund.status === 'not_eligible') {
+                                badgeContainer.innerHTML = '<span style="background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; padding: 6px 16px; border-radius: 9999px; font-size: 0.8rem; font-weight: 800; display: inline-flex; align-items: center; gap: 6px;"><i data-lucide="alert-circle" style="width: 14px; height: 14px;"></i> Request Denied (Not Eligible)</span>';
+                                document.getElementById('refund-timer-container').style.display = 'none';
+                            }
+                            lucide.createIcons();
+                            return;
+                        }
+
+                        // 2. No refund requested yet, check 48h purchase window
+                        if (data.is_eligible && data.purchase_time) {
+                            container.style.display = 'flex';
+                            document.getElementById('refund-form-view').style.display = 'block';
+                            document.getElementById('refund-status-view').style.display = 'none';
+                            document.getElementById('refund-modal-title').innerText = 'Request Refund';
+                            
+                            const purchaseDate = new Date(data.purchase_time);
+                            const deadlineDate = new Date(purchaseDate.getTime() + 48 * 60 * 60 * 1000);
+                            
+                            if (eligibilityInterval) clearInterval(eligibilityInterval);
+                            
+                            function updateEligibilityCountdown() {
+                                const now = new Date();
+                                const diffMs = deadlineDate - now;
+                                
+                                if (diffMs > 0) {
+                                    const hours = Math.floor(diffMs / (1000 * 60 * 60));
+                                    const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+                                    textEl.innerHTML = `Need a refund? Submit request (${hours}h ${minutes}m remaining)`;
+                                } else {
+                                    clearInterval(eligibilityInterval);
+                                    container.style.display = 'none';
+                                }
+                            }
+                            
+                            updateEligibilityCountdown();
+                            eligibilityInterval = setInterval(updateEligibilityCountdown, 60000);
+                        } else {
+                            container.style.display = 'none';
+                        }
+                    }
+                })
+                .catch(e => console.error("Error loading refund details:", e));
+        }
+
+        function startRefundCountdown(timestamp, tid) {
+            if (refundTimerInterval) clearInterval(refundTimerInterval);
+
+            const timerEl = document.getElementById('refund-timer-container');
+            const submissionDate = new Date(timestamp);
+            const deadlineDate = new Date(submissionDate.getTime() + 24 * 60 * 60 * 1000);
+
+            function updateTimer() {
+                const now = new Date();
+                const diffMs = deadlineDate - now;
+
+                timerEl.style.display = 'block';
+                if (diffMs > 0) {
+                    const hours = Math.floor(diffMs / (1000 * 60 * 60));
+                    const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+                    const seconds = Math.floor((diffMs % (1000 * 60)) / 1000);
+
+                    timerEl.style.background = '#fffbeb';
+                    timerEl.style.border = '1px solid #fef3c7';
+                    timerEl.innerHTML = `
+                        <div style="display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 800; font-size: 0.9rem; color: #d97706; margin-bottom: 6px;">
+                            <i data-lucide="clock" style="width: 16px; height: 16px; color: #ea580c;"></i>
+                            Verification in Progress
+                        </div>
+                        <div style="font-size: 1.4rem; font-weight: 900; color: #b45309; letter-spacing: -0.5px; margin-bottom: 4px;">
+                            ${hours}h ${minutes}m ${seconds}s
+                        </div>
+                        <p style="color: #ea580c; font-size: 0.75rem; font-weight: 600; margin: 0;">Processed within 24 hours of submission</p>
+                    `;
+                    lucide.createIcons();
+                } else {
+                    clearInterval(refundTimerInterval);
+                    timerEl.style.background = '#f0fdf4';
+                    timerEl.style.border = '1px solid #bbf7d0';
+                    timerEl.innerHTML = `
+                        <div style="display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 800; font-size: 0.9rem; color: #16a34a; margin-bottom: 8px;">
+                            <i data-lucide="check-circle" style="width: 18px; height: 18px;"></i>
+                            Manual Verification Priority
+                        </div>
+                        <p style="color: #15803d; font-size: 0.8rem; font-weight: 600; margin-bottom: 14px; line-height: 1.4;">24 hours have elapsed. Please contact our leadership unit directly via WhatsApp for instant processing.</p>
+                        <a href="https://wa.me/923465261970?text=Hi,%20I'm%20inquiring%20about%20my%20refund%20request%20for%20ZenithHUD%20(TID:%20${tid})" 
+                           target="_blank" 
+                           style="display: inline-flex; align-items: center; gap: 8px; background: #22c55e; color: white; padding: 12px 24px; border-radius: 12px; font-size: 0.85rem; font-weight: 800; text-decoration: none; box-shadow: 0 10px 20px rgba(34, 197, 94, 0.25); transition: transform 0.2s;">
+                            <svg style="width: 18px; height: 18px; fill: currentColor;" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.003 5.324 5.328 0 12.008 0c3.237.001 6.279 1.262 8.567 3.553C22.863 5.845 24.12 8.89 24.12 12.13c-.003 6.68-5.329 12.005-12.009 12.005-.18 0-.361-.001-.54-.007l-6.16 1.688.026.026-.026-.026zM6.621 16.7c1.15.688 2.29.983 3.65.983 5.176 0 9.387-4.199 9.39-9.36.002-2.5-1.002-4.85-2.77-6.61-1.782-1.78-4.13-2.77-6.623-2.77C5.175 2.943.964 7.142.961 12.3c0 1.623.479 2.99 1.258 4.3l-.986 3.601 3.684-.967.3.167-.3-.167z"/></svg>
+                            Chat on WhatsApp
+                        </a>
+                    `;
+                    lucide.createIcons();
+                }
+            }
+
+            updateTimer();
+            refundTimerInterval = setInterval(updateTimer, 1000);
+        }
 
         function handleRefundProofSelect(event) {
             const file = event.target.files[0];
@@ -736,7 +930,6 @@
             reader.onload = function(e) {
                 uploadedRefundProofBase64 = e.target.result;
                 
-                // Show preview and remove standard instructions
                 document.getElementById('refund-proof-preview').src = uploadedRefundProofBase64;
                 document.getElementById('refund-proof-preview').style.display = 'block';
                 document.getElementById('refund-upload-icon').style.display = 'none';
@@ -760,11 +953,15 @@
             document.getElementById('refund-proof-upload-box').style.background = '#f8fafc';
         }
 
-        function openRefundModal() { document.getElementById('refund-modal').style.display = 'flex'; }
+        function openRefundModal() { 
+            document.getElementById('refund-modal').style.display = 'flex'; 
+            checkRefundEligibility();
+        }
         
         function closeRefundModal() { 
             document.getElementById('refund-modal').style.display = 'none'; 
             clearRefundProof();
+            if (refundTimerInterval) clearInterval(refundTimerInterval);
         }
 
         async function handleRefundSubmit(btn) {
@@ -774,6 +971,7 @@
             if(success) {
                 showToast("Refund Request Received. Processing within 24h.");
                 closeRefundModal();
+                checkRefundEligibility();
             }
         }
 
@@ -781,9 +979,17 @@
             const name = document.getElementById('refund-name').value;
             const tid = document.getElementById('refund-tid').value;
             const reason = document.getElementById('refund-reason').value;
-            const bank = document.getElementById('refund-bank').value;
+            
+            const bankName = document.getElementById('refund-bank-name').value;
+            const accountTitle = document.getElementById('refund-account-title').value;
+            const accountNumber = document.getElementById('refund-account-number').value;
 
-            if(!name || !tid || !bank) { showToast("All fields are mandatory.", "error"); return false; }
+            if(!name || !tid || !bankName || !accountTitle || !accountNumber) { 
+                showToast("All bank fields are mandatory.", "error"); 
+                return false; 
+            }
+
+            const bank = `Bank: ${bankName} | Title: ${accountTitle} | A/C: ${accountNumber}`;
 
             try {
                 const res = await fetch('/api/payment/refund-request', {

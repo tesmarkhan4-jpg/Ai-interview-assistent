@@ -387,6 +387,31 @@
                     `<button class="btn-action btn-secondary" style="padding:4px 10px; font-size:0.7rem; color:var(--rose); border-color:rgba(225, 29, 72, 0.2);" onclick="viewRefundProof('${r._id}')">View Proof</button>` : 
                     `<span style="font-size:0.7rem; color:var(--text-muted); font-weight:700;">No Proof</span>`;
 
+                let actionHtml = '';
+                if (!r.status || r.status === 'pending') {
+                    actionHtml = `
+                        <div style="display:flex; gap:6px;">
+                            <button class="btn-action" style="background:#22c55e; padding:4px 8px; font-size:0.65rem;" onclick="updateRefundStatus('${r._id}', 'refunded')">Refunded</button>
+                            <button class="btn-action" style="background:#f97316; padding:4px 8px; font-size:0.65rem;" onclick="updateRefundStatus('${r._id}', 'not_eligible')">Not Eligible</button>
+                            <button class="btn-action btn-secondary" style="color:var(--rose); border-color:rgba(225, 29, 72, 0.2); padding:4px 8px; font-size:0.65rem;" onclick="deleteRefundRequest('${r._id}')">Delete</button>
+                        </div>
+                    `;
+                } else if (r.status === 'refunded') {
+                    actionHtml = `
+                        <div style="display:flex; gap:8px; align-items:center;">
+                            <span class="status-pill" style="background:#f0fdf4; color:#16a34a; border:1px solid #bbf7d0; font-size:0.65rem; padding:4px 10px; font-weight:800; border-radius:9999px;">✓ REFUNDED</span>
+                            <button class="btn-action btn-secondary" style="color:var(--rose); border-color:rgba(225, 29, 72, 0.2); padding:4px 8px; font-size:0.65rem;" onclick="deleteRefundRequest('${r._id}')">Delete</button>
+                        </div>
+                    `;
+                } else if (r.status === 'not_eligible') {
+                    actionHtml = `
+                        <div style="display:flex; gap:8px; align-items:center;">
+                            <span class="status-pill" style="background:#fff7ed; color:#ea580c; border:1px solid #fed7aa; font-size:0.65rem; padding:4px 10px; font-weight:800; border-radius:9999px;">✕ NOT ELIGIBLE</span>
+                            <button class="btn-action btn-secondary" style="color:var(--rose); border-color:rgba(225, 29, 72, 0.2); padding:4px 8px; font-size:0.65rem;" onclick="deleteRefundRequest('${r._id}')">Delete</button>
+                        </div>
+                    `;
+                }
+
                 return `
                 <tr>
                     <td><b>${r.email}</b><br><span style="font-size:0.7rem; color:var(--text-muted);">${r.name}</span></td>
@@ -394,7 +419,7 @@
                     <td><span style="font-size:0.8rem; color:var(--rose); font-weight:700;">${r.reason}</span></td>
                     <td><span style="font-size:0.75rem;">${r.bank_details}</span></td>
                     <td>${proofButton}</td>
-                    <td><button class="btn-action" style="background:var(--rose); padding:4px 12px; font-size:0.7rem;">PROCESSED</button></td>
+                    <td>${actionHtml}</td>
                 </tr>
                 `;
             }).join('');
@@ -474,6 +499,35 @@
         let currentTicketEmail = null; async function selectTicket(e) { currentTicketEmail = e; document.getElementById('chat-header').style.display = 'block'; document.getElementById('chat-input-container').style.display = 'block'; document.getElementById('chat-user-email').innerText = e; loadMessages(e); }
         async function loadMessages(e) { const res = await adminFetch(`${API_BASE}/auth/ticket/history?email=${e}`); const data = await res.json(); document.getElementById('chat-messages').innerHTML = data.messages.map(m => `<div style="align-self:${m.role==='admin'?'flex-end':'flex-start'}; background:${m.role==='admin'?'#000':'#f1f5f9'}; color:${m.role==='admin'?'#fff':'#000'}; padding:10px 14px; border-radius:14px; max-width:85%; font-weight:600;">${m.text}</div>`).join(''); const chat = document.getElementById('chat-messages'); chat.scrollTop = chat.scrollHeight; }
         async function sendReply() { const t = document.getElementById('ticket-reply-input').value; if(!t) return; await adminFetch(`${API_BASE}/admin/ticket/reply?email=${currentTicketEmail}&message=${encodeURIComponent(t)}`, {method:'POST'}); document.getElementById('ticket-reply-input').value = ''; loadMessages(currentTicketEmail); }
+
+        async function updateRefundStatus(id, status) {
+            if(confirm(`Mark this refund request as ${status.toUpperCase()}?`)) {
+                const res = await adminFetch(`${API_BASE}/admin/refunds/status`, {
+                    method: 'POST',
+                    body: JSON.stringify({ id, status })
+                });
+                if(res && res.ok) {
+                    alert("Status updated successfully.");
+                    fetchPayments();
+                } else {
+                    alert("Failed to update status.");
+                }
+            }
+        }
+
+        async function deleteRefundRequest(id) {
+            if(confirm("Are you sure you want to permanently delete this refund request?")) {
+                const res = await adminFetch(`${API_BASE}/admin/refunds/${id}`, {
+                    method: 'DELETE'
+                });
+                if(res && res.ok) {
+                    alert("Refund request deleted successfully.");
+                    fetchPayments();
+                } else {
+                    alert("Failed to delete request.");
+                }
+            }
+        }
 
         window.addEventListener('DOMContentLoaded', () => fetchStats());
     </script>
