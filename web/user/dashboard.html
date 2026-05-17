@@ -394,6 +394,23 @@
                     <label style="font-size: 0.7rem; font-weight: 800; color: #94a3b8; text-transform: uppercase;">HBL / Bank Details for Return</label>
                     <input type="text" id="refund-bank" class="form-input" placeholder="Where should we send the money?">
                 </div>
+
+                <!-- PREMIUM REFUND PROOF UPLOAD WIDGET -->
+                <div style="margin-top: 4px;">
+                    <label style="font-size: 0.7rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; display: block; margin-bottom: 6px;">Upload Proof / Receipt (Optional)</label>
+                    <div id="refund-proof-upload-box" style="border: 2px dashed #cbd5e1; border-radius: 12px; padding: 16px; text-align: center; background: #f8fafc; cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;" onclick="document.getElementById('refund-proof').click()">
+                        <i id="refund-upload-icon" data-lucide="upload-cloud" style="width: 24px; height: 24px; color: #94a3b8;"></i>
+                        <span id="refund-upload-text" style="font-size: 0.75rem; font-weight: 600; color: #64748b;">Click to upload proof document / receipt</span>
+                        <img id="refund-proof-preview" style="display: none; max-width: 100%; max-height: 100px; border-radius: 8px; border: 1px solid #e2e8f0; margin-top: 6px;" />
+                    </div>
+                    <input type="file" id="refund-proof" accept="image/*" style="display: none;" onchange="handleRefundProofSelect(event)">
+                    <div style="text-align: center;">
+                        <button id="delete-refund-proof-btn" style="display: none; border: none; background: none; color: #ef4444; font-size: 0.75rem; font-weight: 700; text-decoration: underline; margin-top: 6px; cursor: pointer;" onclick="clearRefundProof()">
+                            Remove Receipt
+                        </button>
+                    </div>
+                </div>
+
                 <button class="btn-danger-action" style="margin-top: 12px; padding: 16px;" onclick="handleRefundSubmit(this)">
                     <span class="loader-spinner"></span>
                     <span class="btn-text">Submit Refund Request</span>
@@ -704,8 +721,51 @@
         }
 
         // --- Refund & Ticket Logic ---
+        let uploadedRefundProofBase64 = null;
+
+        function handleRefundProofSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            if (file.size > 5 * 1024 * 1024) {
+                showToast("File size too large. Max limit is 5MB.", "error");
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                uploadedRefundProofBase64 = e.target.result;
+                
+                // Show preview and remove standard instructions
+                document.getElementById('refund-proof-preview').src = uploadedRefundProofBase64;
+                document.getElementById('refund-proof-preview').style.display = 'block';
+                document.getElementById('refund-upload-icon').style.display = 'none';
+                document.getElementById('refund-upload-text').style.display = 'none';
+                document.getElementById('delete-refund-proof-btn').style.display = 'inline-block';
+                document.getElementById('refund-proof-upload-box').style.borderColor = '#4f46e5';
+                document.getElementById('refund-proof-upload-box').style.background = '#eef2ff';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function clearRefundProof() {
+            uploadedRefundProofBase64 = null;
+            document.getElementById('refund-proof').value = '';
+            document.getElementById('refund-proof-preview').src = '';
+            document.getElementById('refund-proof-preview').style.display = 'none';
+            document.getElementById('refund-upload-icon').style.display = 'block';
+            document.getElementById('refund-upload-text').style.display = 'block';
+            document.getElementById('delete-refund-proof-btn').style.display = 'none';
+            document.getElementById('refund-proof-upload-box').style.borderColor = '#cbd5e1';
+            document.getElementById('refund-proof-upload-box').style.background = '#f8fafc';
+        }
+
         function openRefundModal() { document.getElementById('refund-modal').style.display = 'flex'; }
-        function closeRefundModal() { document.getElementById('refund-modal').style.display = 'none'; }
+        
+        function closeRefundModal() { 
+            document.getElementById('refund-modal').style.display = 'none'; 
+            clearRefundProof();
+        }
 
         async function handleRefundSubmit(btn) {
             btn.classList.add('btn-loading');
@@ -729,7 +789,14 @@
                 const res = await fetch('/api/payment/refund-request', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ email: user.email, name, tid, reason, bank })
+                    body: JSON.stringify({ 
+                        email: user.email, 
+                        name, 
+                        tid, 
+                        reason, 
+                        bank,
+                        proof: uploadedRefundProofBase64
+                    })
                 });
                 if((await res.json()).status === 'success') return true;
             } catch(e) { showToast("System Error.", "error"); }

@@ -204,6 +204,17 @@
     </div>
 
     <script>
+        // Auto-redirect if already logged in
+        const existingUser = JSON.parse(localStorage.getItem('zenith_user'));
+        if (existingUser) {
+            const adminEmails = ['tesmarkhan4@gmail.com', 'faheemkhan101992@gmail.com'];
+            if (adminEmails.includes(existingUser.email) || existingUser.role === 'OWNER') {
+                window.location.href = '/admin';
+            } else {
+                window.location.href = '/dashboard';
+            }
+        }
+
         const urlParams = new URLSearchParams(window.location.search);
         const planParam = urlParams.get('plan');
         if (planParam) {

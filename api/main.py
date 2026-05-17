@@ -770,6 +770,7 @@ async def refund_request(data: dict):
         tid = data.get("tid")
         reason = data.get("reason")
         bank = data.get("bank")
+        proof = data.get("proof") # Optional Base64 image proof
         
         if not email or not tid or not bank:
             return {"status": "error", "detail": "Missing mandatory fields"}
@@ -780,6 +781,7 @@ async def refund_request(data: dict):
             "tid": tid,
             "reason": reason,
             "bank_details": bank,
+            "proof": proof,
             "status": "pending",
             "timestamp": datetime.datetime.utcnow().isoformat()
         })

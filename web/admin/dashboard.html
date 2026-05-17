@@ -148,7 +148,7 @@
             <div class="data-card">
                 <div class="card-header"><span class="card-title" style="color:var(--rose);">Urgent Refund Requests</span></div>
                 <table>
-                    <thead><tr><th>User</th><th>TID</th><th>Reason</th><th>Bank Details</th><th>Action</th></tr></thead>
+                    <thead><tr><th>User</th><th>TID</th><th>Reason</th><th>Bank Details</th><th>Proof</th><th>Action</th></tr></thead>
                     <tbody id="admin-refund-list"></tbody>
                 </table>
             </div>
@@ -228,6 +228,20 @@
 
         function closeProofModal() {
             document.getElementById('proof-modal').style.display = 'none';
+        }
+
+        let pendingRefunds = [];
+
+        function viewRefundProof(id) {
+            const refund = pendingRefunds.find(r => r._id === id);
+            if(!refund || !refund.proof) {
+                alert("No receipt proof uploaded for this refund request.");
+                return;
+            }
+            const modal = document.getElementById('proof-modal');
+            const img = document.getElementById('proof-img');
+            img.src = refund.proof;
+            modal.style.display = 'flex';
         }
 
         function showToast(msg, type='success') {
@@ -366,15 +380,24 @@
 
             const refundRes = await adminFetch(`${API_BASE}/admin/payments/refunds`);
             const refundData = await refundRes.json();
-            document.getElementById('admin-refund-list').innerHTML = refundData.refunds.map(r => `
+            pendingRefunds = refundData.refunds;
+            document.getElementById('admin-refund-list').innerHTML = pendingRefunds.map(r => {
+                const hasProof = !!r.proof;
+                const proofButton = hasProof ? 
+                    `<button class="btn-action btn-secondary" style="padding:4px 10px; font-size:0.7rem; color:var(--rose); border-color:rgba(225, 29, 72, 0.2);" onclick="viewRefundProof('${r._id}')">View Proof</button>` : 
+                    `<span style="font-size:0.7rem; color:var(--text-muted); font-weight:700;">No Proof</span>`;
+
+                return `
                 <tr>
                     <td><b>${r.email}</b><br><span style="font-size:0.7rem; color:var(--text-muted);">${r.name}</span></td>
                     <td><code>${r.tid}</code></td>
                     <td><span style="font-size:0.8rem; color:var(--rose); font-weight:700;">${r.reason}</span></td>
                     <td><span style="font-size:0.75rem;">${r.bank_details}</span></td>
+                    <td>${proofButton}</td>
                     <td><button class="btn-action" style="background:var(--rose); padding:4px 12px; font-size:0.7rem;">PROCESSED</button></td>
                 </tr>
-            `).join('');
+                `;
+            }).join('');
         }
 
         async function approvePayment(id, email, tier) {
