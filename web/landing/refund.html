@@ -6,31 +6,89 @@
     <title>Refund Policy | ZenithHUD</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        body { background: #f8fafc; color: #1e293b; padding: 60px 20px; font-family: sans-serif; line-height: 1.6; }
-        .container { max-width: 800px; margin: 0 auto; background: white; padding: 40px; border-radius: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
-        h1 { font-size: 2rem; font-weight: 900; margin-bottom: 24px; color: #0f172a; }
-        h2 { font-size: 1.25rem; font-weight: 700; margin-top: 32px; margin-bottom: 16px; color: #0f172a; }
-        p { margin-bottom: 16px; color: #64748b; }
+        body { 
+            background-color: var(--bg-dark); 
+            color: var(--text-main); 
+            padding: 80px 20px; 
+            font-family: 'Outfit', sans-serif; 
+            line-height: 1.7; 
+        }
+        .container { 
+            max-width: 750px; 
+            margin: 0 auto; 
+            background: var(--bg-card); 
+            padding: 50px; 
+            border-radius: 28px; 
+            border: 1px solid var(--border);
+            box-shadow: 0 30px 60px rgba(0,0,0,0.4);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+        h1 { 
+            font-size: 2.5rem; 
+            font-weight: 900; 
+            margin-bottom: 8px; 
+            color: var(--text-main); 
+            letter-spacing: -1px;
+        }
+        h1 span {
+            background: linear-gradient(135deg, var(--primary-luminous), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        h2 { 
+            font-size: 1.4rem; 
+            font-weight: 800; 
+            margin-top: 36px; 
+            margin-bottom: 12px; 
+            color: var(--text-main); 
+            letter-spacing: -0.5px;
+        }
+        p { 
+            margin-bottom: 18px; 
+            color: var(--text-muted); 
+            font-size: 1rem;
+        }
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--primary-luminous);
+            font-weight: 700;
+            text-decoration: none;
+            margin-top: 30px;
+            transition: all 0.2s ease;
+        }
+        .back-link:hover {
+            color: var(--text-main);
+            transform: translateX(-3px);
+        }
     </style>
 </head>
 <body>
+    <div class="aurora"></div>
+    <div class="tech-grid"></div>
+
     <div class="container">
-        <h1>Refund Policy</h1>
-        <p>Last Updated: May 2026</p>
+        <h1><span>Refund Policy</span></h1>
+        <p style="margin-bottom: 30px;">Last Updated: May 2026</p>
         
-        <h2>1. 14-Day Satisfaction Guarantee</h2>
-        <p>We want you to be 100% satisfied. If ZenithHUD doesn't meet your expectations, you can request a full refund within 14 days of your purchase.</p>
+        <h2>1. Forty-Eight Hour Refund Guarantee</h2>
+        <p>We want you to be fully satisfied. If ZenithHUD does not meet your expectations, you can request a complete refund within forty-eight hours of your purchase.</p>
         
-        <h2>2. Eligibility</h2>
-        <p>To be eligible for a refund, you must have used the product for less than 5 interview sessions and contacted our support team with your feedback.</p>
+        <h2>2. Easy One-Click Claim Process</h2>
+        <p>You do not need to fill out long forms or contact support. Simply navigate to your personal account dashboard and click the refund button to initiate the transaction automatically.</p>
         
-        <h2>3. Process</h2>
-        <p>Refunds are processed via our payment provider (Paddle). Once approved, the funds will return to your original payment method within 5-10 business days.</p>
+        <h2>3. Verification Protocols</h2>
+        <p>To ensure system security, your transaction details will be verified by our administrative panel. Refunds will not be approved if the hardware identity does not match the purchase record.</p>
         
-        <h2>4. Non-Refundable Items</h2>
-        <p>Lifetime licenses are non-refundable after 30 days of purchase.</p>
+        <h2>4. Non-Refundable Situations</h2>
+        <p>Refund requests submitted after the forty-eight hour window has expired are not eligible for approval. Lifetime licenses are also subject to this forty-eight hour limitation.</p>
         
-        <a href="index.html" style="color: #4f46e5; font-weight: 700; text-decoration: none;">&larr; Back to Home</a>
+        <a href="index.html" class="back-link">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-left"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+            Back to Home
+        </a>
     </div>
 </body>
 </html>

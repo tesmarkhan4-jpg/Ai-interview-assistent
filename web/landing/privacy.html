@@ -6,31 +6,89 @@
     <title>Privacy Policy | ZenithHUD</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        body { background: #f8fafc; color: #1e293b; padding: 60px 20px; font-family: sans-serif; line-height: 1.6; }
-        .container { max-width: 800px; margin: 0 auto; background: white; padding: 40px; border-radius: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
-        h1 { font-size: 2rem; font-weight: 900; margin-bottom: 24px; color: #0f172a; }
-        h2 { font-size: 1.25rem; font-weight: 700; margin-top: 32px; margin-bottom: 16px; color: #0f172a; }
-        p { margin-bottom: 16px; color: #64748b; }
+        body { 
+            background-color: var(--bg-dark); 
+            color: var(--text-main); 
+            padding: 80px 20px; 
+            font-family: 'Outfit', sans-serif; 
+            line-height: 1.7; 
+        }
+        .container { 
+            max-width: 750px; 
+            margin: 0 auto; 
+            background: var(--bg-card); 
+            padding: 50px; 
+            border-radius: 28px; 
+            border: 1px solid var(--border);
+            box-shadow: 0 30px 60px rgba(0,0,0,0.4);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+        h1 { 
+            font-size: 2.5rem; 
+            font-weight: 900; 
+            margin-bottom: 8px; 
+            color: var(--text-main); 
+            letter-spacing: -1px;
+        }
+        h1 span {
+            background: linear-gradient(135deg, var(--primary-luminous), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        h2 { 
+            font-size: 1.4rem; 
+            font-weight: 800; 
+            margin-top: 36px; 
+            margin-bottom: 12px; 
+            color: var(--text-main); 
+            letter-spacing: -0.5px;
+        }
+        p { 
+            margin-bottom: 18px; 
+            color: var(--text-muted); 
+            font-size: 1rem;
+        }
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--primary-luminous);
+            font-weight: 700;
+            text-decoration: none;
+            margin-top: 30px;
+            transition: all 0.2s ease;
+        }
+        .back-link:hover {
+            color: var(--text-main);
+            transform: translateX(-3px);
+        }
     </style>
 </head>
 <body>
+    <div class="aurora"></div>
+    <div class="tech-grid"></div>
+
     <div class="container">
-        <h1>Privacy Policy</h1>
-        <p>Last Updated: May 2026</p>
+        <h1><span>Privacy Policy</span></h1>
+        <p style="margin-bottom: 30px;">Last Updated: May 2026</p>
         
-        <h2>1. Data Collection</h2>
-        <p>We collect your email address for account management and Hardware ID (HWID) to prevent unauthorized distribution of our software.</p>
+        <h2>1. Data Collection Protocols</h2>
+        <p>We collect your email address for account validation and system communications. We also gather hardware identifier parameters to secure your license and prevent unauthorized accounts distribution.</p>
         
-        <h2>2. Use of Data</h2>
-        <p>Your data is used solely to provide and improve ZenithHUD services. We do not sell your personal information to third parties.</p>
+        <h2>2. Use of Information</h2>
+        <p>Your details are used solely to provide and maintain ZenithHUD services. We do not sell or trade your personal information with third parties.</p>
         
-        <h2>3. Security</h2>
-        <p>We implement industry-standard encryption to protect your data. Your interview logs are stored securely and can be deleted by you at any time.</p>
+        <h2>3. Local Storage Security</h2>
+        <p>We implement advanced encryption methods to protect your data. Your interview helper sessions are calculated locally on your computer and we do not store your private conversations on our servers.</p>
         
-        <h2>4. Contact</h2>
-        <p>If you have any questions about your privacy, contact us at support@zenith-hud.vercel.app</p>
+        <h2>4. Contact Us</h2>
+        <p>If you have any questions about your privacy or data protections, please connect with us at support@zenith-hud.vercel.app</p>
         
-        <a href="index.html" style="color: #4f46e5; font-weight: 700; text-decoration: none;">&larr; Back to Home</a>
+        <a href="index.html" class="back-link">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-left"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+            Back to Home
+        </a>
     </div>
 </body>
 </html>

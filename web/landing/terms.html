@@ -6,31 +6,89 @@
     <title>Terms of Service | ZenithHUD</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        body { background: #f8fafc; color: #1e293b; padding: 60px 20px; font-family: sans-serif; line-height: 1.6; }
-        .container { max-width: 800px; margin: 0 auto; background: white; padding: 40px; border-radius: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
-        h1 { font-size: 2rem; font-weight: 900; margin-bottom: 24px; color: #0f172a; }
-        h2 { font-size: 1.25rem; font-weight: 700; margin-top: 32px; margin-bottom: 16px; color: #0f172a; }
-        p { margin-bottom: 16px; color: #64748b; }
+        body { 
+            background-color: var(--bg-dark); 
+            color: var(--text-main); 
+            padding: 80px 20px; 
+            font-family: 'Outfit', sans-serif; 
+            line-height: 1.7; 
+        }
+        .container { 
+            max-width: 750px; 
+            margin: 0 auto; 
+            background: var(--bg-card); 
+            padding: 50px; 
+            border-radius: 28px; 
+            border: 1px solid var(--border);
+            box-shadow: 0 30px 60px rgba(0,0,0,0.4);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+        h1 { 
+            font-size: 2.5rem; 
+            font-weight: 900; 
+            margin-bottom: 8px; 
+            color: var(--text-main); 
+            letter-spacing: -1px;
+        }
+        h1 span {
+            background: linear-gradient(135deg, var(--primary-luminous), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        h2 { 
+            font-size: 1.4rem; 
+            font-weight: 800; 
+            margin-top: 36px; 
+            margin-bottom: 12px; 
+            color: var(--text-main); 
+            letter-spacing: -0.5px;
+        }
+        p { 
+            margin-bottom: 18px; 
+            color: var(--text-muted); 
+            font-size: 1rem;
+        }
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--primary-luminous);
+            font-weight: 700;
+            text-decoration: none;
+            margin-top: 30px;
+            transition: all 0.2s ease;
+        }
+        .back-link:hover {
+            color: var(--text-main);
+            transform: translateX(-3px);
+        }
     </style>
 </head>
 <body>
+    <div class="aurora"></div>
+    <div class="tech-grid"></div>
+
     <div class="container">
-        <h1>Terms of Service</h1>
-        <p>Last Updated: May 2026</p>
+        <h1><span>Terms of Service</span></h1>
+        <p style="margin-bottom: 30px;">Last Updated: May 2026</p>
         
-        <h2>1. Acceptance of Terms</h2>
-        <p>By accessing and using ZenithHUD, you agree to be bound by these Terms of Service. If you do not agree, please do not use our services.</p>
+        <h2>1. Acceptance of Conditions</h2>
+        <p>By accessing and using ZenithHUD, you agree to be fully bound by these Terms of Service. If you do not agree to these terms, please do not use our software.</p>
         
-        <h2>2. License to Use</h2>
-        <p>We grant you a non-exclusive, non-transferable license to use ZenithHUD for your personal career development and interview preparation.</p>
+        <h2>2. Tactical License to Use</h2>
+        <p>We grant you a non-exclusive, non-transferable license to use ZenithHUD for your personal career development and interview preparations. One license is limited to one hardware device registration.</p>
         
-        <h2>3. Restrictions</h2>
-        <p>You may not reverse engineer, decompile, or attempt to extract the source code of ZenithHUD. One license is limited to one hardware device (HWID).</p>
+        <h2>3. System Restrictions</h2>
+        <p>You may not reverse engineer, decompile, or attempt to extract the source code of ZenithHUD. You cannot distribute the license key to other individuals.</p>
         
-        <h2>4. Limitation of Liability</h2>
-        <p>ZenithHUD is provided "as is" without any warranties. We are not responsible for any outcome of your job interviews or career decisions.</p>
+        <h2>4. Limitation of Responsibility</h2>
+        <p>ZenithHUD is provided on an as-is basis without any guarantees. We are not responsible for any specific results of your job interviews or professional decisions.</p>
         
-        <a href="index.html" style="color: #4f46e5; font-weight: 700; text-decoration: none;">&larr; Back to Home</a>
+        <a href="index.html" class="back-link">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-left"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+            Back to Home
+        </a>
     </div>
 </body>
 </html>

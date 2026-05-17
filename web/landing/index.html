@@ -5,26 +5,31 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
     <!-- SEO OPTIMIZATION -->
-    <title>ZenithHUD | The World's Most Advanced AI Interview Assistant</title>
-    <meta name="description" content="Ace your next job interview with ZenithHUD. Get real-time, invisible AI assistance tailored to your resume. Undetectable on Zoom, Teams, and Google Meet.">
-    <meta name="keywords" content="AI Interview Assistant, Job Interview Help, Real-time AI, Interview Overlay, Zoom Interview AI, ZenithHUD">
+    <title>ZenithHUD | The Most Advanced AI Interview Assistant in the World</title>
+    <meta name="description" content="Succeed in your next job interview with ZenithHUD. Get real-time, invisible assistance tailored to your exact career history. Fully undetectable on Zoom, Teams, and Google Meet.">
+    <meta name="keywords" content="AI Interview Assistant, Job Interview Helper, Real-time AI, Screen Overlay, Zoom Interview AI, Undetectable Interview Helper, ZenithHUD">
+    <link rel="canonical" href="https://zenith-hud.vercel.app/">
     
     <link rel="stylesheet" href="style.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 </head>
 <body>
+    <!-- Luminous Ambient Grid and Pulse Blobs -->
     <div class="aurora"></div>
+    <div class="tech-grid"></div>
+    <div class="floating-blob blob-indigo"></div>
+    <div class="floating-blob blob-teal"></div>
 
+    <!-- Navigation Header -->
     <nav>
-            <div class="logo" style="display: flex; align-items: center; gap: 10px; font-size: 1.5rem; font-weight: 900; letter-spacing: -1px;">
-                <img src="/icon.png" alt="Z" style="height: 32px; width: 32px; border-radius: 8px;">
-                <div>Zenith<span style="color: #4f46e5;">HUD</span> PRO</div>
-            </div>
+        <div class="logo">
+            <img src="/icon.png" alt="Zenith Logo" style="height: 36px; width: 36px; border-radius: 8px;">
+            <div>Zenith<span>HUD</span> PRO</div>
+        </div>
         <div class="nav-links" id="auth-links">
-            <a href="#why">How it Works</a>
+            <a href="#why">How It Works</a>
+            <a href="#features">Features</a>
             <a href="#pricing">Pricing</a>
+            <a href="#faq">FAQ</a>
             <a href="#" class="dynamic-download">
                 <span class="loader-spinner" style="width:14px; height:14px; border-width:2px; margin-right:6px;"></span>
                 <span class="btn-text">Download</span>
@@ -34,13 +39,12 @@
         </div>
     </nav>
 
+    <!-- Dynamic Session Redirector Script -->
     <script>
-        // Dynamic Auth Check
         document.addEventListener('DOMContentLoaded', () => {
             const user = JSON.parse(localStorage.getItem('zenith_user'));
             const authContainer = document.getElementById('auth-links');
             if (user) {
-                // User is logged in - show Dashboard button
                 const loginLink = authContainer.querySelector('.login-link');
                 const getStartedBtn = authContainer.querySelector('.get-started-btn');
                 if(loginLink) loginLink.style.display = 'none';
@@ -55,24 +59,26 @@
         });
     </script>
 
+    <!-- Hero Section -->
     <header class="hero">
         <div class="hero-content">
             <div class="pill" id="dynamic-version-pill">
-                ZenithHUD PRO | Synchronizing...
+                ZenithHUD PRO | Synchronizing System Configuration...
             </div>
             <h1>Stop <span>Interview Anxiety</span> with a silent partner</h1>
-            <p class="hero-p">Forget generic scripts. ZenithHUD delivers real-time, CV-grounded intelligence to an invisible overlay, so you can focus on being yourself.</p>
+            <p class="hero-p">Forget generic scripts. ZenithHUD displays real-time, helpful details on a completely invisible screen layer. Speak with absolute confidence and ease.</p>
             
             <div class="cta-group">
                 <a href="#" class="btn-primary dynamic-download">
                     <span class="loader-spinner"></span>
-                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right: 6px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
                     <span class="btn-text">Download for Windows</span>
                 </a>
-                <a href="#pricing" class="btn-secondary">View Pricing</a>
+                <a href="#pricing" class="btn-secondary">View Tactical Plans</a>
             </div>
         </div>
         
+        <!-- Live Desktop Simulator Preview -->
         <div class="visual-container">
             <div class="glass-card">
                 <div class="card-header">
@@ -81,166 +87,253 @@
                         <div class="w-dot w-yellow"></div>
                         <div class="w-dot w-green"></div>
                     </div>
-                    <div class="status-badge">PHANTOM MODE ACTIVE</div>
+                    <div class="status-badge">PHANTOM OVERLAY ACTIVE</div>
                 </div>
                 
                 <div class="chat-msg">
-                    <span class="label">Incoming Question</span>
-                    <p>"How would you handle a conflict between two senior developers on your team?"</p>
+                    <span class="label">Incoming Question From Manager</span>
+                    <p style="font-weight: 500; line-height: 1.5;">"How would you handle a conflict between two senior developers on your team?"</p>
                 </div>
                 
                 <div class="response-box">
-                    <span class="label">Strategic Intelligence</span>
-                    <p>"I focus on technical alignment. I'd sit them both down to review the code architecture objectively, using our 'Impact First' framework mentioned in my CV..."</p>
+                    <span class="label">Strategic Intelligence Overlay</span>
+                    <p style="font-weight: 500; line-height: 1.6;">"I focus on technical alignment. I would sit them both down to review the code architecture objectively, using our 'Impact First' framework mentioned in my resume..."</p>
                 </div>
             </div>
         </div>
     </header>
 
-    <section id="why">
-        <div class="section-header">
-            <span class="section-label">The Challenge</span>
-            <h2>Why traditional interviews feel impossible</h2>
-        </div>
-        
-        <div class="pain-grid">
-            <div class="pain-card">
-                <span class="pain-icon">🧠</span>
-                <h3>The "Silent Panic"</h3>
-                <p>That moment you're asked a question and your mind goes blank. We provide a safety net that catches you before the silence becomes awkward.</p>
-            </div>
-            <div class="pain-card">
-                <span class="pain-icon">📉</span>
-                <h3>Generic Answers</h3>
-                <p>Standard AI gives generic advice. ZenithHUD scans your specific career history to give answers that sound like 100% you.</p>
-            </div>
-            <div class="pain-card">
-                <span class="pain-icon">🛡️</span>
-                <h3>Detection Fear</h3>
-                <p>Most tools are easily caught. Our OS-level 'Phantom Overlay' is completely invisible to screen-sharing software like Zoom and Teams.</p>
-            </div>
-        </div>
-    </section>
-
-    <section id="features" style="background: rgba(255,255,255,0.02);">
-        <div class="section-header">
-            <span class="section-label">Capabilities</span>
-            <h2>Unfair advantages for high-stakes roles</h2>
-        </div>
-        
-        <div class="pain-grid">
-            <div class="pain-card">
-                <h3>Ghost Overlay</h3>
-                <p>A transparent layer that only you can see. It floats above your browser or meeting app without leaving a trace on the recording.</p>
-            </div>
-            <div class="pain-card">
-                <h3>Resume Grounding</h3>
-                <p>Upload your CV once. The system uses it to tailor every response, ensuring you never contradict your professional record.</p>
-            </div>
-            <div class="pain-card">
-                <h3>Ultra-Low Latency</h3>
-                <p>Powered by our global Intelligence Pool. Get high-quality strategic advice in under 400ms—faster than human thought.</p>
-            </div>
-        </div>
-    </section>
-
-    <section id="pricing">
-        <div class="section-header">
-            <span class="section-label">Investment</span>
-            <h2>Choose your tactical tier</h2>
-        </div>
-        
-        <div class="pricing-grid">
-            <!-- 7-DAY TRIAL -->
-            <div class="price-card">
-                <span class="section-label" style="font-size: 0.6rem;">START FREE</span>
-                <h3>Trial Mission</h3>
-                <div class="price-value">$0<span>/7 days</span></div>
-                <ul class="benefit-list">
-                    <li>Full Feature Access</li>
-                    <li>Ghost Overlay Enabled</li>
-                    <li>Global Intelligence Pool</li>
-                    <li>7-Day Tactical License</li>
-                </ul>
-                <a href="/signup?plan=trial" class="btn-secondary" style="width: 100%; justify-content: center;">Start Trial</a>
-            </div>
-
-            <!-- BASIC PLAN -->
-            <div class="price-card">
-                <span class="section-label" style="font-size: 0.6rem;">MONTHLY</span>
-                <h3>Basic Tier</h3>
-                <div class="price-value">$29<span>/mo</span></div>
-                <ul class="benefit-list">
-                    <li>Standard AI Support</li>
-                    <li>Invisible Overlay</li>
-                    <li>Basic CV Grounding</li>
-                    <li>Single Device License</li>
-                </ul>
-                <a href="/signup?plan=basic" class="btn-secondary" style="width: 100%; justify-content: center;">Go Basic</a>
+    <!-- Problems and Solved Pain Points Section -->
+    <main>
+        <section id="why">
+            <div class="section-header">
+                <span class="section-label">User Pain Points</span>
+                <h2>Why traditional job interviews feel impossible</h2>
             </div>
             
-            <!-- PRO PLAN -->
-            <div class="price-card featured">
-                <span class="pill" style="margin-bottom: 12px; font-size: 0.6rem; padding: 4px 12px;">MOST POPULAR</span>
-                <h3>PRO Tactical</h3>
-                <div class="price-value">$49<span>/mo</span></div>
-                <ul class="benefit-list">
-                    <li>Priority Intelligence Stream</li>
-                    <li>Infinite Key Rotation</li>
-                    <li>Advanced CV Grounding</li>
-                    <li>Multi-Device Access</li>
-                </ul>
-                <a href="/signup?plan=pro" class="btn-primary" style="width: 100%; justify-content: center;">Upgrade to PRO</a>
+            <div class="pain-grid">
+                <!-- Pain Card 1 -->
+                <div class="pain-card">
+                    <span class="pain-icon">🧠</span>
+                    <h3>The Silent Pause</h3>
+                    <p>That difficult moment when you are asked a tough question and your memory goes blank. We provide a gentle helper that guides you before the silence becomes uncomfortable.</p>
+                </div>
+                <!-- Pain Card 2 -->
+                <div class="pain-card">
+                    <span class="pain-icon">📉</span>
+                    <h3>Robotic Responses</h3>
+                    <p>Standard artificial tools give generic advice that sounds fake. ZenithHUD reads your personal history to provide details that sound exactly like you.</p>
+                </div>
+                <!-- Pain Card 3 -->
+                <div class="pain-card">
+                    <span class="pain-icon">🛡️</span>
+                    <h3>Detection Worry</h3>
+                    <p>Most floating tools can be captured on screen sharing. Our custom overlay system remains completely invisible to standard screen capture software.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Deep Features and Core Capabilities Section -->
+        <section id="features" style="background: rgba(255, 255, 255, 0.01); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);">
+            <div class="section-header">
+                <span class="section-label">Core Capabilities</span>
+                <h2>Outstanding features built for high-stakes roles</h2>
             </div>
             
-            <!-- LIFETIME -->
-            <div class="price-card">
-                <span class="section-label" style="font-size: 0.6rem;">ONE-TIME</span>
-                <h3>Lifetime</h3>
-                <div class="price-value">$199<span>/once</span></div>
-                <ul class="benefit-list">
-                    <li>Permanent License</li>
-                    <li>All Future Updates</li>
-                    <li>VIP Discord Support</li>
-                    <li>Supreme Infrastructure</li>
-                </ul>
-                <a href="/signup?plan=lifetime" class="btn-secondary" style="width: 100%; justify-content: center;">Buy Lifetime</a>
+            <div class="detail-grid">
+                <div class="detail-text">
+                    <h3>Transparent Floating Overlay</h3>
+                    <p>Our transparent visual layer floats gently above your meeting software. You can see it clearly, but it does not appear on screen shares, recordings, or video calls. You are fully secure.</p>
+                    
+                    <h3>Dynamic Document Connection</h3>
+                    <p>Upload your career document one time. The helper reads your past achievements to generate responses that match your real experience. This ensures you never contradict your professional record.</p>
+                </div>
+                
+                <div class="detail-text" style="padding-right: 0;">
+                    <h3>Instant Processing Speed</h3>
+                    <p>Our global system works extremely fast. Get high quality suggestions in under four hundred milliseconds, which is faster than human speech. You will never feel delayed.</p>
+                    
+                    <h3>Local Safety Architecture</h3>
+                    <p>We do not save your interview conversations. All data runs safely and securely on your own computer. Your professional privacy remains completely respected at all times.</p>
+                </div>
             </div>
-        </div>
-    </section>
+        </section>
 
-    <section id="install-guide" style="border-top: 1px solid var(--border);">
-        <div class="section-header">
-            <span class="section-label">Deployment Security</span>
-            <h2>How to install ZenithHUD safely</h2>
-            <p style="color: var(--text-muted); margin-top: 16px;">As a high-performance intelligence tool, Windows may flag our initial installer. This is a standard security protocol for specialized enterprise software.</p>
-        </div>
-        
-        <div style="max-width: 600px; margin: 0 auto; background: var(--bg-white); border: 1px solid var(--border); border-radius: 24px; padding: 40px; box-shadow: 0 10px 30px rgba(0,0,0,0.02);">
-            <div style="display: flex; align-items: flex-start; gap: 20px; margin-bottom: 24px;">
-                <div style="background: var(--primary-glow); color: var(--primary); width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; flex-shrink: 0;">1</div>
-                <div>
-                    <b style="display: block; margin-bottom: 4px;">Launch the Installer</b>
-                    <span style="color: var(--text-muted); font-size: 0.95rem;">If the "Windows protected your PC" blue box appears, do not panic.</span>
-                </div>
+        <!-- Dynamic Tactical Pricing Tier Section -->
+        <section id="pricing">
+            <div class="section-header">
+                <span class="section-label">Tactical Tier Investment</span>
+                <h2>Choose the plan that fits your career goals</h2>
             </div>
-            <div style="display: flex; align-items: flex-start; gap: 20px; margin-bottom: 24px;">
-                <div style="background: var(--primary-glow); color: var(--primary); width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; flex-shrink: 0;">2</div>
-                <div>
-                    <b style="display: block; margin-bottom: 4px;">Select 'More Info'</b>
-                    <span style="color: var(--text-muted); font-size: 0.95rem;">Click the white "More info" link under the warning text.</span>
+            
+            <div class="pricing-grid">
+                <!-- 7-DAY TRIAL -->
+                <div class="price-card">
+                    <div>
+                        <span class="section-label" style="font-size: 0.65rem;">START FREE</span>
+                        <h3 style="margin-top: 8px;">Trial Mission</h3>
+                        <div class="price-value">$0<span>/7 days</span></div>
+                        <ul class="benefit-list">
+                            <li>Full Helper Features</li>
+                            <li>Invisible Overlay Enabled</li>
+                            <li>Standard Processing Speed</li>
+                            <li>Seven Day Free Access</li>
+                        </ul>
+                    </div>
+                    <a href="/signup?plan=trial" class="btn-secondary" style="width: 100%; justify-content: center; margin-top: 20px;">Start Free Trial</a>
                 </div>
-            </div>
-            <div style="display: flex; align-items: flex-start; gap: 20px;">
-                <div style="background: var(--primary-glow); color: var(--primary); width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; flex-shrink: 0;">3</div>
-                <div>
-                    <b style="display: block; margin-bottom: 4px;">Click 'Run Anyway'</b>
-                    <span style="color: var(--text-muted); font-size: 0.95rem;">ZenithHUD will begin the secure tactical deployment to your system.</span>
-                </div>
-            </div>
-        </div>
-    </section>
 
+                <!-- BASIC PLAN -->
+                <div class="price-card">
+                    <div>
+                        <span class="section-label" style="font-size: 0.65rem;">MONTHLY BILLING</span>
+                        <h3 style="margin-top: 8px;">Basic Tier</h3>
+                        <div class="price-value">$29<span>/month</span></div>
+                        <ul class="benefit-list">
+                            <li>Standard AI Engine</li>
+                            <li>Invisible Screen Overlay</li>
+                            <li>Basic Document Connection</li>
+                            <li>Single Computer License</li>
+                        </ul>
+                    </div>
+                    <a href="/signup?plan=basic" class="btn-secondary" style="width: 100%; justify-content: center; margin-top: 20px;">Select Basic</a>
+                </div>
+                
+                <!-- PRO PLAN -->
+                <div class="price-card featured">
+                    <div>
+                        <span class="pill" style="margin-bottom: 12px; font-size: 0.65rem; padding: 4px 12px; font-weight: 800;">RECOMMENDED</span>
+                        <h3>PRO Tactical</h3>
+                        <div class="price-value">$49<span>/month</span></div>
+                        <ul class="benefit-list">
+                            <li>Priority Processing Stream</li>
+                            <li>Unlimited Key Rotation</li>
+                            <li>Advanced Career Connection</li>
+                            <li>Multiple Computer License</li>
+                            <li>Forty-Eight Hour Refund</li>
+                        </ul>
+                    </div>
+                    <a href="/signup?plan=pro" class="btn-primary" style="width: 100%; justify-content: center; margin-top: 20px;">Upgrade to PRO</a>
+                </div>
+                
+                <!-- LIFETIME -->
+                <div class="price-card">
+                    <div>
+                        <span class="section-label" style="font-size: 0.65rem;">ONE TIME LICENSE</span>
+                        <h3 style="margin-top: 8px;">Lifetime Access</h3>
+                        <div class="price-value">$199<span>/forever</span></div>
+                        <ul class="benefit-list">
+                            <li>Permanent Lifetime License</li>
+                            <li>All Future Upgrades Included</li>
+                            <li>Priority Customer Support</li>
+                            <li>Supreme Processing Speed</li>
+                        </ul>
+                    </div>
+                    <a href="/signup?plan=lifetime" class="btn-secondary" style="width: 100%; justify-content: center; margin-top: 20px;">Buy Lifetime</a>
+                </div>
+            </div>
+            
+            <p style="text-align: center; color: var(--text-muted); font-size: 0.95rem; margin-top: 40px; font-weight: 500;">
+                All premium tiers include our secure forty-eight hour refund guarantee. You can request a complete refund with a single click from your account panel.
+            </p>
+        </section>
+
+        <!-- Help FAQ Section (Objections & Obvious Objections Resolved) -->
+        <section id="faq" style="background: rgba(255, 255, 255, 0.01); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);">
+            <div class="section-header">
+                <span class="section-label">Helpful Information</span>
+                <h2>Frequently Asked Questions</h2>
+            </div>
+            
+            <div class="faq-grid">
+                <!-- FAQ 1 -->
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFaq(this)">
+                        <span>Is this helper overlay safe and undetectable?</span>
+                        <span class="faq-icon">▼</span>
+                    </div>
+                    <div class="faq-answer">
+                        Yes. It is fully safe because it operates outside the web browser and screen capture layers. Video call software such as Zoom, Teams, and Meet cannot capture or detect the floating helper interface.
+                    </div>
+                </div>
+                <!-- FAQ 2 -->
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFaq(this)">
+                        <span>How fast is the setup process?</span>
+                        <span class="faq-icon">▼</span>
+                    </div>
+                    <div class="faq-answer">
+                        The process is extremely quick. You can download the software, upload your career history document, and start using the assistant overlay in under three minutes.
+                    </div>
+                </div>
+                <!-- FAQ 3 -->
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFaq(this)">
+                        <span>Do I need a credit card for the free trial?</span>
+                        <span class="faq-icon">▼</span>
+                    </div>
+                    <div class="faq-answer">
+                        No. We do not require any card details to begin your free seven-day trial. You can test the software with zero obligation.
+                    </div>
+                </div>
+                <!-- FAQ 4 -->
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFaq(this)">
+                        <span>How does the forty-eight hour refund guarantee work?</span>
+                        <span class="faq-icon">▼</span>
+                    </div>
+                    <div class="faq-answer">
+                        If you are not completely satisfied with your purchase, you can submit a refund claim within forty-eight hours of buying any premium plan. The refund trigger is available directly inside your user dashboard. The transaction is processed automatically.
+                    </div>
+                </div>
+                <!-- FAQ 5 -->
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFaq(this)">
+                        <span>Is my uploaded career document secure?</span>
+                        <span class="faq-icon">▼</span>
+                    </div>
+                    <div class="faq-answer">
+                        Yes. Your personal information is highly protected. We encrypt all documents and never share your data with anyone.
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Deployment Security Walkthrough Section -->
+        <section id="install-guide">
+            <div class="section-header">
+                <span class="section-label">Deployment Security</span>
+                <h2>How to install ZenithHUD safely</h2>
+                <p style="color: var(--text-muted); margin-top: 16px; font-size: 1.05rem;">Because our helper overlay uses advanced screen-floating parameters, standard Windows security filters may display a protective alert. This is normal behavior for specialized system tools.</p>
+            </div>
+            
+            <div style="max-width: 600px; margin: 0 auto; background: var(--bg-card); border: 1px solid var(--border); border-radius: 24px; padding: 40px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
+                <div style="display: flex; align-items: flex-start; gap: 20px; margin-bottom: 24px;">
+                    <div style="background: rgba(99, 102, 241, 0.1); color: var(--primary-luminous); width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; flex-shrink: 0; border: 1px solid rgba(99, 102, 241, 0.2);">1</div>
+                    <div>
+                        <b style="display: block; margin-bottom: 6px; font-size: 1.05rem; color: var(--text-main);">Launch the Installer</b>
+                        <span style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.5; display: block;">Open the downloaded file. If a blue protection warning box appears, do not worry.</span>
+                    </div>
+                </div>
+                <div style="display: flex; align-items: flex-start; gap: 20px; margin-bottom: 24px;">
+                    <div style="background: rgba(99, 102, 241, 0.1); color: var(--primary-luminous); width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; flex-shrink: 0; border: 1px solid rgba(99, 102, 241, 0.2);">2</div>
+                    <div>
+                        <b style="display: block; margin-bottom: 6px; font-size: 1.05rem; color: var(--text-main);">Select 'More Info'</b>
+                        <span style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.5; display: block;">Click the small white 'More info' link below the security warning text.</span>
+                    </div>
+                </div>
+                <div style="display: flex; align-items: flex-start; gap: 20px;">
+                    <div style="background: rgba(99, 102, 241, 0.1); color: var(--primary-luminous); width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; flex-shrink: 0; border: 1px solid rgba(99, 102, 241, 0.2);">3</div>
+                    <div>
+                        <b style="display: block; margin-bottom: 6px; font-size: 1.05rem; color: var(--text-main);">Click 'Run Anyway'</b>
+                        <span style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.5; display: block;">The software will immediately begin the secure setup on your computer.</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer Area -->
     <footer>
         <div class="f-logo">Zenith<span>HUD</span> PRO</div>
         <div class="f-links">
@@ -252,57 +345,69 @@
         <p class="f-copy">© 2026 ZenithHUD Intelligence. Engineered for the Elite. All rights reserved.</p>
     </footer>
 
+    <!-- Interactive Visual and Functional Scripts -->
     <script>
-        // Dynamic Version & Download Fetching
+        // Interactive FAQ Expansion Toggle
+        function toggleFaq(element) {
+            const answer = element.nextElementSibling;
+            const icon = element.querySelector('.faq-icon');
+            
+            if (answer.style.display === 'block') {
+                answer.style.display = 'none';
+                icon.style.transform = 'rotate(0deg)';
+                element.parentElement.style.borderColor = 'rgba(255, 255, 255, 0.08)';
+            } else {
+                answer.style.display = 'block';
+                icon.style.transform = 'rotate(180deg)';
+                element.parentElement.style.borderColor = 'rgba(99, 102, 241, 0.3)';
+            }
+        }
+
+        // Dynamic System Version and Download URL Synchronization
         async function fetchConfig() {
             try {
                 const res = await fetch('/api/app/version');
                 const data = await res.json();
                 
                 if (data.status === 'success') {
-                    // Update Version Tag
                     const pill = document.getElementById('dynamic-version-pill');
                     if (pill) {
                         pill.innerHTML = `ZenithHUD PRO v${data.version} | Enterprise Deployment Live`;
                     }
                     
-                    // Update all Download buttons
                     const downloadLinks = document.querySelectorAll('.dynamic-download');
                     downloadLinks.forEach(link => {
                         link.href = data.download_url || '#';
-                        // If no URL, maybe disable or show "Coming Soon"
                     });
                 }
             } catch (err) {
-                console.error("Failed to sync enterprise config:", err);
+                console.error("Failed to synchronize system version config:", err);
             }
         }
         
         fetchConfig();
         
-        // Dynamic Download Experience
+        // Interactive Loader Feedback on Download Clicking
         document.querySelectorAll('.dynamic-download').forEach(btn => {
             btn.addEventListener('click', function(e) {
                 const url = this.href;
                 if(url && url !== window.location.href + '#') {
-                    e.preventDefault(); // Take manual control
+                    e.preventDefault();
                     this.classList.add('btn-loading');
                     
-                    // Tactical Delay for Smooth Feel
                     setTimeout(() => {
                         window.location.href = url;
-                        // Reset button state after browser registers the download
                         setTimeout(() => this.classList.remove('btn-loading'), 1500);
                     }, 800);
                 }
             });
         });
 
-        // Smooth scroll (Exclude dynamic-download links)
+        // Smooth Scroll Navigation for Standard Anchor Triggers
         document.querySelectorAll('a[href^="#"]:not(.dynamic-download)').forEach(anchor => {
             anchor.addEventListener('click', function (e) {
                 const targetId = this.getAttribute('href');
-                if(targetId === '#') return; // Ignore empty anchor
+                if(targetId === '#') return;
                 
                 const target = document.querySelector(targetId);
                 if (target) {
