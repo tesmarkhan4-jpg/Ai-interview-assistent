@@ -2,16 +2,16 @@
 
 :root {
     --primary: #4f46e5;
-    --primary-glow: rgba(79, 70, 229, 0.4);
-    --primary-luminous: #6366f1;
+    --primary-glow: rgba(79, 70, 229, 0.12);
+    --primary-luminous: #4f46e5;
     --accent: #0ea5e9;
-    --accent-glow: rgba(14, 165, 233, 0.4);
-    --bg-dark: #070a13;
-    --bg-card: rgba(17, 24, 39, 0.7);
-    --text-main: #f8fafc;
-    --text-muted: #94a3b8;
-    --border: rgba(255, 255, 255, 0.08);
-    --border-hover: rgba(99, 102, 241, 0.3);
+    --accent-glow: rgba(14, 165, 233, 0.12);
+    --bg-light: #f8fafc;
+    --bg-card: rgba(255, 255, 255, 0.75);
+    --text-main: #0f172a;
+    --text-muted: #475569;
+    --border: rgba(0, 0, 0, 0.05);
+    --border-hover: rgba(79, 70, 229, 0.2);
 }
 
 html {
@@ -26,20 +26,20 @@ html {
 
 body { 
     font-family: 'Outfit', sans-serif; 
-    background-color: var(--bg-dark); 
+    background-color: var(--bg-light); 
     color: var(--text-main); 
     line-height: 1.6;
     overflow-x: hidden;
     position: relative;
 }
 
-/* Glowing Neon Background Grids and Blobs */
+/* Glowing Pastel Background Grids and Blobs */
 .aurora {
     position: fixed;
     top: 0; left: 0; width: 100%; height: 100%;
     z-index: -2;
-    background: radial-gradient(circle at 15% 15%, rgba(79, 70, 229, 0.15), transparent 45%),
-                radial-gradient(circle at 85% 85%, rgba(14, 165, 233, 0.12), transparent 45%);
+    background: radial-gradient(circle at 15% 15%, rgba(79, 70, 229, 0.08), transparent 45%),
+                radial-gradient(circle at 85% 85%, rgba(14, 165, 233, 0.06), transparent 45%);
 }
 
 .tech-grid {
@@ -48,8 +48,8 @@ body {
     z-index: -1;
     background-size: 40px 40px;
     background-image: 
-        linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-        linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+        linear-gradient(to right, rgba(0, 0, 0, 0.015) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(0, 0, 0, 0.015) 1px, transparent 1px);
     mask-image: radial-gradient(circle at 50% 50%, black, transparent 80%);
     -webkit-mask-image: radial-gradient(circle at 50% 50%, black, transparent 80%);
     opacity: 0.8;
@@ -60,7 +60,7 @@ body {
     border-radius: 50%;
     filter: blur(120px);
     z-index: -1;
-    opacity: 0.4;
+    opacity: 0.18;
     animation: pulse 12s infinite alternate ease-in-out;
 }
 
@@ -88,7 +88,7 @@ nav {
     justify-content: space-between; 
     align-items: center;
     padding: 20px 4%; /* Logo pushed far left, buttons pushed far right */
-    background: rgba(7, 10, 19, 0.75);
+    background: rgba(255, 255, 255, 0.8);
     backdrop-filter: blur(24px);
     -webkit-backdrop-filter: blur(24px);
     position: sticky; 
@@ -149,14 +149,14 @@ nav {
     text-decoration: none;
     transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     box-shadow: 0 8px 20px var(--primary-glow);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
     cursor: pointer;
 }
 
 .btn-primary:hover { 
     transform: translateY(-3px); 
     box-shadow: 0 12px 28px var(--primary-glow); 
-    background: linear-gradient(135deg, var(--primary-luminous), #60a5fa);
+    background: linear-gradient(135deg, #6366f1, #60a5fa);
 }
 
 .btn-secondary {
@@ -164,7 +164,7 @@ nav {
     align-items: center; 
     justify-content: center;
     gap: 10px;
-    background: rgba(255, 255, 255, 0.03); 
+    background: rgba(255, 255, 255, 0.8); 
     color: var(--text-main);
     padding: 14px 28px; 
     border-radius: 14px;
@@ -173,12 +173,14 @@ nav {
     transition: all 0.3s ease;
     border: 1px solid var(--border);
     cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.02);
 }
 
 .btn-secondary:hover { 
-    background: rgba(255, 255, 255, 0.08); 
+    background: #ffffff; 
     border-color: var(--border-hover);
     transform: translateY(-2px); 
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.04);
 }
 
 /* Hero Section */
@@ -204,14 +206,14 @@ nav {
     display: inline-flex; 
     align-items: center; 
     gap: 8px;
-    background: rgba(99, 102, 241, 0.1);
-    color: #a5b4fc; 
+    background: rgba(79, 70, 229, 0.06);
+    color: #4f46e5; 
     padding: 8px 18px;
     border-radius: 100px; 
     font-size: 0.8rem;
     font-weight: 700; 
     margin-bottom: 28px;
-    border: 1px solid rgba(99, 102, 241, 0.2);
+    border: 1px solid rgba(79, 70, 229, 0.15);
 }
 
 h1 { 
@@ -258,7 +260,7 @@ h1 span {
     border: 1px solid var(--border);
     border-radius: 28px; 
     padding: 35px;
-    box-shadow: 0 30px 60px rgba(0,0,0,0.4);
+    box-shadow: 0 30px 60px rgba(0,0,0,0.06);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
 }
@@ -268,7 +270,7 @@ h1 span {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 24px;
-    border-bottom: 1px solid rgba(255,255,255,0.05);
+    border-bottom: 1px solid rgba(0,0,0,0.04);
     padding-bottom: 16px;
 }
 
@@ -287,22 +289,22 @@ h1 span {
 .w-green { background: #10b981; }
 
 .status-badge {
-    background: rgba(16, 185, 129, 0.1);
-    color: #34d399;
+    background: rgba(16, 185, 129, 0.08);
+    color: #059669;
     font-size: 0.7rem;
     font-weight: 800;
     padding: 6px 12px;
     border-radius: 100px;
     letter-spacing: 0.5px;
-    border: 1px solid rgba(16, 185, 129, 0.2);
+    border: 1px solid rgba(16, 185, 129, 0.15);
 }
 
 .chat-msg { 
-    background: rgba(255, 255, 255, 0.02); 
+    background: rgba(0, 0, 0, 0.015); 
     padding: 20px; 
     border-radius: 16px; 
     margin-bottom: 24px; 
-    border: 1px solid rgba(255,255,255,0.03); 
+    border: 1px solid rgba(0,0,0,0.02); 
 }
 
 .label { 
@@ -324,7 +326,7 @@ h1 span {
     border-left: 3px solid var(--primary-luminous); 
     padding-left: 20px; 
     font-size: 1rem; 
-    color: #c7d2fe;
+    color: #312e81;
 }
 
 /* Sections Structure */
@@ -370,12 +372,13 @@ h2 {
     transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.01);
 }
 
 .pain-card:hover { 
     border-color: var(--border-hover); 
     transform: translateY(-8px); 
-    box-shadow: 0 20px 40px rgba(99, 102, 241, 0.15); 
+    box-shadow: 0 20px 40px rgba(79, 70, 229, 0.08); 
 }
 
 .pain-icon { 
@@ -444,11 +447,13 @@ h2 {
     transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.01);
 }
 
 .price-card:hover {
     transform: translateY(-5px);
-    border-color: rgba(255, 255, 255, 0.15);
+    border-color: rgba(0, 0, 0, 0.1);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.02);
 }
 
 .price-card h3 { 
@@ -459,9 +464,9 @@ h2 {
 
 .price-card.featured { 
     border: 2px solid var(--primary-luminous); 
-    background: rgba(17, 24, 39, 0.85); 
+    background: #ffffff; 
     transform: scale(1.05); 
-    box-shadow: 0 25px 50px rgba(99, 102, 241, 0.2); 
+    box-shadow: 0 25px 50px rgba(79, 70, 229, 0.08); 
     z-index: 2; 
 }
 
@@ -496,12 +501,12 @@ h2 {
     align-items: center; 
     gap: 12px; 
     font-size: 0.95rem; 
-    color: #cbd5e1; 
+    color: var(--text-muted); 
 }
 
 .benefit-list li::before { 
     content: '✓'; 
-    color: #34d399; 
+    color: #10b981; 
     font-weight: 900; 
 }
 
@@ -519,6 +524,7 @@ h2 {
     border-radius: 16px;
     overflow: hidden;
     transition: all 0.3s ease;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.01);
 }
 
 .faq-item:hover {
@@ -555,7 +561,8 @@ footer {
     padding: 80px 4% 50px; 
     border-top: 1px solid var(--border); 
     text-align: center; 
-    background: #04060c; 
+    background: #ffffff; 
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.01);
 }
 
 .f-logo { 

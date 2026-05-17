@@ -13,6 +13,15 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <!-- Mobile/Tablet Blocker Fullscreen Overlay -->
+    <div id="mobile-blocker" style="display: none; position: fixed; inset: 0; background: #ffffff; z-index: 99999; align-items: center; justify-content: center; padding: 30px; text-align: center; font-family: 'Outfit', sans-serif;">
+        <div style="max-width: 440px; padding: 50px 30px; border: 1px solid rgba(0,0,0,0.06); background: #f8fafc; border-radius: 28px; box-shadow: 0 20px 40px rgba(0,0,0,0.03);">
+            <div style="font-size: 4rem; margin-bottom: 24px;">💻</div>
+            <h3 id="blocker-title" style="font-size: 1.8rem; font-weight: 900; color: #0f172a; margin-bottom: 14px; letter-spacing: -0.8px;">Desktop Only</h3>
+            <p id="blocker-message" style="font-size: 1rem; color: #475569; line-height: 1.6; margin: 0 0 24px 0; font-weight: 500;">ZenithHUD is designed exclusively for Laptops and Desktops. Please open this page on your computer to proceed.</p>
+        </div>
+    </div>
+
     <!-- Luminous Ambient Grid and Pulse Blobs -->
     <div class="aurora"></div>
     <div class="tech-grid"></div>
@@ -418,6 +427,39 @@
                 }
             });
         });
+
+        // Device Guard Blocker Logic
+        function checkDevice() {
+            const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+            const isMobileUA = /android|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent.toLowerCase());
+            const isTabletUA = /(ipad|tablet|(android(?!.*mobile))|(windows(?!.*phone)(.*touch))|kindle|playbook|silk)/i.test(userAgent.toLowerCase());
+            const isIPadOS = (navigator.maxTouchPoints > 0 && /Macintosh|iPad/.test(navigator.userAgent));
+            const isMobileScreen = (window.innerWidth < 1024);
+            
+            const blocker = document.getElementById('mobile-blocker');
+            const title = document.getElementById('blocker-title');
+            const msg = document.getElementById('blocker-message');
+            
+            if (isMobileUA || isTabletUA || isIPadOS || isMobileScreen) {
+                blocker.style.display = 'flex';
+                document.body.style.overflow = 'hidden';
+                
+                // If on a mobile device but attempting to use 'Desktop Mode' (Large screen width reported, but touch/UA is active)
+                if ((isMobileUA || isTabletUA || isIPadOS) && !isMobileScreen) {
+                    title.innerText = "Nice Try! 😊";
+                    msg.innerHTML = "You are trying to use desktop mode, but you still cannot open this elite system here. Please open this website on a real Laptop or Desktop computer!";
+                } else {
+                    title.innerText = "Desktop Only";
+                    msg.innerHTML = "ZenithHUD is designed exclusively for Laptops and Desktops. Please open this website on your computer to view benefits and download the software.";
+                }
+            } else {
+                blocker.style.display = 'none';
+                document.body.style.overflow = '';
+            }
+        }
+        
+        window.addEventListener('DOMContentLoaded', checkDevice);
+        window.addEventListener('resize', checkDevice);
     </script>
 </body>
 </html>
