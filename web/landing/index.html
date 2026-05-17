@@ -37,21 +37,22 @@
     <script>
         (function() {
             const userAgent = navigator.userAgent || navigator.vendor || window.opera;
-            const isMobileUA = /android|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent.toLowerCase());
-            const isTabletUA = /(ipad|tablet|(android(?!.*mobile))|(windows(?!.*phone)(.*touch))|kindle|playbook|silk)/i.test(userAgent.toLowerCase());
+            const isMobileUA = /android|iphone|ipod|blackberry|iemobile|opera mini/i.test(userAgent.toLowerCase());
+            const isTabletUA = /(ipad|tablet|(android(?!.*mobile))|kindle|playbook|silk)/i.test(userAgent.toLowerCase());
             const isIPadOS = (navigator.maxTouchPoints > 0 && /Macintosh|iPad/.test(navigator.userAgent));
             
-            // Bulletproof Desktop-Mode detection (touch support + coarse pointer + aspect ratio checks)
+            // Touch & Coarse Pointer capabilities
             const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
             const isCoarse = window.matchMedia("(any-pointer: coarse)").matches;
             
-            // Android/iOS Desktop Mode bypass check
+            // Desktop Mode bypass check (pretends to be a desktop UA but has touch hardware and coarse input)
             const isAndroidDesktop = /Linux x86_64/i.test(userAgent) && isTouchDevice && isCoarse;
-            const isIPadDesktop = /Macintosh/i.test(userAgent) && isTouchDevice && isCoarse;
+            const isIPadDesktop = /Macintosh/i.test(userAgent) && isTouchDevice && isCoarse && !isMobileUA && !isTabletUA;
             
+            const isDesktopModeChecked = isAndroidDesktop || isIPadDesktop || ((!isMobileUA && !isTabletUA) && isTouchDevice && isCoarse);
             const isMobileScreen = (window.innerWidth < 1024) || (window.innerHeight < 768);
             
-            if (isMobileUA || isTabletUA || isIPadOS || isAndroidDesktop || isIPadDesktop || isMobileScreen) {
+            if (isMobileUA || isTabletUA || isIPadOS || isDesktopModeChecked || isMobileScreen) {
                 // Instantly inject scroll locking class onto html and body elements
                 document.documentElement.classList.add('mobile-locked-active');
                 document.body.classList.add('mobile-locked-active');
@@ -64,8 +65,8 @@
                     const title = blocker.querySelector('#blocker-title');
                     const msg = blocker.querySelector('#blocker-message');
                     
-                    // Display funny warning with smile emoji if desktop-mode was requested
-                    if ((isMobileUA || isTabletUA || isIPadOS || isAndroidDesktop || isIPadDesktop) && !isMobileScreen) {
+                    // Display funny warning ONLY when desktop-mode setting was actively requested by user!
+                    if (isDesktopModeChecked) {
                         title.innerText = "Nice Try! 😊";
                         msg.innerHTML = "We see that you enabled the 'Request Desktop Site' checkmark in your mobile browser settings. You are very clever, but this elite system still cannot run on a mobile screen. Please open this website on a real Laptop or Desktop computer to experience the magic!";
                     } else {
