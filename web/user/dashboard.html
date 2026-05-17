@@ -290,8 +290,12 @@
                     </div>
                 </div>
 
-                <div style="display: flex; justify-content: center; margin-top: 32px;">
-                    <button style="border: none; background: none; color: #64748b; font-size: 0.85rem; font-weight: 600; text-decoration: underline; cursor: pointer; transition: 0.2s;" onmouseover="this.style.color='#4f46e5'" onmouseout="this.style.color='#64748b'" onclick="openRefundModal()">
+                <div style="display: flex; justify-content: center; margin-top: 40px;">
+                    <button style="display: flex; align-items: center; gap: 8px; border: 1px dashed #e2e8f0; background: white; color: #64748b; padding: 10px 20px; border-radius: 12px; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); box-shadow: 0 4px 12px rgba(0,0,0,0.015);" 
+                            onmouseover="this.style.borderColor='#cbd5e1'; this.style.color='#1e293b'; this.style.background='#f8fafc'; this.style.transform='translateY(-1px)';" 
+                            onmouseout="this.style.borderColor='#e2e8f0'; this.style.color='#64748b'; this.style.background='white'; this.style.transform='none';" 
+                            onclick="openRefundModal()">
+                        <i data-lucide="help-circle" style="width: 14px; height: 14px; color: #94a3b8;"></i>
                         Need a refund? Submit a request
                     </button>
                 </div>
