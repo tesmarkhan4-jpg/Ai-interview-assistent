@@ -257,7 +257,7 @@
                             <li><i data-lucide="check" style="width:14px; color:#10b981; margin-right:10px;"></i> Invisible Overlay</li>
                             <li><i data-lucide="check" style="width:14px; color:#10b981; margin-right:10px;"></i> Standard Response Engine</li>
                         </ul>
-                        <button class="p-btn" style="background: #f1f5f9; color: #475569;" onclick="initPaddle('BASIC')">Select Basic <i data-lucide="arrow-right" style="width:14px"></i></button>
+                        <button class="p-btn" style="background: #f1f5f9; color: #475569;" onclick="selectPlan('BASIC')">Select Basic <i data-lucide="arrow-right" style="width:14px"></i></button>
                     </div>
 
                     <!-- PRO -->
@@ -272,7 +272,7 @@
                             <li><i data-lucide="check" style="width:14px; color:#10b981; margin-right:10px;"></i> Resume-Specific Grounding</li>
                             <li><i data-lucide="check" style="width:14px; color:#10b981; margin-right:10px;"></i> 24/7 Priority Channel</li>
                         </ul>
-                        <button class="p-btn" style="background: #4f46e5; color: white; box-shadow: 0 10px 20px rgba(79, 70, 229, 0.2);" onclick="initPaddle('PRO')">Select Pro Intelligence <i data-lucide="zap" style="width:14px"></i></button>
+                        <button class="p-btn" style="background: #4f46e5; color: white; box-shadow: 0 10px 20px rgba(79, 70, 229, 0.2);" onclick="selectPlan('PRO')">Select Pro Intelligence <i data-lucide="zap" style="width:14px"></i></button>
                     </div>
 
                     <!-- LIFETIME -->
@@ -286,7 +286,7 @@
                             <li><i data-lucide="check" style="width:14px; color:#10b981; margin-right:10px;"></i> All Future HUD Updates</li>
                             <li><i data-lucide="check" style="width:14px; color:#10b981; margin-right:10px;"></i> Dedicated Strategic Lead</li>
                         </ul>
-                        <button class="p-btn" style="background: #0f172a; color: white;" onclick="initPaddle('LIFETIME')">Select Lifetime <i data-lucide="infinity" style="width:14px"></i></button>
+                        <button class="p-btn" style="background: #0f172a; color: white;" onclick="selectPlan('LIFETIME')">Select Lifetime <i data-lucide="infinity" style="width:14px"></i></button>
                     </div>
                 </div>
 
@@ -497,102 +497,9 @@
             setTimeout(() => { toast.style.opacity = '0'; toast.style.transform = 'translateY(20px)'; setTimeout(() => toast.remove(), 400); }, 3000);
         }
 
-        async function initPaddle(tier) {
-            const prices = {
-                'BASIC': 'pri_01krqx6y16x6h152wvn2xs75wq',
-                'PRO': 'pri_01krqx6y16x6h152wvn2xs75wq',
-                'LIFETIME': 'pri_01krqx6y16x6h152wvn2xs75wq' // Fallback to basic
-            };
-            
-            // Find target button for visual feedback
-            const btns = document.querySelectorAll('.p-btn');
-            let targetBtn = null;
-            btns.forEach(btn => {
-                if (btn.outerHTML.includes(tier)) {
-                    targetBtn = btn;
-                }
-            });
-
-            if (targetBtn) {
-                targetBtn.classList.add('btn-loading');
-                targetBtn.style.opacity = '0.7';
-                targetBtn.innerHTML = `<span class="loader-spinner" style="display:inline-block !important;"></span> Opening Portal...`;
-            }
-
-            if (typeof Paddle === 'undefined') {
-                showToast("Card payment is blocked or offline. Opening Manual Verification...", "error");
-                setTimeout(() => {
-                    if (targetBtn) {
-                        targetBtn.classList.remove('btn-loading');
-                        targetBtn.style.opacity = '1';
-                        targetBtn.innerHTML = tier === 'BASIC' ? 'Select Basic <i class="lucide-arrow-right" style="width:14px"></i>' : 
-                                             tier === 'PRO' ? 'Select Pro Intelligence <i class="lucide-zap" style="width:14px"></i>' : 
-                                             'Select Lifetime <i class="lucide-infinity" style="width:14px"></i>';
-                    }
-                    openManualForTier(tier);
-                }, 1500);
-                return;
-            }
-
-            try {
-                Paddle.Checkout.open({
-                    settings: {
-                        displayMode: "overlay",
-                        theme: "dark",
-                        locale: "en"
-                    },
-                    items: [
-                        {
-                            priceId: prices[tier] || prices['BASIC'],
-                            quantity: 1
-                        }
-                    ],
-                    customer: {
-                        email: user.email
-                    },
-                    eventCallback: function(data) {
-                        if (targetBtn) {
-                            targetBtn.classList.remove('btn-loading');
-                            targetBtn.style.opacity = '1';
-                            targetBtn.innerHTML = tier === 'BASIC' ? 'Select Basic <i class="lucide-arrow-right" style="width:14px"></i>' : 
-                                                 tier === 'PRO' ? 'Select Pro Intelligence <i class="lucide-zap" style="width:14px"></i>' : 
-                                                 'Select Lifetime <i class="lucide-infinity" style="width:14px"></i>';
-                        }
-                    }
-                });
-
-                // Fail-safe: if Paddle fails silently or covers the screen with a transparent overlay,
-                // we release the loader and offer manual transfer after 6 seconds of no event callback
-                setTimeout(() => {
-                    if (targetBtn && targetBtn.classList.contains('btn-loading')) {
-                        targetBtn.classList.remove('btn-loading');
-                        targetBtn.style.opacity = '1';
-                        targetBtn.innerHTML = tier === 'BASIC' ? 'Select Basic <i class="lucide-arrow-right" style="width:14px"></i>' : 
-                                             tier === 'PRO' ? 'Select Pro Intelligence <i class="lucide-zap" style="width:14px"></i>' : 
-                                             'Select Lifetime <i class="lucide-infinity" style="width:14px"></i>';
-                        
-                        showToast("Checkout took too long. Opening Manual Verification...", "error");
-                        openManualForTier(tier);
-                    }
-                }, 6000);
-
-            } catch (err) {
-                console.error(err);
-                showToast("Could not open card portal. Opening Manual Verification...", "error");
-                if (targetBtn) {
-                    targetBtn.classList.remove('btn-loading');
-                    targetBtn.style.opacity = '1';
-                    targetBtn.innerHTML = tier === 'BASIC' ? 'Select Basic <i class="lucide-arrow-right" style="width:14px"></i>' : 
-                                         tier === 'PRO' ? 'Select Pro Intelligence <i class="lucide-zap" style="width:14px"></i>' : 
-                                         'Select Lifetime <i class="lucide-infinity" style="width:14px"></i>';
-                }
-                openManualForTier(tier);
-            }
-        }
-
-        function openManualForTier(tier) {
+        function selectPlan(tier) {
             const tierEl = document.getElementById('pay-tier');
-            if(tierEl) tierEl.value = tier.toUpperCase();
+            if (tierEl) tierEl.value = tier.toUpperCase();
             openBankModal();
         }
 
@@ -809,16 +716,7 @@
             window.location.href = '/login';
         }
     </script>
-    <script src="https://cdn.paddle.com/paddle/v2/paddle.js"></script>
     <script>
-        try {
-            Paddle.Initialize({ 
-                token: "live_90425a06e0e4d8e804bd29d92cd"
-            });
-        } catch (err) {
-            console.error("Paddle initialization failed:", err);
-        }
-        
         loadTicketHistory();
 
         // Check for upgrade redirect from login
