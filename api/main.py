@@ -686,6 +686,38 @@ async def submit_payment(data: dict):
     except Exception as e:
         return {"status": "error", "detail": str(e)}
 
+@app.get("/api/user/profile")
+async def get_user_profile(email: str):
+    try:
+        conn = get_conn()
+        if not conn: return {"status": "error", "detail": "Database unavailable."}
+        u = conn.get_user(email)
+        if not u: return {"status": "error", "detail": "User not found."}
+        
+        user_data = {
+            "email": u["email"],
+            "full_name": u["full_name"],
+            "tier": u["tier"],
+            "role": u.get("role", "user"),
+            "hwid": u.get("hwid", "WEB_LOGIN"),
+            "trial_expiry": u.get("trial_expiry").isoformat() if u.get("trial_expiry") else None
+        }
+        return {"status": "success", "user": user_data}
+    except Exception as e:
+        return {"status": "error", "detail": str(e)}
+
+@app.get("/api/user/payments")
+async def get_user_payments(email: str):
+    try:
+        conn = get_conn()
+        if not conn: return {"status": "error", "detail": "Database unavailable."}
+        payments = list(conn.db.payment_requests.find({"email": email}))
+        for p in payments:
+            p["_id"] = str(p["_id"])
+        return {"status": "success", "payments": payments}
+    except Exception as e:
+        return {"status": "error", "detail": str(e)}
+
 @app.get("/api/admin/payments/pending")
 async def get_pending_payments(request: Request):
     verify_admin_token(request)
